@@ -22,25 +22,29 @@ library(splines) #needed by survival package
 library(tidyverse) 
 library(forcats)
 library(cowplot)
-library(coxme)
-library(brms)
+#library(coxme)
+#library(brms)
 
-#source("color_map.R")
-#source("ggplot_theme.R")
+source("color_map.R")
+source("ggplot_theme.R")
 ```
 
 ## Load data
 
 ```{r}
-eelife <- read.table('../data/processed/ee_lifespan_only.txt',
+eelife <- read.table('../data/processed/Female_events_eelife.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
+
+# the diet combination column is tripped in the functions, recreate it
+eelife <- eelife %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
 ```
 
 # Density
 
 ```{r, dens}
-ggplot(eelife, aes(NewAge, fill = diet)) + 
+ggplot(eelife, aes(NewAge, fill = lvadComb)) + 
   geom_density(alpha = 0.5) +
   coord_cartesian(xlim = c(-5, 101), ylim = c(0, 0.04)) + #adjust frame of x-axis
   scale_x_continuous(expand = c(0, 0), limits = c(-3, 100)) + #limit plot area on x-axix
@@ -49,9 +53,9 @@ ggplot(eelife, aes(NewAge, fill = diet)) +
   theme(axis.title = element_text(size = 12)) +
   xlab("Age (days)") +
   ylab("Density") +
-  theme(legend.position = c(0.1, 0.9)) +
-  tx_fill_map() +
-  my_theme
+  theme(legend.position = c(0.1, 0.9))
+  #tx_fill_map() +
+  #my_theme
 
 #ggsave(last_plot(), file = "../../Figures/density_all-life_data.pdf",
        #width = 4, height = 4)
@@ -60,39 +64,96 @@ ggplot(eelife, aes(NewAge, fill = diet)) +
 # Kaplan-Meier by diet plot with survminer
 
 ```{r}
-# by treatment groups
-h2.diet <- survfit(Surv(NewAge, status == 2) ~ diet,
+# by treatment combinations
+ee.comb <- survfit(Surv(NewAge, status == 2) ~ lvadComb,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
                    error = "greenwood",
                    data = eelife)
 # h2.diet
-summary(h2.diet)$table
+summary(ee.comb)$table
 
 # median for each treatment
-summary(h2.diet)$table[, "median"]
+summary(ee.comb)$table[, "median"]
 
 # survival
-s_plot <- ggsurvplot(h2.diet, data = eelife, 
-                     conf.int = TRUE,
-                     palette = pal,
+ee.comb_plot <- ggsurvplot(ee.comb, data = eelife, 
+                     conf.int = FALSE,
+                     palette = c("#999999", "#E69F00", "#56B4E9", "#009E73"),
                      fun = "pct", 
                      surv.median.line = "hv",
                      font.y = c(14),
                      risk.table = FALSE,
                      legend = c(0.9, 0.8),
-                     legend.labs = c("C", "DR", "HS"),
-                     legend.title = "Diet") +
+                     #legend.labs = c("C", "DR", "HS"),
+                     legend.title = "Larval-Adult Diet") +
   xlab("Age (days)")
-ggpar(s_plot, axis.text = element_text(size = font_size),
-      font.x = c(font_size),
-      font.y = c(font_size),
-      font.tickslab = c(font_size))
-KM_plot <- last_plot()
-ggsave(last_plot(), file = "../../Figures/K-M_diet_summarized_survminer.pdf",
-       width = 4, height = 4)
-save(KM_plot, file = "../../Figures/KM_plot.Rda")
+ee.comb_plot
+
+#ggpar(ee.plot, axis.text = element_text(size = font_size),
+      #font.x = c(font_size),
+      #font.y = c(font_size),
+      #font.tickslab = c(font_size))
+#KM_plot <- last_plot()
+#ggsave(last_plot(), file = "../../Figures/K-M_diet_summarized_survminer.pdf",
+       #width = 4, height = 4)
+#save(KM_plot, file = "../../Figures/KM_plot.Rda")
+
+
+
+# by larval diet only
+ee.larv <- survfit(Surv(NewAge, status == 2) ~ larvalTreat,
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = eelife)
+# h2.diet
+summary(ee.larv)$table
+
+# median for each treatment
+summary(ee.larv)$table[, "median"]
+
+# survival
+ee.larv_plot <- ggsurvplot(ee.larv, data = eelife, 
+                     conf.int = FALSE,
+                     palette = c("#999999", "#E69F00", "#56B4E9", "#009E73"),
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                     font.y = c(14),
+                     risk.table = FALSE,
+                     legend = c(0.9, 0.8),
+                     #legend.labs = c("C", "DR", "HS"),
+                     legend.title = "Larval Diet") +
+  xlab("Age (days)")
+ee.larv_plot
+
+
+# by adult diet only
+ee.adul <- survfit(Surv(NewAge, status == 2) ~ adultTreat,
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = eelife)
+# h2.diet
+summary(ee.adul)$table
+
+# median for each treatment
+summary(ee.adul)$table[, "median"]
+
+# survival
+ee.adul_plot <- ggsurvplot(ee.adul, data = eelife, 
+                     conf.int = FALSE,
+                     palette = c("#999999", "#E69F00", "#56B4E9", "#009E73"),
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                     font.y = c(14),
+                     risk.table = FALSE,
+                     legend = c(0.9, 0.8),
+                     #legend.labs = c("C", "DR", "HS"),
+                     legend.title = "Adult Diet") +
+  xlab("Age (days)")
+ee.adul_plot
 ```
 
 # Bayesian survival models

@@ -1,9 +1,5 @@
 
-############FUNCTIONS##########
 
-source("PreProcess_lifespan_functions.R")
-
-############FUNCTIONS##########
 
 library(tidyverse)
 
@@ -69,7 +65,7 @@ eelife$carriedM <- rep(0,nrow(eelife))
 
 #separate all events into rows
 #females
-Flife.dat<-eelife[,c('setDate','flipDate','age','NewAge','id',
+Flife.dat<-eelife[,c('setDate','flipDate','age','NewAge','id','larv_adult',
                      'larvalTreat','adultTreat','deadF','carriedF','carriedM')]
 colnames(Flife.dat)[which(colnames(Flife.dat)=='deadF')]<-'Dead'
 colnames(Flife.dat)[which(colnames(Flife.dat)=='carriedF')]<-'Carried'
@@ -77,7 +73,7 @@ colnames(Flife.dat)[which(colnames(Flife.dat)=='carriedF')]<-'Carried'
 Fevent<-Manip.Survival(Flife.dat)
 
 #males
-Mlife.dat<-eelife[,c('setDate','flipDate','age','NewAge','id',
+Mlife.dat<-eelife[,c('setDate','flipDate','age','NewAge','id','larv_adult',
                      'larvalTreat','adultTreat','deadM','carriedF','carriedM')]
 colnames(Mlife.dat)[which(colnames(Mlife.dat)=='deadM')]<-'Dead'
 colnames(Mlife.dat)[which(colnames(Mlife.dat)=='carriedM')]<-'Carried'
