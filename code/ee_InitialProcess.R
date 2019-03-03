@@ -107,4 +107,3 @@ newdata[1,]
 save(newdata, file="newdata.rda") #processed original data
 load("newdata.rda")
 
-############FUNCTIONS##########

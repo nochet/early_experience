@@ -36,11 +36,14 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+### 2018-07- 17(EN)
+- Performed a work-around by combining female and male events. This is done at the top of `eeSurv_model_visual.Rmd`. The merged data frame is in the object `eelife`
+- Calculated Kaplan-Meier plots various treatment combinations.
+
 ### 2018-07-12 (EN)
 - Performed initial processing of lifespan data with `InitialProcess.R` modified to calculate `NstartF` and `NstartM` from observed `nDead` separately.
 - Started a parallel script `ee_InitialProcess.R` to include both males and females (fixme!)
 
-### 2018-07- (EN)
 
 
 
