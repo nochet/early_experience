@@ -36,6 +36,9 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+### 2019-03-03
+status key: 1 = alive, 2 = dead, 3 = censored
+
 ### 2018-07- 17(EN)
 - Performed a work-around by combining female and male events. This is done at the top of `eeSurv_model_visual.Rmd`. The merged data frame is in the object `eelife`
 - Calculated Kaplan-Meier plots various treatment combinations.

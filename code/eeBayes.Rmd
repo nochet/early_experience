@@ -28,6 +28,8 @@ options(mc.cores = parallel::detectCores())
 eelife <- read.csv("../data/processed/eeAlldat.csv", header=TRUE)
 head(eelife)
 
+names(eelife)[1]<-"event"
+
 ```
 
 # Exploratory plot
@@ -78,57 +80,50 @@ summary(ee.id)$table[, "median"]
 #     and diet combination dependency ignored
 
 # Run model 1 with stan_glm
-slm <- stan_glm(valence ~ arousal, data = dat)
+slm <- stan_glm(age ~ larv_adult, data = eelife)
 
 # View summary of priors used
-prior_summary(SingleLevelModel)
+prior_summary(slm)
 
 # Example of adapting priors and sampler settings
-SingleLevelModelMod <-  stan_glm(
-  valence ~ arousal,
-  data = dat,
+slmMod <-  stan_glm(
+  age ~ larv_adult,
+  data = eelife,
   prior = normal(0, 1, autoscale = FALSE),
-  prior_intercept = normal(50, 100, autoscale = FALSE),
+  prior_smooth = exponential(autoscale = FALSE),
+  prior_intercept = normal(50, 100),
   iter = 4000,
   adapt_delta = 0.99
 )
 
+prior_summary(slmMod)
 
-
-#------------------------
-#Step 3. 
-# Check sampling quality
-#------------------------
-#------------------------
-#Step 4. 
-# Look at results
-#------------------------
-
+save(slmMod, file = "../data/processed/singleLevelModel.RData")
 
 # View model summary
-summarySingleLevelModel <- summary(SingleLevelModel)
-print(summarySingleLevelModel)
+summaryslmMod <- summary(slmMod)
+print(summaryslmMod)
 
 # Plot traceplot
-plot(SingleLevelModel, "trace", pars = "arousal")
+plot(slmMod, "trace", pars = "larv_adultC_DR")
 
 # Plot traceplot with slightly modified color scheme and axis labels
 color_scheme_set("mix-brightblue-red")  # see help("color_scheme_set")
-plot(SingleLevelModel, "trace", pars = "arousal") +
-  labs(x = "Post-warmup Iteration", y = "Slope on arousal")      
-ggsave("plots/traceplot.pdf", width = 7, height = 3.5)
+plot(slmMod, "trace", pars = "larv_adultC_DR") +
+  labs(x = "Post-warmup Iteration", y = "Slope on treatment")      
+ggsave("../plots/traceplot.pdf", width = 7, height = 3.5)
 
 # Use shinystan to explore the results
-launch_shinystan(SingleLevelModel)
+launch_shinystan(slmMod)
 
 
-# Check pp plots: compare posterior predictive distribution of valence with 
-# distribution of observed valence
+# Check pp plots: compare posterior predictive distribution of lifespan with 
+# distribution of observed lifespan
 color_scheme_set("brightblue")
-pp_dist1 <- pp_check(SingleLevelModel, nreps = 100) + xlab("valence")
+pp_dist1 <- pp_check(slmMod, nreps = 1000) + xlab("age")
 plot(pp_dist1)
 
-posteriorSamples <- as.matrix(SingleLevelModel, pars = "arousal")
+posteriorSamples <- as.matrix(slmMod, pars = "larv_adultC_DR")
 mean(posteriorSamples > 0.7)
 
 #############################################

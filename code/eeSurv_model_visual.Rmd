@@ -38,8 +38,9 @@ eelifeF <- read.table('../data/processed/Female_events_eelife.txt',
                      stringsAsFactors = FALSE) 
 
 # the diet combination column is tripped in the functions, recreate it
-eelifeF <- eelifeF %>%
-  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+# eelifeF <- eelifeF %>%
+#   unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+eelifeF$sex <- "F"
 
 # Male data
 eelifeM <- read.table('../data/processed/Male_events_eelife.txt',
@@ -47,15 +48,18 @@ eelifeM <- read.table('../data/processed/Male_events_eelife.txt',
                      stringsAsFactors = FALSE) 
 
 # the diet combination column is stripped in the functions, recreate it
-eelifeM <- eelifeM %>%
-  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
-
+# eelifeM <- eelifeM %>%
+#   unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+eelifeM$sex <- "M"
+  
 # Merge data
-eelife <- bind_rows(eelifeF,eelifeM) %>%
-  select(-carriedM, -carriedF)
+eelife <- bind_rows(eelifeF,eelifeM) %>% 
+  select(-setDate, -flipDate, -age, -carriedM, -carriedF)
 
-eelife$carried <- 0 
+names(eelife)[1:2]<-c("age", "cageID")
 
+#eelife$carried <- 0 
+  
 write.csv(eelife, file="../data/processed/eeAlldat.csv")
 ```
 
