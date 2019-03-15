@@ -8,10 +8,12 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library("rstanarm")
-library("ggplot2")
-library("broom")
-library("bayesplot")
+library(rstanarm)
+library(ggplot2)
+library(broom)
+library(bayesplot)
+
+source("color_map.R")
 
 set.seed(9725)
 
@@ -26,17 +28,15 @@ options(mc.cores = parallel::detectCores())
 
 ```{r}
 eelife <- read.csv("../data/processed/eeAlldat.csv", header=TRUE)
-head(eelife)
-
 names(eelife)[1]<-"event"
-
+head(eelife)
 ```
 
 # Exploratory plot
 
 ```{r}
 
-ggplot(eelife, aes(NewAge, color = lvadComb)) + 
+ggplot(eelife, aes(age, color = larv_adult)) + 
   geom_density(alpha = 0.5) +
   coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
   #adjust frame of x-axis
@@ -55,35 +55,12 @@ ggplot(eelife, aes(NewAge, color = lvadComb)) +
 #ggsave("plots/dataplot.pdf", width = 8, height = 8)
 ```
 
-# Survival by id
-
-```{r}
-# by treatment combinations
-ee.id <- survfit(Surv(NewAge, status == 2) ~ id,
-                   conf.type = "log", 
-                   conf.int = 0.95,
-                   type = "kaplan-meier",
-                   error = "greenwood",
-                   data = eelife)
-# h2.diet
-summary(ee.id)$table
-
-# median for each treatment
-summary(ee.id)$table[, "median"]
-```
-
 # Single-level model
 
 ```{r}
 # predict lifespan from treatment
 #    * repeated measures are treated independent, 
 #     and diet combination dependency ignored
-
-# Run model 1 with stan_glm
-slm <- stan_glm(age ~ larv_adult, data = eelife)
-
-# View summary of priors used
-prior_summary(slm)
 
 # Example of adapting priors and sampler settings
 slmMod <-  stan_glm(
@@ -92,15 +69,13 @@ slmMod <-  stan_glm(
   prior = normal(0, 1, autoscale = FALSE),
   prior_smooth = exponential(autoscale = FALSE),
   prior_intercept = normal(50, 100),
-  iter = 4000,
+  iter = 8000,
   adapt_delta = 0.99
 )
 
+# View summaries
 prior_summary(slmMod)
 
-save(slmMod, file = "../data/processed/singleLevelModel.RData")
-
-# View model summary
 summaryslmMod <- summary(slmMod)
 print(summaryslmMod)
 
@@ -122,15 +97,19 @@ launch_shinystan(slmMod)
 color_scheme_set("brightblue")
 pp_dist1 <- pp_check(slmMod, nreps = 1000) + xlab("age")
 plot(pp_dist1)
+#pp_check(slmMod, "dens_overlay")
+pp_check(slmMod, "stat")
+pp_check(slmMod, "stat_2d")
 
 posteriorSamples <- as.matrix(slmMod, pars = "larv_adultC_DR")
 mean(posteriorSamples > 0.7)
+```
 
-#############################################
-###### Figure 6: plotting regression lines ##
-##########################################
+# Plot regression lines
+
+```{r}
 # Extract the (post-warmup) posterior draws
-posterior1 <- as.matrix(SingleLevelModel)
+posterior1 <- as.matrix(slmMod)
 colnames(posterior1)
 means1 <- colMeans(posterior1)
 
@@ -139,10 +118,9 @@ means1 <- colMeans(posterior1)
 # making the graph unreadable
 betas <- posterior1[sample(nrow(posterior1), 100), 1:2]
 
-
 # Plot regression lines implied by the betas
 blues <- color_scheme_get("brightblue")
-mod1p1 <- ggplot(dat, aes(x = arousal, y = valence)) +
+mod1p1 <- ggplot(eelife, aes(x = larv_adult, y = age)) +
   geom_point(color = "gray30") +
   geom_abline(
     intercept = betas[, 1], 
@@ -161,18 +139,23 @@ mod1p1 <- ggplot(dat, aes(x = arousal, y = valence)) +
 
 plot(mod1p1)
 ggsave("plots/regression1.pdf", width = 8, height = 6)
-#######################################################################
 
+pSamples <- as.matrix(slmMod, pars = "larv_adultC_DR")
+mean(pSamples > 0.7)
+```
 
 # Optional 
+
+```{r}
 #    Estimate out-of-sample predictive performance
 #    Can use later to compare to the hierarchical model
-looSingle <- loo(SingleLevelModel) 
+looSingle <- loo(slmMod) 
 
+```
 
-# # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # #
 #  MODEL 2
+
+```{r}
 # Two-level HLM: predicting valence from arousal with person-specific variation 
 #     repeated measures nested in person (day-level measures, drawn 14 times) 
 # # # # # # # # # # # # # # # # # #
