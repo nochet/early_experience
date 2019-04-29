@@ -1,0 +1,133 @@
+---
+title: "Bayesian Weibull model"
+author: "Enoch Ng'oma"
+date: "4/16/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+title: "Bayesian analysis of early experience experiment"
+author: "Enoch Ng'oma"
+date: "3/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse) 
+library(forcats)
+library(cowplot)
+library(brms)
+
+source("color_map.R")
+
+set.seed(9725)
+
+```
+
+# Data
+
+```{r}
+eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+names(eelife)[1]<-"event"
+head(eelife)
+```
+
+# Exploratory plot
+
+```{r}
+
+ggplot(eelife, aes(age, color = larv_adult)) + 
+  geom_density(alpha = 0.5) +
+  coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+  #adjust frame of x-axis
+  
+  scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+  expand_limits(x=125) +
+  #limit plot area on x-axis
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  tx_color_map() +
+  theme(axis.title = element_text(size = 12)) +
+  xlab("Age (days)") +
+  ylab("Density") +
+  theme(legend.position = c(0.7, 0.8))
+
+#ggsave("plots/dataplot.pdf", width = 8, height = 8)
+```
+
+# Bayesian survival models
+# status: 1=alive, 2=dead, 3=right censored
+
+```{r brm_models, cache=TRUE}
+
+eelife_2 <- eelife %>%
+  filter(status == 2) %>% 
+  mutate(censored = 0)
+
+eelife[1:4,]
+names(eelife)[7]<-"censored"
+eelife$censored[eelife$censored==2] <- 1
+eelife$censored[eelife$censored==3] <- 2
+
+if (FALSE) {
+  # gamma(0.01, 0.01) shape by default
+  # student_t(3, 4, 10) for intercept
+  # student_t(3, 0, 10) for sd
+  ee1 <- brm(age | cens(censored) ~ 1,
+             data = eelife_2,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+
+  ee2 <- brm(age | cens(censored) ~ adultTreat,
+             data = eelife_2,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+  plot(ee2)
+  posterior_summary(ee2)
+  #posterior_samples(ee2)
+  
+  ee3 <- brm(age | cens(censored) ~ larvalTreat,
+             data = eelife_2,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+  ee4 <- brm(age | cens(censored) ~ larv_adult + (1 | cageID:sex ), 
+            data = eelife_2, family = weibull(), inits = "0",
+            prior = set_prior("cauchy(0,2)", class = "sd"),
+            data = eelife_2,
+            family = weibull(),
+            inits = "0",
+            cores = 4)
+  
+ee5 <- brm(age | cens(censored) ~ larv_adult + (1 | cageID:sex ), 
+            data = eelife_2, family = weibull(), inits = "0",
+            prior = set_prior("cauchy(0,2)", class = "sd"),
+            data = eelife_2,
+            family = weibull(),
+            inits = "0",
+            cores = 4)
+
+get_prior(age | cens(censored) ~ larvalTreat,data = eelife_2)
+
+  loo_comp <- loo(bm1, bm2, bm3, bm4)
+  model_wts <- model_weights(bm1, bm2, bm3, bm4)
+
+  save(list = c("ee1", "bm2", "ee3", "ee4", "ee5", "loo_comp", "model_wts"),
+       file = "../Data/Processed/ee_bayesModels.Rda")
+}
+```
+
+```{r}
+load("../../Data/Processed/ee_bayesModels.Rda")
+
+loo_comp
+data.frame(weight = round(model_wts, 3))
+```
