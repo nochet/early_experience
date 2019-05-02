@@ -38,7 +38,7 @@ names(eelife)[1]<-"event"
 head(eelife)
 ```
 
-# Exploratory plot
+# Exploratory density plot
 
 ```{r}
 
@@ -63,65 +63,125 @@ ggplot(eelife, aes(age, color = larv_adult)) +
 
 # Bayesian survival models
 # status: 1=alive, 2=dead, 3=right censored
+# Ref: https://rdrr.io/cran/brms/man/kidney.html
 
 ```{r brm_models, cache=TRUE}
 
-eelife_2 <- eelife %>%
-  filter(status == 2) %>% 
-  mutate(censored = 0)
+# eelife_2 <- eelife %>%
+#   filter(status == 2) %>% 
+#   mutate(censored = 0)
 
 eelife[1:4,]
 names(eelife)[7]<-"censored"
-eelife$censored[eelife$censored==2] <- 1
-eelife$censored[eelife$censored==3] <- 2
+eelife$censored[eelife$censored==2] <- 0
+eelife$censored[eelife$censored==3] <- 1
 
 if (FALSE) {
   # gamma(0.01, 0.01) shape by default
   # student_t(3, 4, 10) for intercept
   # student_t(3, 0, 10) for sd
-  ee1 <- brm(age | cens(censored) ~ 1,
-             data = eelife_2,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-
-  ee2 <- brm(age | cens(censored) ~ adultTreat,
-             data = eelife_2,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  plot(ee2)
-  posterior_summary(ee2)
-  #posterior_samples(ee2)
+ee1 <- brm(age | cens(censored) ~ larvalTreat + adultTreat,
+          data = eelife,
+          family = weibull(),
+          control = list(adapt_delta = 0.98),
+          #control = list(max_treedepth = 15),
+          #warmup = 1000,
+          #iter = 10000,
+          inits = "0",
+          #prior = set_prior("cauchy(0,2)", class = "sd"),
+          cores = 4)
+  loo1 <- loo(ee1)
   
-  ee3 <- brm(age | cens(censored) ~ larvalTreat,
-             data = eelife_2,
+summary(ee1)
+plot(ee1)
+
+# hyp <- "sd_class__Intercept^2 / (sd_class__Intercept^2 + shape^2) = 0"
+# hypothesis(ee1, hyp, class = NULL)
+
+ee2 <- brm(age | cens(censored) ~ adultTreat,
+          data = eelife,
+          family = weibull(),
+          control = list(adapt_delta = 0.95),
+          #warmup = 1000,
+          #iter = 10000,
+          inits = "0",
+          #prior = set_prior("cauchy(0,2)", class = "sd"),
+          cores = 4)
+loo2 <- loo(ee2)
+plot(loo2)
+summary(ee2)  
+plot(ee2)
+posterior_summary(ee2)
+marginal_effects(ee2)
+#posterior_samples(ee2)
+  
+ee3 <- brm(age | cens(censored) ~ larvalTreat*adultTreat,
+             data = eelife,
              family = weibull(),
              inits = "0",
              cores = 4)
-  ee4 <- brm(age | cens(censored) ~ larv_adult + (1 | cageID:sex ), 
-            data = eelife_2, family = weibull(), inits = "0",
-            prior = set_prior("cauchy(0,2)", class = "sd"),
-            data = eelife_2,
+loo3 <- loo(ee3)
+plot(loo3)
+summary(ee3)  
+plot(ee3)
+posterior_summary(ee3)
+marginal_effects(ee3)
+
+ee4 <- brm(age | cens(censored) ~ larvalTreat + adultTreat +
+          (1|cageID),
+          data = eelife,
+          control = list(c(adapt_delta = 0.98,max_treedepth = 15)),
+          #control = list(max_treedepth = 15),
+          family = weibull(),
+          inits = "0",
+          cores = 4)
+loo4 <- loo(ee4)
+
+summary(ee4)  
+plot(ee4)
+posterior_summary(ee4)
+marginal_effects(ee4)
+plot(loo4)
+
+ee5 <- brm(age | cens(censored) ~ larvalTreat + (1|adultTreat:cageID),
+           control = list(adapt_delta = 0.95),
+            data = eelife,
             family = weibull(),
             inits = "0",
             cores = 4)
+prior_summary(ee5)
+summary(ee5)  
+plot(ee5)
+posterior_summary(ee5)
+pairs(ee5)
+marginal_effects(ee5)
+loo5 <- loo(ee5)
+plot(loo5)
+
+ee6 <- brm(age | cens(censored) ~ larvalTreat + (1|adultTreat) + (1 | adultTreat:cageID), 
+          control = list(adapt_delta = 0.95),
+          data = eelife, 
+          family = weibull(), 
+          inits = "0",
+          prior = set_prior("cauchy(0,2)", class = "sd"),
+          cores = 4)
+loo6 <- loo(ee6)
+
+prior_summary(ee6)
+summary(ee6)  
+plot(ee5)
+posterior_summary(ee5)
+pairs(ee5)
+marginal_effects(ee6)
+plot(loo6)
   
-ee5 <- brm(age | cens(censored) ~ larv_adult + (1 | cageID:sex ), 
-            data = eelife_2, family = weibull(), inits = "0",
-            prior = set_prior("cauchy(0,2)", class = "sd"),
-            data = eelife_2,
-            family = weibull(),
-            inits = "0",
-            cores = 4)
+#get_prior(age | cens(censored) ~ larvalTreat,data = eelife_2)
 
-get_prior(age | cens(censored) ~ larvalTreat,data = eelife_2)
+  loo_comp <- loo_compare(loo1,loo2,loo3,loo4)
+  model_wts <- model_weights(ee1, ee2, ee3, ee4)
 
-  loo_comp <- loo(bm1, bm2, bm3, bm4)
-  model_wts <- model_weights(bm1, bm2, bm3, bm4)
-
-  save(list = c("ee1", "bm2", "ee3", "ee4", "ee5", "loo_comp", "model_wts"),
-       file = "../Data/Processed/ee_bayesModels.Rda")
+  save(list = c("ee1", "ee2", "ee3", "ee4", "loo_comp", "model_wts"),
+       file = "..processed/ee_bayesModels.Rda")
 }
 ```
 
