@@ -4,7 +4,7 @@ source("PreProcess_lifespan_functions.R")
 
 library(tidyverse)
 
-eelife <- read.table('../data/processed/ee_lifespan_only.txt',
+eelife <- read.table("../processed/ee_lifespan_only.txt",
                      sep="\t",header=TRUE,stringsAsFactors=FALSE) %>%
   select(-age)
 
@@ -41,7 +41,7 @@ duplnames
 check.age <- age.check(unique(eelife$id), eelife[,c('id','age')])
 dd<-eelife[,c('id','age')]
 check.age
-write.table(check.age,file='../data/processed/omitedages.txt', 
+write.table(check.age,file='../processed/omitedages.txt', 
             sep='\t',row.names = FALSE)
 
 #change NewAge
@@ -51,13 +51,13 @@ eelife$NewAge<-eelife$age+2
 eelife %in% letters
 
 #write out cleaned data
-write.table(eelife,file='../data/processed/eelife_correctedData.txt', 
+write.table(eelife,file='../processed/eelife_correctedData.txt', 
             sep='\t',row.names = FALSE)
 
 ################################
 
 
-eelife<-read.table("../data/processed/eelife_correctedData.txt",
+eelife<-read.table("../processed/eelife_correctedData.txt",
                    sep="\t",stringsAsFactors=FALSE,header=TRUE)
 
 # Create 'carriedF' and 'carriedM' for function to run, fill with 0s
@@ -112,6 +112,7 @@ eelife$NstartM <- M[match(eelife$id, F$id),2]
 eelife <- eelife %>%
   select(-eelife_age) %>%
   data.frame()
+#colnames(eelife)[colnames(eelife)=="NewAge"] <- "age"
 
 totals <- CountEvents(eelife)
 max(totals$NCensor)

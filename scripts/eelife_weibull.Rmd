@@ -181,7 +181,7 @@ plot(loo6)
   model_wts <- model_weights(ee1, ee2, ee3, ee4)
 
   save(list = c("ee1", "ee2", "ee3", "ee4", "loo_comp", "model_wts"),
-       file = "..processed/ee_bayesModels.Rda")
+       file = "../processed/ee_bayesModels.Rda")
 }
 ```
 
