@@ -1,6 +1,6 @@
 ---
 title: "Bayesian Weibull model"
-author: "Enoch Ng'oma"
+author: "Enoch Ng'oma" 
 date: "4/16/2019"
 output: html_document
 ---
