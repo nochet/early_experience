@@ -1,0 +1,66 @@
+---
+title: "eeFec"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(car)
+library(MASS)
+library(lme4)
+library(tidyverse)
+library(cowplot)
+library(MCMCglmm)
+
+set.seed(30111)
+```
+
+```{r}
+# Merge with fecundity data
+eeFec <- read.table("../processed/Early_Experience_LiFec.txt",
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE) 
+
+fec <- eeFec[,c(4:7,11:12)]
+colnames(fec)[colnames(fec)=="age"] <- "old"
+colnames(fec)[colnames(fec)=="camera_id"] <- "cam"
+fec <- fec %>% 
+  mutate(cageID = sub('EE_', '', id))
+```
+
+# Lifetime fecundity - adult diet
+
+```{r}
+
+#ggplot(fec, aes(adultTreat)) + geom_bar()
+
+zz <- ggplot(fec, aes(x=adultTreat, y=numEggs, color = adultTreat)) + 
+  geom_jitter(width=0.1, height=0.5) +
+  theme_half_open()
+zz
+
+ggplot(fec, aes(x=old, y=numEggs, color = adultTreat)) + 
+  geom_jitter(width=0.1, height=0.5) +
+  theme_half_open()
+
+max(fec$old)
+fec[which.max(fec$old),]
+
+# Looks like last female died at age 87 days
+# Remove rows after that.
+# Or, start with male data only
+```
+
+```{r}
+eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+names(eelife)[1]<-"event"
+eelife$cageID <- as.character(eelife$cageID)
+head(eelife)
+
+ff <- summarise(eelife$numEggs, by())
+
+lifec <- inner_join(eelife,fec)
+
+```
+
