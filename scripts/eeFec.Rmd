@@ -164,7 +164,7 @@ summary(res.aov)
 TukeyHSD(res.aov)
 ```
 
-# Eggs per female at each flip
+# Get surviving females at each flip date
 
 ```{r}
 head(eelifeF)
@@ -173,11 +173,30 @@ unique(eelifeF$status)
 # Grouping variable
 # Get number of females at each flip day
 eelifeF$Age <- as.factor(eelifeF$Age)
+#eelifeF$ageCage <- as.factor(eelifeF$ageCage)
+
 eelifeF <- eelifeF %>% 
   unite(ageCage, cageID, Age, sep = "_", remove=FALSE) %>%
-  select(-c(setDate,flipDate,age, carriedM))
+  select(ageCage, Age, status)
 
+eelifeF$Age <- as.numeric(eelifeF$Age)
 
+# Females dead or censored per date
+lifeF <- eelifeF %>%
+  group_by(ageCage) %>%
+  summarise(status = n())
+
+# Females alive per cage per date
+lifeF$cageID <- gsub(pattern = "\\_d",replacement = "",lifeF$ageCage)
+ff$Treatment <- gsub("\\d", "", ff$Treatment)
+
+lifeF <- eelifeF %>%
+  group_by(ageCage)
+```
+
+# Eggs per female at each flip
+
+```{r}
 
 ff <- eeFec[,c(4:8,11:12)]
 ff <- ff %>% 

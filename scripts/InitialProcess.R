@@ -67,7 +67,7 @@ eelife$carriedM <- rep(0,nrow(eelife))
 #separate all events into rows
 #females
 Flife.dat<-eelife[,c('setDate','flipDate','age','NewAge','id','larv_adult',
-                     'larvalTreat','adultTreat','deadF','carriedF','carriedM')]
+                     'larvalTreat','adultTreat','deadF','carriedF')]
 colnames(Flife.dat)[which(colnames(Flife.dat)=='deadF')]<-'Dead'
 colnames(Flife.dat)[which(colnames(Flife.dat)=='carriedF')]<-'Carried'
 #Flife.dat<-Flife.dat[-which(is.na(Flife.dat$Dead)),]
@@ -75,7 +75,7 @@ Fevent<-Manip.Survival(Flife.dat)
 
 #males
 Mlife.dat<-eelife[,c('setDate','flipDate','age','NewAge','id','larv_adult',
-                     'larvalTreat','adultTreat','deadM','carriedF','carriedM')]
+                     'larvalTreat','adultTreat','deadM','carriedM')]
 colnames(Mlife.dat)[which(colnames(Mlife.dat)=='deadM')]<-'Dead'
 colnames(Mlife.dat)[which(colnames(Mlife.dat)=='carriedM')]<-'Carried'
 #Mlife.dat<-Mlife.dat[-which(is.na(Mlife.dat$Dead)),]
@@ -180,8 +180,8 @@ totals$miss.m
 
 Fevent[1,]
 
-write.table(Fevent, "../data/processed/Female_events_eelife.txt", row.names=FALSE, sep="\t")
-write.table(Mevent, "../data/processed/Male_events_eelife.txt", row.names=FALSE, sep="\t")
+write.table(Fevent, "../processed/Female_events_eelife.txt", row.names=FALSE, sep="\t")
+write.table(Mevent, "../processed/Male_events_eelife.txt", row.names=FALSE, sep="\t")
 
 ## End of script
 
