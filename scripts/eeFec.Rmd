@@ -8,12 +8,9 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library(car)
 library(MASS)
-library(lme4)
 library(tidyverse)
 library(cowplot)
-library(MCMCglmm)
 library(survival)
 library(ggpubr)
 library(colorblindr)
@@ -61,7 +58,7 @@ ffm <- survfit(Surv(age, status == 2) ~ adultTreat,
                    conf.int = 0.95,
                    type = "kaplan-meier",
                    error = "greenwood",
-                   data = ff)
+                   data = eelifeF)
 
 # median for each treatment
 
@@ -164,6 +161,10 @@ summary(res.aov)
 TukeyHSD(res.aov)
 ```
 
+
+
+
+
 # Get surviving females at each flip date
 
 ```{r}
@@ -184,11 +185,14 @@ eelifeF$Age <- as.numeric(eelifeF$Age)
 # Females dead or censored per date
 lifeF <- eelifeF %>%
   group_by(ageCage) %>%
-  summarise(status = n())
+  summarise(deadF_flip = sum(status))
+
+
+
 
 # Females alive per cage per date
 lifeF$cageID <- gsub(pattern = "\\_d",replacement = "",lifeF$ageCage)
-ff$Treatment <- gsub("\\d", "", ff$Treatment)
+eelifeF$Treatment <- gsub("\\d", "", eelifeF$Treatment)
 
 lifeF <- eelifeF %>%
   group_by(ageCage)
