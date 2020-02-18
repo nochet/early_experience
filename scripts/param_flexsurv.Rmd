@@ -1,0 +1,60 @@
+---
+title: "Parametric analysis"
+author: "Enoch Ng'oma"
+date: "2/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse) 
+library(cowplot)
+library(survival)
+library(flexsurv)
+
+source("color_map.R")
+
+set.seed(428)
+
+```
+
+# Data
+
+```{r}
+eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+names(eelife)[1]<-"event"
+head(eelife)
+```
+
+```{r}
+#Weibull
+pm1 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult, 
+                   data = eelife, dist = "weibull")
+pm1
+
+# Generalized gamma
+pm2 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult, 
+                   data = eelife, dist = "gengamma")
+pm2
+
+#Generalized gamma
+pm3 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult + sigma(larv_adult), 
+                   data = eelife, dist = "gengamma")
+pm3
+
+pm31 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult, 
+                    data = eelife, anc = list(sigma = ~ larv_adult), 
+                    dist = "gengamma")
+pm31
+
+#Sex
+pm4 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult + sex, 
+                    data = eelife, dist = "gengamma")
+pm4
+
+```
+
+
+
+
