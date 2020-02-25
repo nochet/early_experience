@@ -1,0 +1,201 @@
+---
+title: "GLMM"
+author: "Enoch Ng'oma"
+date: "8/6/2019"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2 #defaults to 3 if not specified
+    toc_float: true
+    number_sections: true
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(car)
+library(MASS)
+library(lme4)
+library(tidyverse)
+library(cowplot)
+library(MCMCglmm)
+
+source("color_map.R")
+
+set.seed(23025)
+
+```
+
+# Data for males and females together
+
+```{r}
+
+eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+names(eelife)[1]<-"event"
+head(eelife)
+```
+
+# Density plots
+
+```{r}
+dev.off()
+ggplot(eelife, aes(x = age.a)) + 
+  geom_density() + 
+  theme_half_open() +
+  facet_wrap(larv_adult ~ cageID)
+```
+
+# Distribution fitting age data
+# Ref.: https://ase.tufts.edu/gsc/gradresources/guidetomixedmodelsinr/mixed%20model%20guide.html
+
+```{r}
+eelife$age.a <- eelife$age + 1
+qqp(eelife$age.a, "weibull")
+
+qqp(eelife$age.a, "lnorm")
+
+nbinom <- fitdistr(eelife$age.a, "Negative Binomial")
+qqp(eelife$age, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
+
+poissonn <- fitdistr(eelife$age.a, "Poisson")
+qqp(eelife$age.a, "pois", lambda=1,poissonn$estimate)
+
+gammaa <- fitdistr(eelife$age.a, "gamma")
+qqp(eelife$age.a, "gamma", shape = gammaa$estimate[[1]], rate = gammaa$estimate[[2]])
+
+```
+
+# Test penalized quasilikelihood (PQL)?
+
+# PQL is a flexible technique that can deal with non-normal data, unbalanced design, and crossed random effects. However, it produces biased estimates if your response variable fits a discrete count distribution, like Poisson or binomial, and the mean is less than 5 - or if your response variable is binary
+
+```{r}
+pql1 <- glmmPQL(age.a ~ larv_adult, random =  ~1 | cageID, 
+               family = gaussian(link = "log"),
+               data = eelife, verbose = FALSE)
+summary(pql1)
+
+```
+
+Fixed effects: age.a ~ larv_adult 
+                   Value  Std.Error   DF   t-value p-value
+(Intercept)     3.550191 0.03431733 3124 103.45183  0.0000
+larv_adultC_DR  0.145601 0.04716790    4   3.08687  0.0367
+larv_adultDR_C  0.051503 0.04695323    4   1.09691  0.3343
+larv_adultDR_DR 0.149532 0.04684138    4   3.19232  0.0331
+
+Diet swith from C in larvae to DR in adults seems to extend lifespan
+Maintaining DR diet in both stages seems to extend lifespan
+However, a switch from DR to C seems to have no effect on lifespan
+
+```{r}
+pql2 <- glmmPQL(age.a ~ larv_adult + sex, ~1 | cageID, 
+               family = gaussian(link = "log"),
+               data = eelife, verbose = FALSE)
+
+```
+
+Fixed effects: age.a ~ larv_adult + sex 
+                   Value  Std.Error   DF  t-value p-value
+(Intercept)     3.488111 0.03680965 3123 94.76077  0.0000
+larv_adultC_DR  0.129301 0.04951595    4  2.61129  0.0593
+larv_adultDR_C  0.055970 0.04930424    4  1.13520  0.3197
+larv_adultDR_DR 0.151264 0.04916373    4  3.07675  0.0370
+sexM            0.159810 0.01837741 3123  8.69598  0.0000
+
+A large effect of sex! The male xes appears to affect lifespan positively - longer in males
+The effect of diet switch from C in larvae to DR in adults on lifespan is marginal in the presence of sex
+Maintaining DR diet in both stages seems to extend lifespan even in the presence of sex
+A switch from DR to C remains of no effect on lifespan
+
+```{r}
+pql3 <- glmmPQL(age.a ~ larv_adult + sex, ~1 | cageID/adultTreat, 
+               family = gaussian(link = "log"),
+               data = eelife, verbose = FALSE)
+
+```
+
+Nesting larvalTreat or adultTreat in cageID yields identical effects.
+
+```{r}
+set.seed(37264)
+
+iter <- 2e5
+burnin <- 15000
+rerun_MCMC <- FALSE
+
+prior = list(R = list(V = 1, n = 0, fix = 1), G = list(G1 = list(V = 1, n = 1),
+    G2 = list(V = 1, n = 1), G3 = list(V = 1, n = 1)))
+
+eemcmc <- MCMCglmm(age.a ~ 1, 
+                   random = ~larv_adult + cageID + sex,
+                   data = eelife, 
+                   family = "gaussian", 
+                   prior = prior, 
+                   verbose = FALSE)
+
+summary(eemcmc)
+```
+
+A huge mean for sex (68.2), but some effect also of cage (mean = 9.902) and diet switch (4.669). The probability of living to a given age varies a lot between sex, and also between cages and diet switch.
+
+
+
+# Females only analysis
+
+```{r}
+eelifeF <- subset(eelife, eelife$sex=="F")
+```
+
+```{r}
+fpl1 <- glmmPQL(age ~ larv_adult, random =  ~1 | cageID, 
+               family = gaussian(link = "log"),
+               data = eelifeF, verbose = FALSE)
+summary(fpl1)
+
+```
+
+No effect of diet in all combinations
+
+```{r}
+fpl2 <- glmmPQL(age ~ larv_adult, ~1 | cageID / larvalTreat, 
+               family = gaussian(link = "log"),
+               data = eelifeF, verbose = FALSE)
+
+```
+
+No diet effects
+
+```{r}
+fpl3 <- glmmPQL(age ~ larv_adult, ~1 | cageID/adultTreat, 
+               family = gaussian(link = "log"),
+               data = eelifeF, verbose = FALSE)
+
+```
+
+No diet effects
+
+```{r}
+set.seed(27014)
+
+iter <- 2e5
+burnin <- 15000
+rerun_MCMC <- FALSE
+
+prior = list(R = list(V = 1, n = 0, fix = 1), 
+             G = list(G1 = list(V = 1, n = 1), 
+                      G2 = list(V = 1, n = 1),
+                      G3 = list(V = 1, n = 1),
+                      G4 = list(V = 1, n = 1)))
+
+eemcmc <- MCMCglmm(age ~ 1, 
+                   random = ~larv_adult + cageID,+ larvalTreat + adultTreat,
+                   data = eelifeF, 
+                   family = "gaussian", 
+                   prior = prior, 
+                   verbose = FALSE)
+
+summary(eemcmc)
+```
