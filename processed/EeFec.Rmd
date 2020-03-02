@@ -1,0 +1,156 @@
+---
+title: "eeFec"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(car)
+library(MASS)
+library(lme4)
+library(tidyverse)
+library(cowplot)
+library(MCMCglmm)
+library(survival)
+library(ggpubr)
+
+set.seed(30111)
+```
+
+```{r}
+# Fecundity data
+eeFec <- read.table("../processed/Early_Experience_LiFec.txt",
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE) 
+
+fec <- eeFec[,c(4:7,11:12)]
+#colnames(fec)[colnames(fec)=="age"] <- "old"
+#colnames(fec)[colnames(fec)=="camera_id"] <- "cam"
+fec <- fec %>% 
+  mutate(cageID = sub('EE_', '', id))
+
+fec$cageID <- gsub("\\d", "", fec$cageID)
+
+fec <- subset(fec, fec$numEggs>0)
+```
+
+# Lifespan data - females only
+
+```{r}
+eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+names(eelife)[1]<-"event"
+eelife$cageID <- as.character(eelife$cageID)
+head(eelife)
+
+ff <- subset(eelife, eelife$sex=="F")
+
+# Get medians
+
+# by treatment combinations
+ffm <- survfit(Surv(age, status == 2) ~ adultTreat,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = ff)
+
+# median for each treatment
+
+summary(ffm)$table[, "median"]
+
+fif <- as.data.frame(summary(ffm)$table[, "median"])
+fif <- rownames_to_column(fif, "adultTreat")
+names(fif)[2]<-"Mean"
+fif$adultTreat <- c("C", "DR")
+
+```
+
+# Lifetime fecundity - adult diet
+
+```{r}
+
+# Get weekly mean fecundity for treatments
+
+fi <- group_by(fec, age, adultTreat) %>% 
+  summarise(Mean = mean(numEggs))
+fi
+
+# Overal mean fecundity for treatments
+fii <-  group_by(fec, adultTreat) %>%
+  summarise(Mean = mean(numEggs))
+fii
+
+# Plot on log scale
+ggplot(fi, aes(x=age, y=Mean, color = adultTreat)) + 
+  geom_line() +
+  theme_half_open()
+
+zz <- ggplot(fi, aes(x=adultTreat, y=log(Mean), color = adultTreat)) + 
+  geom_jitter(size = 3, width=0.1, height=0.5) +
+  geom_point(data = fii, size = 5, shape = 2) +
+  geom_point(data = fif, size = 5, shape = 23) +
+  labs(x = "Diet", y = "log(mean No. of eggs per day)") +
+  theme_half_open()
+zz + theme(legend.title = element_blank())
+ggpubr::show_point_shapes()
+
+# t-test
+t.test(fi, log(Mean)~adultTreat)
+with(fi, t.test(log(Mean)[adultTreat == "C"], 
+                log(Mean)[adultTreat == "DR"]))
+
+ggplot(fi, aes(x=age, y=Mean, color = adultTreat)) + 
+  geom_jitter(width=0.1, height=0.5) +
+  theme_half_open()
+
+# max(fec$age)
+# fec[which.max(fec$age),]
+```
+
+# Fecundity - 4-way diet regime
+
+```{r}
+# Get weekly mean fecundity for treatments
+
+# fec <- unite(fec, "lv", larvalTreat, adultTreat, 
+#              sep = "_", remove = FALSE)
+
+fk <- group_by(fec, age, cageID) %>% 
+  summarise(Mean = mean(numEggs))
+fk
+
+# Overal mean fecundity for treatments
+fkk <-  group_by(fec, cageID) %>%
+  summarise(Mean = mean(numEggs))
+fkk
+
+# Plot on log scale
+ggplot(fk, aes(x=age, y=Mean, color = cageID)) + 
+  geom_line() +
+  theme_half_open()
+
+zz <- ggplot(fk, aes(x=cageID, y=log(Mean), color = cageID)) + 
+  geom_jitter(size = 2, width=0.1, height=0.5) +
+  geom_point(data = fkk, size = 5, shape = 2) +
+  #geom_point(data = fif, size = 5, shape = 23) +
+  labs(x = "Diet", y = "log(mean No. of eggs per day)") +
+  theme_half_open()
+zz + theme(legend.title = element_blank())
+
+####
+ggline(fec, x = "cageID", y = "numEggs", 
+       add = c("mean_se", "jitter"), 
+       #order = c("ctrl", "trt1", "trt2"),
+       ylab = "Fec", xlab = "Diet")
+###
+
+# ANOVA
+res.aov <- aov(numEggs ~ cageID, data = fec)
+summary(res.aov)
+TukeyHSD(res.aov)
+```
+
+
+
+
