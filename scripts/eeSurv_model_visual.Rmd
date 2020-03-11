@@ -9,6 +9,8 @@ output:
     toc_float:
       collapsed: false
       smooth_scroll: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Analysis of diet-dependent developmental plasticity in D. melanogaster lifespan
@@ -33,7 +35,7 @@ source("ggplot_theme.R")
 
 ```{r}
 # Female data
-eelifeF <- read.table('../data/processed/Female_events_eelife.txt',
+eelifeF <- read.table('../processed/Female_events_eelife.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
 
@@ -43,7 +45,7 @@ eelifeF <- read.table('../data/processed/Female_events_eelife.txt',
 eelifeF$sex <- "F"
 
 # Male data
-eelifeM <- read.table('../data/processed/Male_events_eelife.txt',
+eelifeM <- read.table('../processed/Male_events_eelife.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
 
@@ -60,13 +62,13 @@ names(eelife)[1:2]<-c("age", "cageID")
 
 #eelife$carried <- 0 
   
-write.csv(eelife, file="../data/processed/eeAlldat.csv")
+write.csv(eelife, file="../processed/eeAlldat.csv")
 ```
 
 # Density
 
 ```{r, dens}
-ggplot(eelife, aes(NewAge, color = lvadComb)) + 
+ggplot(eelife, aes(age, color = lvadComb)) + 
   geom_density(alpha = 0.5) +
   coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
   #adjust frame of x-axis
