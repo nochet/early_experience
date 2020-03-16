@@ -226,14 +226,22 @@ ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet, group = Sex)) +
 
 #With Jitterdodge
 ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet)) +
-  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_jitterdodge(.1)) +
-  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.2, position = position_jitterdodge(.1))
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_jitterdodge(dodge.width = .95)) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.05, position = position_jitterdodge(dodge.width = .95))
 
 #Enoch's Chunk
 ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet)) +
   geom_dotplot(binaxis = "y", stackdir='center', dotsize = .15) +
   geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.2) +
   geom_jitter(position = position_jitter(width = 0.4), alpha = 1) 
+
+#Poistion Dodge Stack exchange   ****WORKED****
+ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet, group = Sex)) +
+  geom_point(size = 1, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD),
+                width = 0.2,
+                position = position_dodge(width = 0.5))
+
 
 ```
 
@@ -257,7 +265,7 @@ ggplot(eelifespanComb, aes(x = Diet, y = Mean, color = Diet)) +
   geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85) +
   geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.3)
 
-ggplot(eelifespanComb, aes())
+ggplot(eelifespanComb, aes(x = Diet, y = Mean, color = Diet))
 ```
 
 
