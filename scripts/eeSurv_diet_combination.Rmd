@@ -210,13 +210,14 @@ colnames(eelifespanM) <- c("Diet", "Min", "Max", "Mean", "SD")
 eelifespanM$Sex <-sexM
 
 eelifespan <- rbind(eelifespanF, eelifespanM)
+
 ```
 
 #Attempting new plots with new data frames
 ```{r}
 ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet)) +
-  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_dodge(width = .5)) +
-  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.3, position = position_dodge(width = .5))
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_dodge2(width = .3, preserve = c("total"))) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.3, position = position_dodge2(width = .3, preserve = c("total")))
 
 #Modulated by Sex
 ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet, group = Sex)) +
@@ -236,6 +237,28 @@ ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet)) +
 
 ```
 
+#Trying Dot and Error Plot without Sex
+```{r}
+eelife$Lifespan <- ifelse(eelife$status >=2, eelife$NewAge, 0)
+
+eelifeComb <- eelife[,c(4,5,7,8,9,10,12)]
+
+eelifespanComb <- data.frame(
+aggregate(Lifespan~lvadComb, data=eelifeComb, min),
+aggregate(Lifespan~lvadComb, data=eelifeComb, max),
+aggregate(Lifespan~lvadComb, data=eelifeComb, mean),
+aggregate(Lifespan~lvadComb, data = eelifeComb, sd))
+
+eelifespanComb <- eelifespanComb[,c(1,2,4,6, 8)]
+
+colnames(eelifespanComb) <- c("Diet", "Min", "Max", "Mean", "SD")
+
+ggplot(eelifespanComb, aes(x = Diet, y = Mean, color = Diet)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.3)
+
+ggplot(eelifespanComb, aes())
+```
 
 
 
