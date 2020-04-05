@@ -21,9 +21,15 @@ set.seed(30111)
 
 ```{r}
 # Fecundity data
-eeFec <- read.table("../processed/Early_Experience_LiFec.txt",
+eeFec <- read.table("~/early_experience/processed/Early_Experience_LiFec.txt",
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
+
+TotalFemales <- sum(eeFec$deadFemale)
+TotalMales <- sum(eeFec$deadMale)
+TotalCensored <- sum(eeFec$censured)
+
+#Need to make a function for Females and Males Left each date by doing Total Females minus deadfemales for each date that carries over to the subsequent date, going down until it reaches zero for each line. 
 
 fec <- eeFec[,c(4:7,11:12)]
 #colnames(fec)[colnames(fec)=="age"] <- "old"
@@ -39,7 +45,7 @@ fec <- subset(fec, fec$numEggs>0)
 # Lifespan data - females only
 
 ```{r}
-eelifeF <- read.table('../processed/Female_events_eelife.txt',
+eelifeF <- read.table('~/early_experience/processed/Female_events_eelife.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
 #names(eelifeF)[1]<-"event"
@@ -97,7 +103,8 @@ zz <- ggplot(fi, aes(x=adultTreat, y=log(Mean), color = adultTreat)) +
   geom_point(data = fif, size = 5, shape = 23) +
   labs(x = "Diet", y = "log(mean No. of eggs per day)") +
   theme_half_open() +
-  scale_color_OkabeIto() +
+  scale_color_OkabeIto() 
+
 zz + theme(legend.title = element_blank())
 #ggpubr::show_point_shapes()
 
@@ -233,4 +240,24 @@ flipF$flipEggsF <- flipF$numEggs /
 ```
 
 
+#Fecundity Reaction Norms
+```{r}
+ggplot(fec, aes(x = age, y = log(numEggs), group = cageID, color = cageID)) +
+  geom_point() +
+  geom_line()
+
+ggplot(fec, aes(x = age, y = log(numEggs), group = cageID, color = cageID)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(fec, aes(x = age/7, y = log(numEggs), group = cageID, color = cageID)) +
+  geom_point() +
+  geom_line()
+
+fec$ageWeek <- fec$age/7
+
+ggplot(fec, aes(x = ageWeek, y = log(numEggs), group = cageID, color = cageID)) +
+  geom_point() +
+  geom_line()
+```
 
