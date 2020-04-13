@@ -21,7 +21,7 @@ set.seed(30111)
 
 ```{r}
 # Fecundity data
-eeFec <- read.table("~/early_experience/processed/Early_Experience_LiFec.txt",
+eeFec <- read.table("~/early_experience/processed/Early_Experience_Data_rechecked.txt",
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
 
@@ -236,8 +236,27 @@ flipF <- ff %>%
 flipF$females <- allF-flipF$deadFemale
 
 # Get eggs per female per date
-flipF$flipEggsF <- flipF$numEggs / 
+flipF$flipEggsF <- flipF$numEggs / flipF$females
+
 ```
+
+#Getting Females per Cage by Group
+```{r}
+
+
+
+
+
+
+flipF %>%
+    group_by(grp) %>%
+    arrange(age) %>%
+    mutate(females = females - lag(females, default = first(1829)))
+```
+
+
+
+
 
 
 #Fecundity Reaction Norms

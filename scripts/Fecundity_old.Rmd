@@ -22,7 +22,7 @@ source("ggplot_theme.R")
 ```
 
 ```{r}
-eefecundity <- read.table('../processed/Early_Experience_Data_V1.txt',
+eefecundity <- read.table('../processed/Early_Experience_Data_rechecked.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE)
 

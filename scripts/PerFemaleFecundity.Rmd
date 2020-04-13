@@ -1,0 +1,80 @@
+---
+title: "PerFemaleFecundity"
+author: "Andrew Jones"
+date: "4/11/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+library(MASS)
+library(tidyverse)
+library(cowplot)
+library(survival)
+library(ggpubr)
+library(colorblindr)
+library(data.table)
+
+```
+
+#Getting all data gathered
+```{r pressure, echo=FALSE}
+eeFec <- read.table("~/early_experience/processed/Early_Experience_Data_rechecked.txt",
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE) 
+
+TotalFemales <- sum(eeFec$deadFemale)
+TotalCensored <- sum(eeFec$censored)
+```
+
+#Subsetting to make it easier and more individual
+```{r}
+CC <- subset(eeFec, eeFec$larvalTreat == "C" & eeFec$adultTreat == "C")
+CDR <- subset(eeFec, eeFec$larvalTreat == "C" & eeFec$adultTreat == "DR")
+DRC <- subset(eeFec, eeFec$larvalTreat == "DR" & eeFec$adultTreat == "C")
+DRDR <- subset(eeFec, eeFec$larvalTreat == "DR" & eeFec$adultTreat == "DR")
+
+CCFemales <- sum(CC$deadFemale)
+CDRFemales <- sum(CDR$deadFemale)
+DRCFemales <- sum(DRC$deadFemale)
+DRDRFemales <- sum(DRDR$deadFemale)
+```
+
+#Sum Females/Sum Eggs
+```{r}
+CCEggs <- sum(CC$numEggs, na.rm = TRUE)
+CCRatio <- CCEggs/CCFemales
+
+CDREggs <- sum(CDR$numEggs, na.rm = TRUE)
+CDRRatio <- CDREggs/CDRFemales
+
+DRCEggs <- sum(DRC$numEggs, na.rm = TRUE)
+DRCRatio <- DRCEggs/DRCFemales
+
+DRDREggs <- sum(DRDR$numEggs, na.rm = TRUE)
+DRDRRatio <- DRDREggs/CCFemales
+```
+
+
+
+#Attmepting to get column of females per date
+```{r}
+CCFec <- CC[,c(4:5,8,12)]
+
+CCFec$aliveFemale <- 0
+
+CCFec[1, 5] = 407
+
+CCFec$aliveFemale <- (lag(CCFec$aliveFemale, n = 1L, default = 407) - CCFec$deadfemale)
+
+
+```
+
+
+
