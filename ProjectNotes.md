@@ -36,6 +36,8 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+# 2020-04-17
+Started script `/scripts/Fec_perFem.Rmd` to calculate number of females at each egg quantification time.
 
 ## 2020-04-13
 Adrew recounted eggs on 3 unreasonably outlier images. On April 7th he reported these counts (below). The original data was copied to a new file called `Early_Experience_Data_rechecked.txt` and saved to `/early_experience/processed`. This data should be used for further analysis. (Note, the original raw data remains unaltered in `/early_experience/original`.) Slack message from Andrew:
