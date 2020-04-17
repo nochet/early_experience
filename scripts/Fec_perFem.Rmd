@@ -118,7 +118,6 @@ fcd[which(fcd$alive<0),]
 hist(fcd[which(fcd$alive<0),'alive'])
 
 hist(fcd$alive)
-fcd$perfem <- fcd$numEggs/fcd$ndead
 
 fcd <- fcd[,2:15]
 
