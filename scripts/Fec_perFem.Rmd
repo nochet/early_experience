@@ -3,6 +3,8 @@ title: "PerFemaleFecundity"
 author: "Enoch Ng'oma"
 date: "4/14/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -19,6 +21,8 @@ library(cowplot)
 ```{r pressure, echo=FALSE}
 
 fcd <- read.table("/Users/ngomae/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
+
+fcd <- read.table("~/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
 
 fec <- fcd[,c(2:3,5:8,10:12)]
 

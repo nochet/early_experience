@@ -62,17 +62,22 @@ DRDRRatio <- DRDREggs/CCFemales
 ```
 
 
-
 #Attmepting to get column of females per date
 ```{r}
-CCFec <- CC[,c(4:5,8,12)]
+View(fcd)
 
-CCFec$aliveFemale <- 0
+PerFemaleFec <- ungroup(fcd, id)
 
-CCFec[1, 5] = 407
+PerFemaleFec$EggsPerFemale <- PerFemaleFec$numEggs/PerFemaleFec$alive
 
-CCFec$aliveFemale <- (lag(CCFec$aliveFemale, n = 1L, default = 407) - CCFec$deadfemale)
+ggplot(PerFemaleFec, aes(x=age, y=EggsPerFemale, color = id)) +
+  geom_point(na.rm = TRUE)
 
+ggplot(PerFemaleFec, aes(x=age, y=EggsPerFemale, color = id)) +
+  geom_line(na.rm = TRUE)
+
+ggplot(PerFemaleFec, aes(x=age, y=EggsPerFemale, color = id)) +
+  geom_smooth(na.rm = TRUE)
 
 ```
 
