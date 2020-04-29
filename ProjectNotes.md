@@ -35,6 +35,9 @@ STEP 4: A Bayesian approach
 
 
 ## Project Notes 
+# 2020-04-29
+Got Per-Female Fecundity script so that it was standalone. 
+
 
 # 2020-04-18
 Using script created by Enoch yesterday, PerFemaleFec was modified and a new datatable was created including the ratio of number of eggs per female at each egg collection date. 
