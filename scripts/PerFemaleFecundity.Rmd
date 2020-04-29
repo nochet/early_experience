@@ -61,6 +61,119 @@ DRDREggs <- sum(DRDR$numEggs, na.rm = TRUE)
 DRDRRatio <- DRDREggs/CCFemales
 ```
 
+#Setup for Per-Female
+```{r}
+fcd <- read.table("~/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
+
+fec <- fcd[,c(2:3,5:8,10:12)]
+
+
+# Recalculate age, then delete dates
+fec$startDate <- as.Date(fec$startDate , "%m/%d/%y")
+fec$sampleDate <- as.Date(fec$sampleDate , "%m/%d/%y")
+fec$age <- (fec$sampleDate - fec$startDate)
+fec$age <- as.numeric(fec$age)
+
+#fec <- na.omit(fec) 
+fec <- fec[!is.na(fec$camera_id),]
+
+# Check re-conted images
+# Original #s: IMG_9318 2491, IMG_9389-1136, and 9397-1461
+# Recounts:  9318-1043, 9389-645, and 9397-709
+
+cam_id <- c("9318","9389","9397")
+#new_count <- c(1043,645,709)
+
+which(fec$camera_id %in% cam_id)
+fec[c(22,30,38),]
+
+# Percent censored - about 11%
+sum(fec$censored)
+sum(fec$deadFemale)
+((sum(fec$censored))/(sum(fec$deadFemale)+sum(fec$censored)))*100
+# ~5% for each sex - ignore censored for per/female analysis
+
+# Count females - dead and censored
+sum(fec$deadFemale)+sum(fec$censored)
+
+cf_eggs <- fec %>%
+  group_by(id) %>%
+  summarise(sum(numEggs)) %>%
+  pull() #output vector
+
+# Check means per cage
+scheck <- fec %>%
+  group_by(id) %>%
+  summarise(mean(numEggs), n=n())
+
+# Number of females in a cage on each age
+fec$ndead <- fec$deadFemale + fec$censored
+
+cf_dead <- fec %>%
+  group_by(id) %>%
+  summarise(sum(ndead)) %>%
+  pull()
+```
+
+#Applying Function to each cage
+```{r}
+fcd$NstartF <- recode(fcd$id, "EE_C_C1" = cf_dead[1],
+       "EE_C_C2" = cf_dead[2],
+       "EE_C_DR1" = cf_dead[3],
+       "EE_C_DR2" = cf_dead[4],
+       "EE_DR_C1" = cf_dead[5],
+       "EE_DR_C2" = cf_dead[6],
+       "EE_DR_DR1" = cf_dead[7],
+       "EE_DR_DR2" = cf_dead[8])
+```
+
+#Finding Number of eggs per female
+```{r}
+ureps <- unique(fcd$id)
+
+fcd$alive <- rep(NA, nrow(fcd))
+
+fcd.t <- fcd[0,]
+
+for(k in ureps) {
+  fcd.s <- subset(fcd, id==k)
+  for(i in 1:nrow(fcd.s)) {
+    if(i == 1) {
+      fcd.s[i,'alive'] <- fcd.s$NstartF[1]
+    } else {
+      if(is.na(fcd.s$deadFemale[i])) {
+        fcd.s[i,'alive'] <- fcd.s[(i-1),'alive']
+      } else {
+        nDead <- fcd.s[i,'deadFemale']
+        fcd.s[i,'alive'] <- fcd.s[(i-1),'alive']-nDead
+      }
+    }
+  }
+  fcd.t <- rbind(fcd.t, fcd.s)
+}
+
+fcd <- fcd.t
+
+min(fcd$alive,na.rm=TRUE)
+which(is.na(fcd$alive))
+fcd[which(fcd$alive<0),]
+hist(fcd[which(fcd$alive<0),'alive'])
+
+hist(fcd$alive)
+
+fcd <- fcd[,2:15]
+
+# Check that start values are assigned correctly
+subset(fcd,fcd$id=="EE_DR_DR1") #176
+subset(fcd,fcd$id=="EE_DR_DR2") #361
+subset(fcd,fcd$id=="EE_DR_C1") #235
+subset(fcd,fcd$id=="EE_DR_C2") #426
+subset(fcd,fcd$id=="EE_C_C1") #190
+subset(fcd,fcd$id=="EE_C_C2") #251
+subset(fcd,fcd$id=="EE_C_DR1") #139
+subset(fcd,fcd$id=="EE_C_DR2") #274
+```
+
 
 #Attmepting to get column of females per date
 ```{r}
