@@ -179,7 +179,7 @@ subset(fcd,fcd$id=="EE_C_DR2") #274
 ```{r}
 View(fcd)
 
-PerFemaleFec <- ungroup(fcd, id)
+PerFemaleFec <- group_by(fcd, age)
 
 PerFemaleFec$EggsPerFemale <- PerFemaleFec$numEggs/PerFemaleFec$alive
 
@@ -192,7 +192,25 @@ ggplot(PerFemaleFec, aes(x=age, y=EggsPerFemale, color = id)) +
 ggplot(PerFemaleFec, aes(x=age, y=EggsPerFemale, color = id)) +
   geom_smooth(na.rm = TRUE)
 
+ggplot(PerFemaleFec, aes(x=id, y= EggsPerFemale, color = id)) +
+  geom_line(na.rm = TRUE)
+
+ggplot(PerFemaleFec, aes(x=id, y= EggsPerFemale, color = id)) +
+  geom_point(na.rm = TRUE)
+
 ```
 
+#Getting Means for each Combination
+```{r}
+CCF <- subset(PerFemaleFec, PerFemaleFec$larvalTreat == "C" & PerFemaleFec$adultTreat == "C")
+CDRF <- subset(PerFemaleFec, PerFemaleFec$larvalTreat == "C" & PerFemaleFec$adultTreat == "DR")
+DRCF <- subset(PerFemaleFec, PerFemaleFec$larvalTreat == "DR" & PerFemaleFec$adultTreat == "C")
+DRDRF <- subset(PerFemaleFec, PerFemaleFec$larvalTreat == "DR" & PerFemaleFec$adultTreat == "DR")
+
+CCF$Mean <- mean(CCF$EggsPerFemale, na.rm = TRUE)
+CDRF$Mean <- mean(CDRF$EggsPerFemale, na.rm = TRUE)
+DRCF$Mean <- mean(DRCF$EggsPerFemale, na.rm = TRUE)
+DRDRF$Mean <- mean(DRDRF$EggsPerFemale, na.rm = TRUE)
+```
 
 
