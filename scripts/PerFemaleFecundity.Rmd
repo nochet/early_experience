@@ -183,6 +183,8 @@ PerFemaleFec <- group_by(fcd, age)
 
 PerFemaleFec$EggsPerFemale <- PerFemaleFec$numEggs/PerFemaleFec$alive
 
+hist(PerFemaleFec$EggsPerFemale)
+
 ggplot(PerFemaleFec, aes(x=age, y=EggsPerFemale, color = id)) +
   geom_point(na.rm = TRUE)
 
@@ -211,6 +213,22 @@ CCF$Mean <- mean(CCF$EggsPerFemale, na.rm = TRUE)
 CDRF$Mean <- mean(CDRF$EggsPerFemale, na.rm = TRUE)
 DRCF$Mean <- mean(DRCF$EggsPerFemale, na.rm = TRUE)
 DRDRF$Mean <- mean(DRDRF$EggsPerFemale, na.rm = TRUE)
+
+TotalF <- rbind(CCF,CDRF,DRCF,DRDRF)
+
+ggplot(TotalF, aes(x = id, y = Mean, color = id)) +
+  geom_boxplot()
+
+ggplot(TotalF, aes(x = id, y = Mean, color = id)) +
+  geom_col()
 ```
+
+#Pairwise Testing
+```{r}
+pairwise.t.test(TotalF$Mean, TotalF$id, p.adjust.method = "bonferroni", paired = FALSE)
+
+pairwise.t.test(TotalF$EggsPerFemale, TotalF$id, p.adjust.method = "bonferroni", paired = FALSE)
+```
+
 
 
