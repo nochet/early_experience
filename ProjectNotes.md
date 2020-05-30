@@ -35,6 +35,9 @@ STEP 4: A Bayesian approach
 
 
 ## Project Notes 
+# 2020-05-24
+Created some more figures to look at our data and made some simple pairwise tests. Signifcant differences between mean eggs per female but unclear about total number of eggs per female. Will investigate.  
+
 # 2020-04-29
 Got Per-Female Fecundity script so that it was standalone. 
 
