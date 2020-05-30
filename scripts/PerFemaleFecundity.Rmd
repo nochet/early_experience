@@ -228,6 +228,13 @@ ggplot(TotalF, aes(x = id, y = Mean, color = id)) +
 pairwise.t.test(TotalF$Mean, TotalF$id, p.adjust.method = "bonferroni", paired = FALSE)
 
 pairwise.t.test(TotalF$EggsPerFemale, TotalF$id, p.adjust.method = "bonferroni", paired = FALSE)
+
+a1 <- aov(Mean ~ id, data = TotalF)
+summary(a1)
+
+pairwise.t.test(TotalF$Mean, TotalF$id, p.adjust.method = "none")
+
+pairwise.t.test(TotalF$Mean, TotalF$id, p.adjust.method = "holm")
 ```
 
 
