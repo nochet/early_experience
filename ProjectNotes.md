@@ -35,6 +35,10 @@ STEP 4: A Bayesian approach
 
 
 ## Project Notes 
+
+# 2020-05-29
+Did more work with the pairwise testing. Used holm and bonf testing to show values < E-16 so they are defintiely significantly different. 
+
 # 2020-05-24
 Created some more figures to look at our data and made some simple pairwise tests. Signifcant differences between mean eggs per female but unclear about total number of eggs per female. Will investigate.  
 
