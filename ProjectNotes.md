@@ -36,6 +36,9 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+# 2020-06-01 (EN)
+A bit of cleaning up in the scripts directory
+
 # 2020-05-29
 Did more work with the pairwise testing. Used holm and bonf testing to show values < E-16 so they are defintiely significantly different. 
 
