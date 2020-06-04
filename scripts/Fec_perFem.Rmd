@@ -11,7 +11,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 
 
-library(dplyr)
+library(tidyverse)
 library(cowplot)
 
 ```
@@ -20,9 +20,7 @@ library(cowplot)
 
 ```{r pressure, echo=FALSE}
 
-fcd <- read.table("/Users/ngomae/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
-
-fcd <- read.table("~/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
+fcd <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
 
 fec <- fcd[,c(2:3,5:8,10:12)]
 
@@ -36,7 +34,7 @@ fec$age <- as.numeric(fec$age)
 #fec <- na.omit(fec) 
 fec <- fec[!is.na(fec$camera_id),]
 
-# Check re-conted images
+# Check re-counted images
 # Original #s: IMG_9318 2491, IMG_9389-1136, and 9397-1461
 # Recounts:  9318-1043, 9389-645, and 9397-709
 
@@ -65,7 +63,7 @@ scheck <- fec %>%
   group_by(id) %>%
   summarise(mean(numEggs), n=n())
 
-# Number of females in a cage on each age
+# Number of dead females in a cage on each age
 fec$ndead <- fec$deadFemale + fec$censored
 
 cf_dead <- fec %>%
@@ -77,14 +75,15 @@ cf_dead <- fec %>%
 # Assign cf_start to each cage
 
 ```{r}
-fcd$NstartF <- recode(fcd$id, "EE_C_C1" = cf_dead[1],
-       "EE_C_C2" = cf_dead[2],
-       "EE_C_DR1" = cf_dead[3],
-       "EE_C_DR2" = cf_dead[4],
-       "EE_DR_C1" = cf_dead[5],
-       "EE_DR_C2" = cf_dead[6],
-       "EE_DR_DR1" = cf_dead[7],
-       "EE_DR_DR2" = cf_dead[8])
+fcd$NstartF <- recode(fcd$id, 
+                      "EE_C_C1" = cf_dead[1],
+                      "EE_C_C2" = cf_dead[2],
+                      "EE_C_DR1" = cf_dead[3],
+                      "EE_C_DR2" = cf_dead[4],
+                      "EE_DR_C1" = cf_dead[5],
+                      "EE_DR_C2" = cf_dead[6],
+                      "EE_DR_DR1" = cf_dead[7],
+                      "EE_DR_DR2" = cf_dead[8])
 
 ```
 
@@ -123,7 +122,10 @@ hist(fcd[which(fcd$alive<0),'alive'])
 
 hist(fcd$alive)
 
-fcd <- fcd[,2:15]
+# Per female per date fecundity
+fcd <- fcd[,c(3:8,11:12,14:15)]
+fcd$eggpDay <- fcd$numEggs*8
+fcd$eggpFemDay <- fcd$eggpDay/fcd$alive
 
 # Check that start values are assigned correctly
 subset(fcd,fcd$id=="EE_DR_DR1") #176
@@ -134,6 +136,53 @@ subset(fcd,fcd$id=="EE_C_C1") #190
 subset(fcd,fcd$id=="EE_C_C2") #251
 subset(fcd,fcd$id=="EE_C_DR1") #139
 subset(fcd,fcd$id=="EE_C_DR2") #274
+
 ```
+
+# Visualize
+
+```{r}
+# Collapse replicates
+dat <- fcd %>%
+  unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
+  unite(date_treat,age,treat,sep="_",remove=FALSE)
+#dat <- dat[order(dat$age),]
+
+##############
+#test grouping by multiple columns
+test <- rbind(
+  subset(dat,dat$age==1 & dat$treat=="DR_DR"),
+  subset(dat,dat$age==8 & dat$treat=="DR_DR"),
+  subset(dat,dat$age==1 & dat$treat=="C_DR"),
+  subset(dat,dat$age==8 & dat$treat=="C_DR")
+)
+test <- test[,c(3,5,10,12)]
+
+te <- test %>%
+  group_by(treat, age) %>%
+  summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
+ #############
+
+
+collapse.dat <- dat %>%
+  group_by(treat, age) %>%
+  summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
+
+ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) +
+  geom_boxplot() +
+  geom_jitter()
+
+ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
+  geom_line() +
+  geom_jitter()
+
+# Rull these lines and give these images a quick check
+dat[which(dat$eggpFemDay>10),]
+dat[which(dat$eggpFemDay<1 & dat$age<36),]
+
+spot.check <- rbind(dat[which(dat$eggpFemDay>10),],dat[which(dat$eggpFemDay<1 & dat$age<36),])
+```
+
+
 
 
