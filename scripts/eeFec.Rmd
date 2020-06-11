@@ -255,10 +255,6 @@ flipF %>%
 ```
 
 
-
-
-
-
 #Fecundity Reaction Norms
 ```{r}
 ggplot(fec, aes(x = age, y = log(numEggs), group = cageID, color = cageID)) +
@@ -279,4 +275,6 @@ ggplot(fec, aes(x = ageWeek, y = log(numEggs), group = cageID, color = cageID)) 
   geom_point() +
   geom_line()
 ```
+
+
 

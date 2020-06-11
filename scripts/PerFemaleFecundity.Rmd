@@ -235,7 +235,26 @@ summary(a1)
 pairwise.t.test(TotalF$Mean, TotalF$id, p.adjust.method = "none")
 
 pairwise.t.test(TotalF$Mean, TotalF$id, p.adjust.method = "holm")
+
+pairwise.t.test(TotalF$EggsPerFemale, TotalF$id, p.adjust.method = "none")
+
+TukeyHSD(a1, which = "id", ordered = TRUE, conf.level = 0.95)
 ```
+
+#Testing by Diet Combination
+```{r}
+TotalF <- TotalF %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+a2 <- aov(Mean ~ lvadComb, data = TotalF)
+summary(a2)
+
+pairwise.t.test(TotalF$Mean, TotalF$lvadComb, p.adjust.method = "none")
+
+pairwise.t.test(TotalF$EggsPerFemale, TotalF$lvadComb, p.adjust.method = "none")
+```
+
+
 
 
 
