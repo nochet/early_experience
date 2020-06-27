@@ -36,6 +36,9 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+# 2020-06-26 (EN)
+Add plotting features to script `Fec_perFem.Rmd`
+
 # 2020-06-01 (EN)
 A bit of cleaning up in the scripts directory
 

@@ -13,6 +13,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(cowplot)
+library(colorblindr)
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  legend
+}
+
+source("ggplot_theme.R")
 
 ```
 
@@ -170,13 +180,19 @@ collapse.dat <- dat %>%
 
 ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) +
   geom_boxplot() +
-  geom_jitter()
+  geom_jitter() +
+  #scale_colour_OkabeIto() +
+  theme_half_open() +
+  my_theme
 
 ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
   geom_line() +
-  geom_jitter()
+  geom_jitter() +
+  #scale_colour_OkabeIto() +
+  theme_half_open() +
+  my_theme
 
-# Rull these lines and give these images a quick check
+# Pull these lines and give these images a quick check
 dat[which(dat$eggpFemDay>10),]
 dat[which(dat$eggpFemDay<1 & dat$age<36),]
 
