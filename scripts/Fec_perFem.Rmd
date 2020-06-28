@@ -178,19 +178,29 @@ collapse.dat <- dat %>%
   group_by(treat, age) %>%
   summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
 
-ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) +
+collapse.dat <- collapse.dat[complete.cases(collapse.dat[,3]),]
+
+pp <- ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) + 
+  stat_boxplot(geom ='errorbar',width = 0.3) + 
   geom_boxplot() +
   geom_jitter() +
   #scale_colour_OkabeIto() +
+  xlab("Larval_Adult diet treatment") + 
+  ylab("Mean eggs/♀/date") +
   theme_half_open() +
   my_theme
+pp + theme(legend.position = "none")
 
-ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
+
+qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
   geom_line() +
-  geom_jitter() +
+  geom_point() +
   #scale_colour_OkabeIto() +
+  xlab("Age (Days)") + 
+  ylab("Mean eggs/♀/date") +
   theme_half_open() +
   my_theme
+qq + theme(legend.position = "none")
 
 # Pull these lines and give these images a quick check
 dat[which(dat$eggpFemDay>10),]
