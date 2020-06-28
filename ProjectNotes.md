@@ -36,6 +36,9 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+# 2020-06-27 (EN)
+Upgrade figures for descriptive statistics to publication quality
+
 # 2020-06-26 (EN)
 Add plotting features to script `Fec_perFem.Rmd`
 
