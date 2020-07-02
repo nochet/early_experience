@@ -15,15 +15,10 @@ library(tidyverse)
 library(cowplot)
 library(colorblindr)
 
-g_legend<-function(a.gplot){
-  tmp <- ggplot_gtable(ggplot_build(a.gplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  legend
-}
+
 
 source("ggplot_theme.R")
-
+source("color_map_blindr.R")
 ```
 
 # Look at data
@@ -157,6 +152,7 @@ dat <- fcd %>%
   unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
   unite(date_treat,age,treat,sep="_",remove=FALSE)
 #dat <- dat[order(dat$age),]
+names(dat)[5] <- "Treatment"
 
 ##############
 #test grouping by multiple columns
@@ -174,33 +170,50 @@ te <- test %>%
  #############
 
 
+
 collapse.dat <- dat %>%
-  group_by(treat, age) %>%
+  group_by(Treatment, age) %>%
   summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
 
 collapse.dat <- collapse.dat[complete.cases(collapse.dat[,3]),]
 
-pp <- ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) + 
+# Plot overall eggs per female per 3-hr sampling period
+pp <- ggplot(collapse.dat,aes(x=Treatment,y=mean_eggs, col=Treatment)) + 
   stat_boxplot(geom ='errorbar',width = 0.3) + 
   geom_boxplot() +
   geom_jitter() +
-  #scale_colour_OkabeIto() +
+  scale_colour_OkabeIto() +
   xlab("Larval_Adult diet treatment") + 
   ylab("Mean eggs/♀/date") +
   theme_half_open() +
   my_theme
 pp + theme(legend.position = "none")
 
-
-qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
+# Plot time series of eggs per female per 3-hr sampling period
+qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=Treatment)) +
   geom_line() +
   geom_point() +
-  #scale_colour_OkabeIto() +
-  xlab("Age (Days)") + 
+  scale_colour_OkabeIto() +
+  #scale_fill_OkabeIto() +
+  xlab("Age (days)") + 
   ylab("Mean eggs/♀/date") +
   theme_half_open() +
   my_theme
-qq + theme(legend.position = "none")
+qq + theme(legend.position=c(0.7,1))
+
+
+# Plot time series of eggs per female per 3-hr sampling period
+dat <- dat[complete.cases(dat[,c(3,5)]),]
+tt <- ggplot(dat,aes(x=as.numeric(age),y=eggpFemDay, col=Treatment)) +
+  geom_line() +
+  geom_point() +
+  scale_colour_OkabeIto() +
+  #scale_fill_OkabeIto() +
+  xlab("Age (days)") + 
+  ylab("Mean eggs/♀/date") +
+  theme_half_open() +
+  my_theme
+tt + theme(legend.position=c(0.4,1))
 
 # Pull these lines and give these images a quick check
 dat[which(dat$eggpFemDay>10),]
@@ -209,6 +222,22 @@ dat[which(dat$eggpFemDay<1 & dat$age<36),]
 spot.check <- rbind(dat[which(dat$eggpFemDay>10),],dat[which(dat$eggpFemDay<1 & dat$age<36),])
 ```
 
+# Investigate recounts of 31 images
+
+```{r}
+recs <- read.csv("~/MyGithub/early_experience/processed/Recount_ImagesFlagged_extremeOutliers.csv")
+
+names(recs)[1] <- "camera_id"
+names(recs)[2] <- "numEggs"
+recs$camera_id <- str_split(recs$camera_id, "_", simplify = TRUE)[,2]
+
+fcd$camera_id <- as.character(fcd$camera_id)
+
+
+llP <- left_join(recs, fcd, by="camera_id")
+llP <- select(llP,camera_id,numEggs.x,numEggs.y)
+llP$dif <- ((llP$numEggs.x-llP$numEggs.y)/llP$numEggs.x)*100
+```
 
 
 
