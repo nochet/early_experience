@@ -27,17 +27,34 @@ source("color_map_blindr.R")
 
 fcd <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
 
-fec <- fcd[,c(2:3,5:8,10:12)]
+fcd <- na.omit(fcd) 
+
+# Check duplicated camera_id
+dup_ids <- which(duplicated(fcd$camera_id)) # 2 images dupl.
+k <- fcd[which(duplicated(fcd$camera_id)), ]
+# Seemsimages 9834 (33 eggs) & 9835 15 eggs) are duplicated 
+
+kk <- rbind(subset(fcd, fcd$camera_id=="9834") , 
+            subset(fcd, fcd$camera_id=="9835"))
+
+######################################
+#### TO OMIT OR NOT TO OMIT - ANDREW
+######################################
+
+
+fcd <- fcd[unique(fcd$camera_id), ]
+
+fcd <- fcd[,c(2:3,5:8,10:12)]
 
 
 # Recalculate age, then delete dates
-fec$startDate <- as.Date(fec$startDate , "%m/%d/%y")
-fec$sampleDate <- as.Date(fec$sampleDate , "%m/%d/%y")
-fec$age <- (fec$sampleDate - fec$startDate)
-fec$age <- as.numeric(fec$age)
+fcd$startDate <- as.Date(fcd$startDate , "%m/%d/%y")
+fcd$sampleDate <- as.Date(fcd$sampleDate , "%m/%d/%y")
+fcd$age <- (fcd$sampleDate - fcd$startDate)
+fcd$age <- as.numeric(fcd$age)
 
-#fec <- na.omit(fec) 
-fec <- fec[!is.na(fec$camera_id),]
+#fcd <- na.omit(fcd) 
+#fcd <- fcd[!is.na(fcd$camera_id),]
 
 # Check re-counted images
 # Original #s: IMG_9318 2491, IMG_9389-1136, and 9397-1461
@@ -46,32 +63,32 @@ fec <- fec[!is.na(fec$camera_id),]
 cam_id <- c("9318","9389","9397")
 #new_count <- c(1043,645,709)
 
-which(fec$camera_id %in% cam_id)
-fec[c(22,30,38),]
+which(fcd$camera_id %in% cam_id)
+fcd[c(22,30,38),]
 
 # Percent censored - about 11%
-sum(fec$censored)
-sum(fec$deadFemale)
-((sum(fec$censored))/(sum(fec$deadFemale)+sum(fec$censored)))*100
+sum(fcd$censored)
+sum(fcd$deadFemale)
+((sum(fcd$censored))/(sum(fcd$deadFemale)+sum(fcd$censored)))*100
 # ~5% for each sex - ignore censored for per/female analysis
 
 # Count females - dead and censored
-sum(fec$deadFemale)+sum(fec$censored)
+sum(fcd$deadFemale)+sum(fcd$censored)
 
-cf_eggs <- fec %>%
+cf_eggs <- fcd %>%
   group_by(id) %>%
   summarise(sum(numEggs)) %>%
   pull() #output vector
 
 # Check means per cage
-scheck <- fec %>%
+scheck <- fcd %>%
   group_by(id) %>%
   summarise(mean(numEggs), n=n())
 
 # Number of dead females in a cage on each age
-fec$ndead <- fec$deadFemale + fec$censored
+fcd$ndead <- fcd$deadFemale + fcd$censored
 
-cf_dead <- fec %>%
+cf_dead <- fcd %>%
   group_by(id) %>%
   summarise(sum(ndead)) %>%
   pull()
@@ -237,6 +254,25 @@ fcd$camera_id <- as.character(fcd$camera_id)
 llP <- left_join(recs, fcd, by="camera_id")
 llP <- select(llP,camera_id,numEggs.x,numEggs.y)
 llP$dif <- ((llP$numEggs.x-llP$numEggs.y)/llP$numEggs.x)*100
+llP <- llP[order(llP$camera_id),] 
+
+# Use new numbers and repeat plotting
+ffQ <- fcd %>%
+  select(2:5,7:8,12)
+
+ff <- subset(ffQ,ffQ$camera_id %in% recs$camera_id)
+for(i in ff$camera_id) 
+  if(i %in% recs$camera_id) 
+    ff$numEggs[ff$numEggs <- recs$numEggs]
+
+ffQ <- ffQ[which(!ffQ$camera_id==ff$camera_id),]
+
+
+# Check if values correctly replaced
+#fcd <- fcd[order(fcd$camera_id),] 
+subset(fcd,fcd$camera_id %in% recs$camera_id)
+
+
 ```
 
 

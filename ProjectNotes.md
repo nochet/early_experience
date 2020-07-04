@@ -35,6 +35,19 @@ STEP 4: A Bayesian approach
 
 
 ## Project Notes 
+
+# 2020-07-04 (EN)
+Identified duplicated image: different flip dates and egg counts
+> kk[,c(2:5,11:12)]
+    startDate sampleDate age        id camera_id numEggs
+137 2/20/2018   4/2/2018  41 EE_DR_DR1      9834      19
+189 2/20/2018  4/16/2018  55 EE_DR_DR2      9834      33
+143 2/20/2018   4/2/2018  41  EE_C_DR2      9835      24
+190 2/20/2018  4/16/2018  55  EE_DR_C2      9835      15
+
+These may be wrongly named - @Andrew, please check and advise!
+
+# 2020-07-02 (EN)
   - bash script `rename_files.sh` adds a random number to the image name
   - A copy of these names kept
   - bash script `simplify.sh` deletes original name leaving just a random number
