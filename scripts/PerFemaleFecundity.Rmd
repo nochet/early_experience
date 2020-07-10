@@ -198,7 +198,8 @@ ggplot(PerFemaleFec, aes(x=id, y= EggsPerFemale, color = id)) +
   geom_line(na.rm = TRUE)
 
 ggplot(PerFemaleFec, aes(x=id, y= EggsPerFemale, color = id)) +
-  geom_point(na.rm = TRUE)
+  geom_point(na.rm = TRUE) + 
+  labs(x = "Diet Combination", y = "Eggs Per Female", color = "Diet Combination")
 
 ```
 
