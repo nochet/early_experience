@@ -41,8 +41,8 @@ kk <- rbind(subset(fcd, fcd$camera_id=="9834") ,
 #### TO OMIT OR NOT TO OMIT - ANDREW
 ######################################
 
-
-fcd <- fcd[unique(fcd$camera_id), ]
+# For now, trash all 4
+fcd <- fcd[which(!duplicated(fcd$camera_id)), ]
 
 fcd <- fcd[,c(2:3,5:8,10:12)]
 
@@ -201,10 +201,12 @@ pp <- ggplot(collapse.dat,aes(x=Treatment,y=mean_eggs, col=Treatment)) +
   geom_jitter() +
   scale_colour_OkabeIto() +
   xlab("Larval_Adult diet treatment") + 
-  ylab("Mean eggs/♀/date") +
+  ylab("Mean eggs/Fem/date") +
   theme_half_open() +
   my_theme
 pp + theme(legend.position = "none")
+
+ggsave(pp, filename="~/MyGithub/early_experience/Plots/lifetime_eggs_perF_per3HR.pdf", height=5, width=10)
 
 # Plot time series of eggs per female per 3-hr sampling period
 qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=Treatment)) +
@@ -213,10 +215,12 @@ qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=Treatment)) +
   scale_colour_OkabeIto() +
   #scale_fill_OkabeIto() +
   xlab("Age (days)") + 
-  ylab("Mean eggs/♀/date") +
+  ylab("Mean eggs/Fem/date") +
   theme_half_open() +
   my_theme
 qq + theme(legend.position=c(0.7,1))
+
+ggsave(qq, filename="~/MyGithub/early_experience/Plots/Eggs_perF_per3HR_timeseries.pdf", height=5, width=10)
 
 
 # Plot time series of eggs per female per 3-hr sampling period
@@ -238,6 +242,20 @@ dat[which(dat$eggpFemDay<1 & dat$age<36),]
 
 spot.check <- rbind(dat[which(dat$eggpFemDay>10),],dat[which(dat$eggpFemDay<1 & dat$age<36),])
 ```
+
+# A faceted figure
+```{r}
+# Use facet_grid or facet_wrap to split up graphs by factors
+gplot(mydata, aes(Var1, Var2)) + geom_point() + facet_grid(~ Variety)
+```
+
+
+# Use new counts to see what changes
+
+```{r}
+
+```
+
 
 # Investigate recounts of 31 images
 

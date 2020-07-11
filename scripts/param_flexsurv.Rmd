@@ -12,6 +12,7 @@ library(tidyverse)
 library(cowplot)
 library(survival)
 library(flexsurv)
+library(rms)
 
 source("color_map.R")
 
@@ -25,6 +26,8 @@ set.seed(428)
 eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
 names(eelife)[1]<-"event"
 head(eelife)
+
+eelife <- eelife[complete.cases(eelife),]
 ```
 
 ```{r}
@@ -55,6 +58,43 @@ pm4
 
 ```
 
+# Plot log of hazard ratio
 
+```{r}
+# Forestplot
+
+#########################
+library(survival)
+library(rms)
+ddist <- datadist(ovarian)
+options(datadist='ddist')
+
+ovarian$rx <- factor(ovarian$rx)
+fit1 = cph(Surv(futime, fustat) ~ rx + rcs(age, 3), ovarian, x=TRUE, y=TRUE)
+
+# The plot.summary.rms
+plot(summary(fit1, age=c(50,60)), q=c(.6, .8, .95), log=T, 
+                 col=c("orange", "gold", "blue"))
+
+#########################
+
+# Example
+# fit.coxph <- coxph(surv_object ~ rx + resid.ds + age_group + ecog.ps, 
+#                    data = ovarian)
+
+eelife$larv_adult <- factor(eelife$larv_adult)
+
+fit.coxph <- coxph(Surv(NewAge, status) ~ larv_adult + Sex, 
+                   data = eelife)
+ggforest(fit.coxph, data = ovarian)
+
+
+fit1 = cph(Surv(NewAge, status) ~ larv_adult, eelife, x=TRUE, y=TRUE)
+
+# The plot.summary.rms
+plot(summary(fit1, age=c(50,60)), q=c(.6, .8, .95), log=T, 
+                 col=c("orange", "gold", "blue"))
+
+```
 
 
