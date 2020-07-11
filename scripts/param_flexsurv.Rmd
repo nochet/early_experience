@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse) 
 library(cowplot)
 library(survival)
+library(survminer)
 library(flexsurv)
 library(rms)
 
@@ -84,12 +85,21 @@ plot(summary(fit1, age=c(50,60)), q=c(.6, .8, .95), log=T,
 
 eelife$larv_adult <- factor(eelife$larv_adult)
 
-fit.coxph <- coxph(Surv(NewAge, status) ~ larv_adult + Sex, 
+trt <- coxph(Surv(NewAge, status==2) ~ larv_adult, 
                    data = eelife)
-ggforest(fit.coxph, data = ovarian)
+ggforest(trt, data = eelife)
+
+tsex <- coxph(Surv(NewAge, status==2) ~ larv_adult + Sex, 
+                   data = eelife)
+ggforest(tsex, data = eelife)
 
 
-fit1 = cph(Surv(NewAge, status) ~ larv_adult, eelife, x=TRUE, y=TRUE)
+tadult <- coxph(Surv(NewAge, status==2) ~ larv_adult + adultTreat, 
+                   data = eelife)
+ggforest(tadult, data = eelife)
+
+
+fit1 = cph(Surv(NewAge, status==2) ~ larv_adult, eelife, x=TRUE, y=TRUE)
 
 # The plot.summary.rms
 plot(summary(fit1, age=c(50,60)), q=c(.6, .8, .95), log=T, 
