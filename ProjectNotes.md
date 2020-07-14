@@ -36,6 +36,48 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+# 2020-07-13 (EN)
+Fit Cox Proportional Hazard models to lifespan data
+Visualize HRs with Forest plots
+Next, do reaction norms for Fig. 2 in Monaghan et al, (2008)
+
+# 2020-07-04 (EN)
+Identified duplicated image: different flip dates and egg counts
+> kk[,c(2:5,11:12)]
+    startDate sampleDate age        id camera_id numEggs
+137 2/20/2018   4/2/2018  41 EE_DR_DR1      9834      19
+189 2/20/2018  4/16/2018  55 EE_DR_DR2      9834      33
+143 2/20/2018   4/2/2018  41  EE_C_DR2      9835      24
+190 2/20/2018  4/16/2018  55  EE_DR_C2      9835      15
+
+These may be wrongly named - @Andrew, please check and advise!
+
+# 2020-07-02 (EN)
+  - bash script `rename_files.sh` adds a random number to the image name
+  - A copy of these names kept
+  - bash script `simplify.sh` deletes original name leaving just a random number
+Made a new data sheet with columns image_id and numEggs.
+
+# 2020-07-01 (EN)
+Andrew and De'anne each to recount all images - average out the counts
+I replaced image names with random numbers: 
+
+# 2020-06-28 (EN)
+Integrate recounted image data
+Investigate and compare old and new data - decide approach forward
+Differences are large; need for recounting
+
+# 2020-06-27 (EN)
+Upgrade figures for descriptive statistics to publication quality
+
+# 2020-06-26 (EN)
+Add plotting features to script `Fec_perFem.Rmd`
+
+# 2020-06-04 (EN)
+Exploratory analysis of per female fecundity time series.
+30 images flagged as outliers. Andrew, pliz blindly recount these images:
+Run `Fec_perFem.Rmd`. The last line: spot.check <- rbind(dat[which(dat$eggpFemDay>10),],dat[which(dat$eggpFemDay<1 & dat$age<36),])
+
 # 2020-06-01 (EN)
 A bit of cleaning up in the scripts directory
 
@@ -47,7 +89,6 @@ Created some more figures to look at our data and made some simple pairwise test
 
 # 2020-04-29
 Got Per-Female Fecundity script so that it was standalone. 
-
 
 # 2020-04-18
 Using script created by Enoch yesterday, PerFemaleFec was modified and a new datatable was created including the ratio of number of eggs per female at each egg collection date. 

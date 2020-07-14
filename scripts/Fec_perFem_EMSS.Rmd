@@ -29,19 +29,8 @@ fcd <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_r
 
 fcd <- na.omit(fcd) 
 
-# Check duplicated camera_id
-dup_ids <- which(duplicated(fcd$camera_id)) # 2 images dupl.
-k <- fcd[which(duplicated(fcd$camera_id)), ]
-# Seemsimages 9834 (33 eggs) & 9835 15 eggs) are duplicated 
 
-kk <- rbind(subset(fcd, fcd$camera_id=="9834") , 
-            subset(fcd, fcd$camera_id=="9835"))
-
-######################################
-#### TO OMIT OR NOT TO OMIT - ANDREW
-######################################
-
-# For now, trash all 4
+# For now, trash duplicated image ids
 fcd <- fcd[which(!duplicated(fcd$camera_id)), ]
 
 fcd <- fcd[,c(2:3,5:8,10:12)]
@@ -150,57 +139,47 @@ fcd$eggpDay <- fcd$numEggs*8
 fcd$eggpFemDay <- fcd$eggpDay/fcd$alive
 
 # Check that start values are assigned correctly
-subset(fcd,fcd$id=="EE_DR_DR1") #176
-subset(fcd,fcd$id=="EE_DR_DR2") #361
-subset(fcd,fcd$id=="EE_DR_C1") #235
-subset(fcd,fcd$id=="EE_DR_C2") #426
-subset(fcd,fcd$id=="EE_C_C1") #190
-subset(fcd,fcd$id=="EE_C_C2") #251
-subset(fcd,fcd$id=="EE_C_DR1") #139
-subset(fcd,fcd$id=="EE_C_DR2") #274
+# subset(fcd,fcd$id=="EE_DR_DR1") #176
+# subset(fcd,fcd$id=="EE_DR_DR2") #361
+# subset(fcd,fcd$id=="EE_DR_C1") #235
+# subset(fcd,fcd$id=="EE_DR_C2") #426
+# subset(fcd,fcd$id=="EE_C_C1") #190
+# subset(fcd,fcd$id=="EE_C_C2") #251
+# subset(fcd,fcd$id=="EE_C_DR1") #139
+# subset(fcd,fcd$id=="EE_C_DR2") #274
 
 ```
 
-# Visualize
+# Visualize 
 
 ```{r}
 # Collapse replicates
-dat <- fcd %>%
-  unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
-  unite(date_treat,age,treat,sep="_",remove=FALSE)
-#dat <- dat[order(dat$age),]
-names(dat)[5] <- "Treatment"
+# dat <- fcd %>%
+#   unite(treat,larvalTreat,adultTreat,sep = "_",remove = FALSE,na.rm=TRUE) %>%
+#   unite(date_treat,age,treat,sep="_",remove=FALSE)
+# #dat <- dat[order(dat$age),]
+# names(dat)[5] <- "Treatment"
 
-##############
-#test grouping by multiple columns
-test <- rbind(
-  subset(dat,dat$age==1 & dat$treat=="DR_DR"),
-  subset(dat,dat$age==8 & dat$treat=="DR_DR"),
-  subset(dat,dat$age==1 & dat$treat=="C_DR"),
-  subset(dat,dat$age==8 & dat$treat=="C_DR")
-)
-test <- test[,c(3,5,10,12)]
+# Subset bt larval diet to assess theories (EM & SS)
+fcd.poor <- fcd[c(fcd$larvalTreat=="DR"),]
+fcd.rich <- fcd[c(fcd$larvalTreat=="C"),]
 
-te <- test %>%
-  group_by(treat, age) %>%
-  summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
- #############
+# Grouping by multiple variables
+dat.poor <- fcd.poor %>%
+  group_by(adultTreat, age) %>%
+  dplyr::summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
 
-
-
-collapse.dat <- dat %>%
-  group_by(Treatment, age) %>%
-  summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
-
-collapse.dat <- collapse.dat[complete.cases(collapse.dat[,3]),]
+dat.poor <- dat.poor[complete.cases(dat[,3]),]
+dat.poor$adultTreat <- factor(dat.poor$adultTreat,
+                              levels = c("DR", "C"))
 
 # Plot overall eggs per female per 3-hr sampling period
-pp <- ggplot(collapse.dat,aes(x=Treatment,y=mean_eggs, col=Treatment)) + 
+pp <- ggplot(dat.poor,aes(x=adultTreat,y=mean_eggs, col=adultTreat)) + 
   stat_boxplot(geom ='errorbar',width = 0.3) + 
   geom_boxplot() +
   geom_jitter() +
   scale_colour_OkabeIto() +
-  xlab("Larval_Adult diet treatment") + 
+  xlab("Poor larval diet (DR)") + 
   ylab("Mean eggs/Fem/date") +
   theme_half_open() +
   my_theme
@@ -209,12 +188,12 @@ pp + theme(legend.position = "none")
 ggsave(pp, filename="~/MyGithub/early_experience/Plots/lifetime_eggs_perF_per3HR.pdf", height=5, width=10)
 
 # Plot time series of eggs per female per 3-hr sampling period
-qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=Treatment)) +
-  geom_line() +
+qq <- ggplot(dat.poor,aes(x=age,y=mean_eggs, col=adultTreat)) +
+  geom_smooth(method = lm, formula = y~x,se=FALSE) +
   geom_point() +
   scale_colour_OkabeIto() +
   #scale_fill_OkabeIto() +
-  xlab("Age (days)") + 
+  xlab("DR larval diet, Age (days)") + 
   ylab("Mean eggs/Fem/date") +
   theme_half_open() +
   my_theme
@@ -223,74 +202,27 @@ qq + theme(legend.position=c(0.7,1))
 ggsave(qq, filename="~/MyGithub/early_experience/Plots/Eggs_perF_per3HR_timeseries.pdf", height=5, width=10)
 
 
-# Plot time series of eggs per female per 3-hr sampling period
-dat <- dat[complete.cases(dat[,c(3,5)]),]
-tt <- ggplot(dat,aes(x=as.numeric(age),y=eggpFemDay, col=Treatment)) +
+# Plot on a numeric (0/1) diet treat
+dat.poor[,"ntreat"] <- ifelse(dat.poor[,"adultTreat"]=="C",1,2) 
+
+
+rr <- ggplot(dat.poor,aes(x=ntreat,y=mean_eggs, col=adultTreat)) +
+  stat_summary(fun = 'mean',geom = 'point') +
+  #stat_smooth(method = lm, formula = y~x,se=FALSE) +
+  #geom_smooth(method = lm, formula = y~x,se=FALSE) +
   geom_line() +
-  geom_point() +
   scale_colour_OkabeIto() +
   #scale_fill_OkabeIto() +
-  xlab("Age (days)") + 
-  ylab("Mean eggs/♀/date") +
+  xlab("DR larval diet, Age (days)") + 
+  ylab("Mean eggs/Fem/date") +
   theme_half_open() +
   my_theme
-tt + theme(legend.position=c(0.4,1))
+rr + theme(legend.position=c(0.7,1))
 
-# Pull these lines and give these images a quick check
-dat[which(dat$eggpFemDay>10),]
-dat[which(dat$eggpFemDay<1 & dat$age<36),]
-
-spot.check <- rbind(dat[which(dat$eggpFemDay>10),],dat[which(dat$eggpFemDay<1 & dat$age<36),])
-```
-
-# A faceted figure
-```{r}
-# Use facet_grid or facet_wrap to split up graphs by factors
-gplot(mydata, aes(Var1, Var2)) + geom_point() + facet_grid(~ Variety)
-```
-
-
-# Use new counts to see what changes
-
-```{r}
-
-```
-
-
-# Investigate recounts of 31 images
-
-```{r}
-recs <- read.csv("~/MyGithub/early_experience/processed/Recount_ImagesFlagged_extremeOutliers.csv")
-
-names(recs)[1] <- "camera_id"
-names(recs)[2] <- "numEggs"
-recs$camera_id <- str_split(recs$camera_id, "_", simplify = TRUE)[,2]
-
-fcd$camera_id <- as.character(fcd$camera_id)
-
-
-llP <- left_join(recs, fcd, by="camera_id")
-llP <- select(llP,camera_id,numEggs.x,numEggs.y)
-llP$dif <- ((llP$numEggs.x-llP$numEggs.y)/llP$numEggs.x)*100
-llP <- llP[order(llP$camera_id),] 
-
-# Use new numbers and repeat plotting
-ffQ <- fcd %>%
-  select(2:5,7:8,12)
-
-ff <- subset(ffQ,ffQ$camera_id %in% recs$camera_id)
-for(i in ff$camera_id) 
-  if(i %in% recs$camera_id) 
-    ff$numEggs[ff$numEggs <- recs$numEggs]
-
-ffQ <- ffQ[which(!ffQ$camera_id==ff$camera_id),]
-
-
-# Check if values correctly replaced
-#fcd <- fcd[order(fcd$camera_id),] 
-subset(fcd,fcd$camera_id %in% recs$camera_id)
-
-
+ggplot(data, aes(x = Length, y= ReadT, colour = Pos)) + 
+ stat_summary(fun.y = 'mean', geom = 'point')+
+ stat_smooth(method = 'lm', aes(x=as.numeric(Length)), se = FALSE) +
+ facet_grid(~Group)
 ```
 
 
