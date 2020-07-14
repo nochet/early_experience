@@ -1,35 +1,28 @@
 ---
 title: "eeFec"
 output: html_document
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+library(car)
 library(MASS)
+library(lme4)
 library(tidyverse)
 library(cowplot)
+library(MCMCglmm)
 library(survival)
 library(ggpubr)
-library(colorblindr)
-library(data.table)
 
 set.seed(30111)
 ```
 
 ```{r}
 # Fecundity data
-eeFec <- read.table("~/early_experience/processed/Early_Experience_Data_rechecked.txt",
+eeFec <- read.table("../processed/Early_Experience_LiFec.txt",
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
-
-TotalFemales <- sum(eeFec$deadFemale)
-TotalMales <- sum(eeFec$deadMale)
-TotalCensored <- sum(eeFec$censured)
-
-#Need to make a function for Females and Males Left each date by doing Total Females minus deadfemales for each date that carries over to the subsequent date, going down until it reaches zero for each line. 
 
 fec <- eeFec[,c(4:7,11:12)]
 #colnames(fec)[colnames(fec)=="age"] <- "old"
@@ -45,16 +38,12 @@ fec <- subset(fec, fec$numEggs>0)
 # Lifespan data - females only
 
 ```{r}
-eelifeF <- read.table('~/early_experience/processed/Female_events_eelife.txt',
-                     sep = "\t", header = TRUE,
-                     stringsAsFactors = FALSE) 
-#names(eelifeF)[1]<-"event"
-#colnames(eelifeF)[colnames(eelifeF)=="id"] <- "cageID"
-setnames(eelifeF, old=c("NewAge","id"), new=c("Age", "cageID"))
+eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+names(eelife)[1]<-"event"
+eelife$cageID <- as.character(eelife$cageID)
+head(eelife)
 
-eelifeF$cageID <- as.character(eelifeF$cageID)
-head(eelifeF)
-
+ff <- subset(eelife, eelife$sex=="F")
 
 # Get medians
 
@@ -64,7 +53,7 @@ ffm <- survfit(Surv(age, status == 2) ~ adultTreat,
                    conf.int = 0.95,
                    type = "kaplan-meier",
                    error = "greenwood",
-                   data = eelifeF)
+                   data = ff)
 
 # median for each treatment
 
@@ -102,11 +91,9 @@ zz <- ggplot(fi, aes(x=adultTreat, y=log(Mean), color = adultTreat)) +
   geom_point(data = fii, size = 5, shape = 2) +
   geom_point(data = fif, size = 5, shape = 23) +
   labs(x = "Diet", y = "log(mean No. of eggs per day)") +
-  theme_half_open() +
-  scale_color_OkabeIto() 
-
+  theme_half_open()
 zz + theme(legend.title = element_blank())
-#ggpubr::show_point_shapes()
+ggpubr::show_point_shapes()
 
 # t-test
 t.test(fi, log(Mean)~adultTreat)
@@ -115,8 +102,7 @@ with(fi, t.test(log(Mean)[adultTreat == "C"],
 
 ggplot(fi, aes(x=age, y=Mean, color = adultTreat)) + 
   geom_jitter(width=0.1, height=0.5) +
-  theme_half_open() +
-  scale_color_OkabeIto()
+  theme_half_open()
 
 # max(fec$age)
 # fec[which.max(fec$age),]
@@ -142,18 +128,15 @@ fkk
 # Plot on log scale
 ggplot(fk, aes(x=age, y=Mean, color = cageID)) + 
   geom_line() +
-  theme_half_open() +
-  scale_color_OkabeIto() 
+  theme_half_open()
 
 zz <- ggplot(fk, aes(x=cageID, y=log(Mean), color = cageID)) + 
   geom_jitter(size = 2, width=0.1, height=0.5) +
   geom_point(data = fkk, size = 5, shape = 2) +
-  theme_half_open() +
-  theme(legend.title = element_blank()) +
   #geom_point(data = fif, size = 5, shape = 23) +
   labs(x = "Diet", y = "log(mean No. of eggs per day)") +
-  scale_color_OkabeIto() 
-zz 
+  theme_half_open()
+zz + theme(legend.title = element_blank())
 
 ####
 ggline(fec, x = "cageID", y = "numEggs", 
@@ -168,113 +151,6 @@ summary(res.aov)
 TukeyHSD(res.aov)
 ```
 
-
-
-
-
-# Get surviving females at each flip date
-
-```{r}
-head(eelifeF)
-unique(eelifeF$status)
-
-# Grouping variable
-# Get number of females at each flip day
-eelifeF$Age <- as.factor(eelifeF$Age)
-#eelifeF$ageCage <- as.factor(eelifeF$ageCage)
-
-eelifeF <- eelifeF %>% 
-  unite(ageCage, cageID, Age, sep = "_", remove=FALSE) %>%
-  select(ageCage, Age, status)
-
-eelifeF$Age <- as.numeric(eelifeF$Age)
-
-# Females dead or censored per date
-lifeF <- eelifeF %>%
-  group_by(ageCage) %>%
-  summarise(deadF_flip = sum(status))
-
-
-
-
-# Females alive per cage per date
-lifeF$cageID <- gsub(pattern = "\\_d",replacement = "",lifeF$ageCage)
-eelifeF$Treatment <- gsub("\\d", "", eelifeF$Treatment)
-
-lifeF <- eelifeF %>%
-  group_by(ageCage)
-```
-
-# Eggs per female at each flip
-
-```{r}
-
-ff <- eeFec[,c(4:8,11:12)]
-ff <- ff %>% 
-  mutate(Treatment = sub('EE_', '', id))
-
-ff$Treatment <- gsub("\\d", "", ff$Treatment)
-
-ff <- subset(ff, ff$numEggs>0)
-
-# all females - ignore censored
-allF <- sum(ff$deadFemale)
-
-# Get number of females at each flip day
-ff$age <- as.factor(ff$age)
-ff <- ff %>% 
-  unite(grp, Treatment, age, sep = "_", remove=FALSE) %>%
-  select(grp, age, deadFemale, numEggs)
-
-ff$age <- as.numeric(ff$age)
-
-flipF <- ff %>%
-  group_by(grp) %>%
-  summarise_all(funs(sum))
-
-# No. females at each age
-flipF$females <- allF-flipF$deadFemale
-
-# Get eggs per female per date
-flipF$flipEggsF <- flipF$numEggs / flipF$females
-
-```
-
-#Getting Females per Cage by Group
-```{r}
-
-
-
-
-
-
-flipF %>%
-    group_by(grp) %>%
-    arrange(age) %>%
-    mutate(females = females - lag(females, default = first(1829)))
-```
-
-
-#Fecundity Reaction Norms
-```{r}
-ggplot(fec, aes(x = age, y = log(numEggs), group = cageID, color = cageID)) +
-  geom_point() +
-  geom_line()
-
-ggplot(fec, aes(x = age, y = log(numEggs), group = cageID, color = cageID)) +
-  geom_point() +
-  geom_smooth()
-
-ggplot(fec, aes(x = age/7, y = log(numEggs), group = cageID, color = cageID)) +
-  geom_point() +
-  geom_line()
-
-fec$ageWeek <- fec$age/7
-
-ggplot(fec, aes(x = ageWeek, y = log(numEggs), group = cageID, color = cageID)) +
-  geom_point() +
-  geom_line()
-```
 
 
 

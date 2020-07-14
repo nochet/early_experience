@@ -13,7 +13,8 @@ library(cowplot)
 library(survival)
 library(survminer)
 library(flexsurv)
-library(rms)
+library(rms) #HR
+library(msmtools)
 
 source("color_map.R")
 
@@ -24,15 +25,18 @@ set.seed(428)
 # Data
 
 ```{r}
-eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+#eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+eelife <- read.table("../processed/Female_events_eelife.txt", header=TRUE,sep = "\t")
 names(eelife)[1]<-"event"
 head(eelife)
 
 eelife <- eelife[complete.cases(eelife),]
 ```
 
+# Weibull models
+
 ```{r}
-#Weibull
+
 pm1 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult, 
                    data = eelife, dist = "weibull")
 pm1
@@ -59,12 +63,13 @@ pm4
 
 ```
 
-# Plot log of hazard ratio
+# CoxPH models hazard ratio (HR) plots
 
 ```{r}
 # Forestplot
 
 #########################
+#example
 library(survival)
 library(rms)
 ddist <- datadist(ovarian)
@@ -83,28 +88,33 @@ plot(summary(fit1, age=c(50,60)), q=c(.6, .8, .95), log=T,
 # fit.coxph <- coxph(surv_object ~ rx + resid.ds + age_group + ecog.ps, 
 #                    data = ovarian)
 
-eelife$larv_adult <- factor(eelife$larv_adult)
+#eelife$larv_adult <- factor(eelife$larv_adult)
 
-trt <- coxph(Surv(NewAge, status==2) ~ larv_adult, 
+lad <- coxph(Surv(NewAge, status==2) ~ larv_adult, 
                    data = eelife)
-ggforest(trt, data = eelife)
+ggforest(lad, data = eelife)
 
-tsex <- coxph(Surv(NewAge, status==2) ~ larv_adult + Sex, 
+
+larv <- coxph(Surv(NewAge, status==2) ~ larvalTreat, 
                    data = eelife)
-ggforest(tsex, data = eelife)
+ggforest(larv, data = eelife)
 
 
-tadult <- coxph(Surv(NewAge, status==2) ~ larv_adult + adultTreat, 
+ad <- coxph(Surv(NewAge, status==2) ~ adultTreat, 
                    data = eelife)
-ggforest(tadult, data = eelife)
+ggforest(ad, data = eelife)
 
 
-fit1 = cph(Surv(NewAge, status==2) ~ larv_adult, eelife, x=TRUE, y=TRUE)
+la <- coxph(Surv(NewAge, status==2) ~ larvalTreat + adultTreat, 
+                   data = eelife)
+ggforest(la, data = eelife)
 
-# The plot.summary.rms
-plot(summary(fit1, age=c(50,60)), q=c(.6, .8, .95), log=T, 
-                 col=c("orange", "gold", "blue"))
 
 ```
 
+# Reaction norms for fig 2 in Monaghan et al, 2008
+
+```{r}
+
+```
 

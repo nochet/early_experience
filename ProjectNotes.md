@@ -36,6 +36,11 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+# 2020-07-13 (EN)
+Fit Cox Proportional Hazard models to lifespan data
+Visualize HRs with Forest plots
+Next, do reaction norms for Fig. 2 in Monaghan et al, (2008)
+
 # 2020-07-04 (EN)
 Identified duplicated image: different flip dates and egg counts
 > kk[,c(2:5,11:12)]
