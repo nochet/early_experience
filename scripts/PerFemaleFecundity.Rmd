@@ -256,6 +256,14 @@ pairwise.t.test(TotalF$EggsPerFemale, TotalF$lvadComb, p.adjust.method = "none")
 ```
 
 
+```{r}
+ggplot(TotalF, aes(x = age, y = EggsPerFemale, color = lvadComb)) +
+  xlim(0, 80) +
+  geom_point(na.rm = TRUE) +
+  geom_smooth(method = lm, se = F) +
+  labs(x = "Age(Days)", y = "Eggs Per Female", color = "Diet Combination")
+```
+
 
 
 
