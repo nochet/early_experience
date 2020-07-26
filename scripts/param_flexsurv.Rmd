@@ -115,6 +115,61 @@ ggforest(la, data = eelife)
 # Reaction norms for fig 2 in Monaghan et al, 2008
 
 ```{r}
+react <- eelife[eelife$status !=3,]
+react$NewAge <- as.numeric(react$NewAge)
+
+# Calculate medians
+
+# Get the four main treatments
+rich.rich <- subset(react,c(larvalTreat=="C" & adultTreat=="C"))
+rich.poor <- subset(react, c(larvalTreat=="C" & adultTreat=="DR"))
+poor.rich <- subset(react, c(larvalTreat=="DR" & adultTreat=="C"))
+poor.poor <- subset(react, c(larvalTreat=="DR" & adultTreat=="DR"))
+
+
+rr_med <- rich.rich %>%
+  group_by(larv_adult) %>%
+  summarise(med_age = median(NewAge), n = n())
+
+rp_med <- rich.poor %>%
+  group_by(larv_adult) %>%
+  summarise(med_age = median(NewAge), n = n())
+
+pr_med <- poor.rich %>%
+  group_by(larv_adult) %>%
+  summarise(med_age = median(NewAge), n = n())
+
+pp_med <- poor.poor %>%
+  group_by(larv_adult) %>%
+  summarise(med_age = median(NewAge), n = n())
+
+# Join data frames
+med.dat <- rbind(rr_med,rp_med,pr_med,pp_med)
+
 
 ```
 
+# Reaction norms for sire families
+
+```{r}
+
+
+#reorder x-axis (ggplot default is alphabetical)
+mlife1$diet <- as.character(mlife1$diet) 
+mlife1$diet <- factor(mlife1$diet, levels = unique(mlife1$diet)) #back to ordered factor
+
+# plot reaction norms for sire families
+ggplot(mlife1, aes(x = diet, y = age, color = sireid)) +
+  geom_point(size = 3) +
+  geom_line(aes(group = sireid), alpha = 0.5, size = 1) +
+  xlab("Diet") +
+  ylab("Median lifespan (days)") +
+  theme(legend.position = "none") +
+  coord_cartesian(xlim = c(1.5, 2.5)) +
+  my_theme
+Lifespan_GxE <- last_plot()
+
+ggsave(file = "../../Figures/h2life_reaction_norms.pdf",
+       width = 4, height = 4)
+save(Lifespan_GxE, file = "../../Figures/Lifespan_GxE.Rda")
+```
