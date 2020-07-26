@@ -36,6 +36,9 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+# 2020-07-22 (AJ)
+Made new plot to show per female fecundity vs age. Also cleaned up some of the older scripts that had gotten clogged up.
+
 # 2020-07-13 (EN)
 Fit Cox Proportional Hazard models to lifespan data
 Visualize HRs with Forest plots
