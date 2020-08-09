@@ -293,5 +293,54 @@ subset(fcd,fcd$camera_id %in% recs$camera_id)
 
 ```
 
+# Reaction norms
+
+```{r}
+norms <- fcd[,c(4:5,8,15)]
+
+# Calculate medians
+
+# Get the four main treatments
+richEarly <- subset(norms,larvalTreat=="C")
+poorEarly <- subset(norms,larvalTreat=="DR")
+
+# rich.rich <- subset(react,c(larvalTreat=="C" & adultTreat=="C"))
+
+remed <- richEarly %>%
+  group_by(adultTreat) %>%
+  summarise(med_eggs = mean(eggpFemDay), n = n())
+colnames(remed) <- c("adult", "mean_eggs", "N")
+remed$grp <- "RichEarly"
+
+pemed <- poorEarly %>%
+  group_by(adultTreat) %>%
+  summarise(med_eggs = mean(eggpFemDay), n = n())
+colnames(pemed) <- c("adult", "mean_eggs", "N")
+pemed$grp <- "PoorEarly"
+
+med.all <- rbind(remed,pemed)
+
+# Join data frames
+med.all <- select(med.all, grp,adult,mean_eggs)
+
+all.piv <- pivot_wider(med.all,
+    names_from = adult,
+    values_from = mean_eggs,
+    values_fill = 0
+    )
+
+all.piv <- select(all.piv, grp,DR,C)
+
+par(mar=c(6,6,1,2.5))
+matplot(t(all.piv[,2:3]),
+        type='b',lty=1, lwd=2,pch=16,
+        col = 1:6,
+        ylab="Mean Eggs \n (3 hrs)",xlab="Adult Diet",
+        axes=FALSE,cex.lab=1)
+#col='black'
+box()
+axis(2,cex.axis=1.0)
+axis(1, at=c(1,2), labels=c("DR","C"),cex.axis=1.0)
+```
 
 
