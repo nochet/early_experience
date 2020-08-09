@@ -121,39 +121,94 @@ react$NewAge <- as.numeric(react$NewAge)
 # Calculate medians
 
 # Get the four main treatments
-rich.rich <- subset(react,c(larvalTreat=="C" & adultTreat=="C"))
-rich.poor <- subset(react, c(larvalTreat=="C" & adultTreat=="DR"))
-poor.rich <- subset(react, c(larvalTreat=="DR" & adultTreat=="C"))
-poor.poor <- subset(react, c(larvalTreat=="DR" & adultTreat=="DR"))
+rich.early <- subset(react,larvalTreat=="C")
+poor.early <- subset(react,larvalTreat=="DR")
+
+# rich.rich <- subset(react,c(larvalTreat=="C" & adultTreat=="C"))
+# rich.poor <- subset(react, c(larvalTreat=="C" & adultTreat=="DR"))
+# poor.rich <- subset(react, c(larvalTreat=="DR" & adultTreat=="C"))
+# poor.poor <- subset(react, c(larvalTreat=="DR" & adultTreat=="DR"))
 
 
-rr_med <- rich.rich %>%
-  group_by(larv_adult) %>%
+re_med <- rich.early %>%
+  group_by(adultTreat) %>%
   summarise(med_age = median(NewAge), n = n())
+colnames(re_med) <- c("adult", "age", "N")
+# re_med$larvae <- "C"
+re_med$grp <- "RichEarly"
+# re_med$larv <- "C"
+#re_med$adult <- c("C_C","C_DR")
 
-rp_med <- rich.poor %>%
-  group_by(larv_adult) %>%
+pe_med <- poor.early %>%
+  group_by(adultTreat) %>%
   summarise(med_age = median(NewAge), n = n())
+colnames(pe_med) <- c("adult", "age", "N")
+# pe_med$larvae <- "DR"
+# #pe_med$larvae <- c("DR_C","DR_DR")
+# pe_med$adult[1] <- "DR_C3"
+# pe_med$adult[2] <- "DR_C4"
+# pe_med$adult[3] <- "DR_DR3"
+# pe_med$adult[4] <- "DR_DR4"
+# pe_med$larv <- "DR"
+pe_med$grp <- "PoorEarly"
+#pe_med$adult <- c("DR_C","DR_DR")
 
-pr_med <- poor.rich %>%
-  group_by(larv_adult) %>%
-  summarise(med_age = median(NewAge), n = n())
-
-pp_med <- poor.poor %>%
-  group_by(larv_adult) %>%
-  summarise(med_age = median(NewAge), n = n())
+med.dat <- rbind(re_med,pe_med)
 
 # Join data frames
-med.dat <- rbind(rr_med,rp_med,pr_med,pp_med)
+med.dat <- select(med.dat, grp,adult,age)
+
+med.piv <- pivot_wider(med.dat,
+    names_from = adult,
+    values_from = age,
+    values_fill = 0
+    )
 
 
+#med.dat$adultTreat <- as.character(med.dat$adultTreat) 
+med.dat$larvae <- factor(med.dat$larvae, levels = unique(med.dat$larvae)) 
+
+# plot reaction norms for sire families
+ggplot(med.dat, aes(x = adult, y = age, color = larvae)) +
+  geom_point(size = 3) +
+  geom_line(aes(group = grp), alpha = 0.5, size = 1) +
+  xlab("Diet") +
+  ylab("Median lifespan (days)") +
+  theme(legend.position = "none") +
+  coord_cartesian(xlim = c(1.5, 2.5)) 
+#+
+#  my_theme
+Lifespan_GxE <- last_plot()
 ```
 
 # Reaction norms for sire families
 
 ```{r}
 
+# Set up data so treatments are in own columns (adultTreat)
+M <- eelife %>%
+  select(c(4,7:9)) %>%
+  filter(status==2) %>%
+  select(-status)
 
+# M <- pivot_wider(M,
+#     names_from = larvalTreat, 
+#     values_from = NewAge
+#     ) 
+
+
+par(mar=c(6,6,1,2.5))
+matplot(t(med.piv[,2:3]),
+        type='b',lty=1, lwd=2,pch=16,
+        col = 1:6,
+        ylab="Median Lifespan \n (days)",xlab="Adult Diet",
+        axes=FALSE,cex.lab=1)
+#col='black'
+box()
+axis(2,cex.axis=1.0)
+axis(1, at=c(1,2), labels=c("Control","DR"),cex.axis=1.0)
+
+##############
 #reorder x-axis (ggplot default is alphabetical)
 mlife1$diet <- as.character(mlife1$diet) 
 mlife1$diet <- factor(mlife1$diet, levels = unique(mlife1$diet)) #back to ordered factor
@@ -173,3 +228,31 @@ ggsave(file = "../../Figures/h2life_reaction_norms.pdf",
        width = 4, height = 4)
 save(Lifespan_GxE, file = "../../Figures/Lifespan_GxE.Rda")
 ```
+
+
+```{r}
+#REACTION NORM FOR EACH RIL
+#This analysis requires data formatted differently:treatment and control data
+#should be in different consecutive columns. The ID column may be included
+#just for understanding data in future, but is not necessary
+
+#read in data
+#lhgx_rn<-read.table('lhgx_reactnorm.txt',sep="\t",header=TRUE,stringsAsFactors=FALSE)
+#head(lhgx_rn)
+#save(lhgx_rn, file="lhgx_rn.rda") #processed original data
+load("lhgx_rn.rda")
+
+#pdf("Dropbox/KingLab/Zach/DataAnalysis/LowHighBodyMass.pdf",width=6, height=6)
+#matplot() - plots columns of one matrix against columns of another
+
+#m_s <- data.frame(med_surv$medsurv, med_surv$rilt)
+par(mar=c(6,6,1,2.5))
+matplot(t(lhgx_rn[,2:3]),type='b',lty=1, lwd=2,pch=16, 
+        ylab="Lifespan (days)",xlab="Dietary Conditions",
+        axes=FALSE,cex.lab=2)#col='black'
+box()
+axis(2,cex.axis=1.5)
+axis(1, at=c(1,2), labels=c("Control","DR"),cex.axis=1.5)
+#dev.off
+```
+
