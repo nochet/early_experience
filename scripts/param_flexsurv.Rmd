@@ -196,6 +196,7 @@ M <- eelife %>%
 #     values_from = NewAge
 #     ) 
 
+med.piv <- select(med.piv, grp,DR,C)
 
 par(mar=c(6,6,1,2.5))
 matplot(t(med.piv[,2:3]),
@@ -206,7 +207,7 @@ matplot(t(med.piv[,2:3]),
 #col='black'
 box()
 axis(2,cex.axis=1.0)
-axis(1, at=c(1,2), labels=c("Control","DR"),cex.axis=1.0)
+axis(1, at=c(1,2), labels=c("DR","C"),cex.axis=1.0)
 
 ##############
 #reorder x-axis (ggplot default is alphabetical)
