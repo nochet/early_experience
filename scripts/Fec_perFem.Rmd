@@ -27,13 +27,13 @@ source("color_map_blindr.R")
 
 fcd <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
 
-fcd <- na.omit(fcd) 
+fcd <- na.omit(fcd)
 
 # Check duplicated camera_id
 dup_ids <- which(duplicated(fcd$camera_id)) # 2 images dupl.
 k <- fcd[which(duplicated(fcd$camera_id)), ]
-# Seemsimages 9834 (33 eggs) & 9835 15 eggs) are duplicated 
 
+# Seemsimages 9834 (33 eggs) & 9835 15 eggs) are duplicated 
 kk <- rbind(subset(fcd, fcd$camera_id=="9834") , 
             subset(fcd, fcd$camera_id=="9835"))
 
@@ -43,9 +43,7 @@ kk <- rbind(subset(fcd, fcd$camera_id=="9834") ,
 
 # For now, trash all 4
 fcd <- fcd[which(!duplicated(fcd$camera_id)), ]
-
 fcd <- fcd[,c(2:3,5:8,10:12)]
-
 
 # Recalculate age, then delete dates
 fcd$startDate <- as.Date(fcd$startDate , "%m/%d/%y")
@@ -61,6 +59,7 @@ fcd$age <- as.numeric(fcd$age)
 # Recounts:  9318-1043, 9389-645, and 9397-709
 
 cam_id <- c("9318","9389","9397")
+
 #new_count <- c(1043,645,709)
 
 which(fcd$camera_id %in% cam_id)
@@ -74,7 +73,6 @@ sum(fcd$deadFemale)
 
 # Count females - dead and censored
 sum(fcd$deadFemale)+sum(fcd$censored)
-
 cf_eggs <- fcd %>%
   group_by(id) %>%
   summarise(sum(numEggs)) %>%
@@ -87,7 +85,6 @@ scheck <- fcd %>%
 
 # Number of dead females in a cage on each age
 fcd$ndead <- fcd$deadFemale + fcd$censored
-
 cf_dead <- fcd %>%
   group_by(id) %>%
   summarise(sum(ndead)) %>%
@@ -145,7 +142,7 @@ hist(fcd[which(fcd$alive<0),'alive'])
 hist(fcd$alive)
 
 # Per female per date fecundity
-fcd <- fcd[,c(3:8,11:12,14:15)]
+#fcd <- fcd[,c(3:5,8:13)]
 fcd$eggpDay <- fcd$numEggs*8
 fcd$eggpFemDay <- fcd$eggpDay/fcd$alive
 
@@ -169,33 +166,21 @@ dat <- fcd %>%
   unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
   unite(date_treat,age,treat,sep="_",remove=FALSE)
 #dat <- dat[order(dat$age),]
-names(dat)[5] <- "Treatment"
-
-##############
-#test grouping by multiple columns
-test <- rbind(
-  subset(dat,dat$age==1 & dat$treat=="DR_DR"),
-  subset(dat,dat$age==8 & dat$treat=="DR_DR"),
-  subset(dat,dat$age==1 & dat$treat=="C_DR"),
-  subset(dat,dat$age==8 & dat$treat=="C_DR")
-)
-test <- test[,c(3,5,10,12)]
-
-te <- test %>%
-  group_by(treat, age) %>%
-  summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
- #############
-
-
+names(dat)[3] <- "Treatment"
 
 collapse.dat <- dat %>%
-  group_by(Treatment, age) %>%
-  summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
+  group_by(treat, age) %>%
+  summarise(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
+
+# Cage-wise
+# collapse.dat <- dat %>%
+#   group_by(Treatment, age) %>%
+#   summarise(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
 
 collapse.dat <- collapse.dat[complete.cases(collapse.dat[,3]),]
 
 # Plot overall eggs per female per 3-hr sampling period
-pp <- ggplot(collapse.dat,aes(x=Treatment,y=mean_eggs, col=Treatment)) + 
+pp <- ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) + 
   stat_boxplot(geom ='errorbar',width = 0.3) + 
   geom_boxplot() +
   geom_jitter() +
@@ -206,10 +191,10 @@ pp <- ggplot(collapse.dat,aes(x=Treatment,y=mean_eggs, col=Treatment)) +
   my_theme
 pp + theme(legend.position = "none")
 
-ggsave(pp, filename="~/MyGithub/early_experience/Plots/lifetime_eggs_perF_per3HR.pdf", height=5, width=10)
+ggsave(pp, filename="~/MyGithub/early_experience/Plots/lifetime_eggs_perF_per3HR.pdf", height=4, width=4)
 
 # Plot time series of eggs per female per 3-hr sampling period
-qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=Treatment)) +
+qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
   geom_line() +
   geom_point() +
   scale_colour_OkabeIto() +
@@ -220,18 +205,18 @@ qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=Treatment)) +
   my_theme
 qq + theme(legend.position=c(0.7,1))
 
-ggsave(qq, filename="~/MyGithub/early_experience/Plots/Eggs_perF_per3HR_timeseries.pdf", height=5, width=10)
+ggsave(qq, filename="~/MyGithub/early_experience/Plots/Eggs_perF_per3HR_timeseries.pdf", height=4, width=4)
 
 
 # Plot time series of eggs per female per 3-hr sampling period
 dat <- dat[complete.cases(dat[,c(3,5)]),]
-tt <- ggplot(dat,aes(x=as.numeric(age),y=eggpFemDay, col=Treatment)) +
+tt <- ggplot(dat,aes(x=as.numeric(age),y=eggpFemDay, col=treat)) +
   geom_line() +
   geom_point() +
   scale_colour_OkabeIto() +
   #scale_fill_OkabeIto() +
   xlab("Age (days)") + 
-  ylab("Mean eggs/♀/date") +
+  ylab("Eggs/♀/date") +
   theme_half_open() +
   my_theme
 tt + theme(legend.position=c(0.4,1))
@@ -296,7 +281,7 @@ subset(fcd,fcd$camera_id %in% recs$camera_id)
 # Reaction norms
 
 ```{r}
-norms <- fcd[,c(4:5,8,15)]
+norms <- fcd[,c(4:5,15)]
 
 # Calculate medians
 
@@ -331,16 +316,18 @@ all.piv <- pivot_wider(med.all,
 
 all.piv <- select(all.piv, grp,DR,C)
 
+pdf("~/MyGithub/early_experience/plots/fec_norms.pdf",width=4, height=4)
+
 par(mar=c(6,6,1,2.5))
 matplot(t(all.piv[,2:3]),
         type='b',lty=1, lwd=2,pch=16,
         col = 1:6,
         ylab="Mean Eggs \n (3 hrs)",xlab="Adult Diet",
         axes=FALSE,cex.lab=1)
-#col='black'
 box()
 axis(2,cex.axis=1.0)
 axis(1, at=c(1,2), labels=c("DR","C"),cex.axis=1.0)
-```
 
+dev.off()
+```
 
