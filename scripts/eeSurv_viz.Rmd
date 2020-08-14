@@ -167,6 +167,8 @@ ggsave(last_plot(), file = "../plots/density_male_female.pdf",
 
 ```{r}
 # Model
+eelife <- read.csv("../processed/eeAlldat.csv")
+
 mf <- survfit(Surv(age, status == 2) ~ adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
@@ -363,23 +365,183 @@ epm.plot
 
 survdiff(Surv(age, status ==2) ~ adultTreat,
                      data = earlyPoorM, rho = 0) 
-
 ```
 
-# CoxPH models hazard ratio (HR) plots
+# CoxPH models 
+
+Assupmtion: Proportional hazards (effects of all covariates do not change over time)
+Non-PH therefore under- or overestimated risk
+
+PH assumption (i.e. residuals independent of time) violated
+Early:Adult diet interaction sig, albeit skewed residuals
+Intearction of non-PH variables with age non-convergent (diet interacts heavily with age - nothing else is significant)
+Models on age-classes not significant for either diet, but a large effect of sex.
 
 ```{r}
-# Forestplot
-
-# Example
-# fit.coxph <- coxph(surv_object ~ rx + resid.ds + age_group + ecog.ps, 
-#                    data = ovarian)
 
 # All together
-cph1 <- coxph(Surv(age, status==2) ~ adultTreat +sex, 
+cph1 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + sex, 
                    data = eelife)
-ggforest(cph1, data = eelife)
+cph1
+#ggforest(cph1, data = eelife)
+test.cph1 <- cox.zph(cph1)
+test.cph1
+ggcoxzph(test.cph1)
 
+
+cph2 <- coxph(Surv(age, status==2) ~ larvalTreat+sex + adultTreat + 
+              larvalTreat:adultTreat, data = eelife)
+cph2
+#ggforest(cph2, data = eelife)
+test.cph2 <- cox.zph(cph2)
+test.cph2
+ggcoxzph(test.cph2)
+
+
+# Hazards are unproportional in both models 
+# see Fox and Weisberg (2018)
+
+# 1. Try interactions with age for non-PH variables (larvalTreat, sex)
+cph3 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + 
+                larvalTreat:adultTreat + 
+                larvalTreat:age + sex + sex:age, data = eelife)
+# Does not converge
+cph3
+#ggforest(cph1, data = eelife)
+test.cph3 <- cox.zph(cph3)
+test.cph3
+ggcoxzph(test.cph3)
+
+
+# 2. Stratify the time variable
+
+hist(eelife$age)
+
+eelife$age.intv <- car::recode(eelife$age, 
+                              "lo:19=1; 
+                              20:39=2; 
+                              40:59=3; 
+                              60:79=4; 
+                              80:hi=5") 
+xtabs(~ age.intv, data=eelife)
+
+cph4 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + sex + 
+                    strata(age.intv), data=eelife)
+cph4
+
+test.cph4 <- cox.zph(cph4)
+test.cph4
+ggcoxzph(test.cph4)
+# Sex and global p-vals are still non-proportional
+
+
+# Add interaction back
+cph5 <- coxph(Surv(age, status==2) ~ adultTreat + larvalTreat + sex + 
+                    larvalTreat:adultTreat,strata(age.intv),
+              data=eelife)
+cph5
+# ‘floor’ not meaningful for factors
+```
+
+## Sexes separately
+
+PH assumption violated
+Intearction of non-PH variables with age non-convergent (adultTrt sig)
+Models on age-classes not significant for either diet
+
+```{r}
+female <- subset(eelife, eelife$sex=="F")
+
+f1 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat, 
+                   data = female)
+f1
+test.f1 <- cox.zph(f1)
+test.f1 # non-PH
+
+
+f2 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat +
+              larvalTreat:adultTreat, data = female)
+f2
+test.f2 <- cox.zph(f2)
+test.f2 # non-PH
+
+hist(female$age)
+
+female$age.f <- car::recode(female$age, 
+                              "lo:19=1; 
+                              20:29=2; 
+                              30:49=3; 
+                              50:hi=4") 
+
+xtabs(~ age.f, data=female)
+
+
+f3 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + 
+                    strata(age.f), data=female)
+f3
+
+test.f3 <- cox.zph(f3)
+test.f3
+ggcoxzph(test.f3)
+
+
+
+male <- subset(eelife, eelife$sex=="M")
+
+m1 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat, 
+                   data = male)
+m1
+test.m1 <- cox.zph(m1)
+test.m1 # non-PH
+
+
+m2 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat +
+              larvalTreat:adultTreat, data = male)
+m2
+test.m2 <- cox.zph(m2)
+test.m2 # non-PH
+
+m2.1 <- coxph(Surv(age, status==2) ~ larvalTreat + larvalTreat:age + 
+                adultTreat + adultTreat:age + 
+                larvalTreat:adultTreat, data = male)
+# all run out of iterations (non-convergent)
+
+hist(male$age)
+
+male$age.m <- car::recode(male$age, 
+                              "lo:29=1; 
+                              30:39=2; 
+                              40:59=3;
+                              60:hi=4") 
+
+xtabs(~ age.m, data=male)
+
+
+m3 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + 
+                    strata(age.m), data=male)
+m3
+
+test.m3 <- cox.zph(m3)
+test.m3
+ggcoxzph(test.m3)
+```
+
+# Diagnostics
+
+```{r}
+# Influential cases
+
+cph1beta <- residuals(cph4, type="dfbeta") 
+
+par(mfrow=c(2, 2))
+
+for (j in 1:3) {
+  plot(cph1beta[, j], 
+       ylab=names(coef(cph4))[j]) 
+  abline(h=0, lty=2)
+}
+
+# Non-linearity
 
 
 # Early poor
@@ -390,20 +552,17 @@ cph2 <- coxph(Surv(age, status==2) ~ adultTreat + sex,
 ggforest(cph2, data = earlyPoor)
 
 
-
 # Early rich
 earlyRich <- subset(eelife, eelife$larvalTreat=="C")
 
-cph3 <- coxph(Surv(age, status==2) ~ adultTreat + sex, 
+cph3 <- coxph(Surv(age, status==2) ~ adultTreat +sex + sex*age, 
                    data = earlyRich)
-ggforest(cph3, data = earlyRich)
+ggforest(cph3, data = earlyRich, main=NULL)
+test.cph3 <- cox.zph(cph3)
+test.cph3
+ggcoxzph(test.cph3)
 
 
-
-cph4 <- coxph(Surv(age, status==2) ~ adultTreat+larvalTreat+sex+
-                larvalTreat*adultTreat, 
-                   data = eelife)
-ggforest(cph4, data = eelife)
 
 ```
 

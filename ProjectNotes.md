@@ -36,6 +36,38 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+
+
+
+
+# 2020-08-13 (EN)
+library(coxphw): Weighted Cox Regression Using the R Package coxphw. Dunkler et al, 2018.
+
+library(Greg). TimeSplitter(), Gordon (2020). https://cran.r-project.org/web/packages/Greg/vignettes/timeSplitter.html
+
+and,
+
+coxph diagnostics. http://www.sthda.com/english/wiki/cox-model-assumptions
+
+Also,
+vignette("timedep", package = "survival")
+
+# 2020-08-12 (EN)
+Cox models
+Models fail the assumption of proportional hazards: that residuals should be time-independent.
+
+Explore approaches to remedy the problem:
+John Fox & Sanford Weisberg last revision: 2018-09-28: Cox Proportional-Hazards Regression for Survival Data in R An Appendix to An R Companion to Applied Regression, third edition
+
+ 1) Include interaction of non-PH with age. Fails to converge
+ 2) Stratify the time variable - effects disappear
+
+# 2020-08-11 (EN)
+Survival models revisited: subset data by larval diet, then model survival by adult diet for males and females separately. Script: `eeSurv_viz.Rmd`
+
+# 2020-08-10 (EN)
+Reaction norms for lifespan and fecundity (baseR matplot()). Script: `eeSurv_viz.Rmd` and `Fec_perFem.Rmd`
+
 # 2020-07-22 (AJ)
 Made new plot to show per female fecundity vs age. Also cleaned up some of the older scripts that had gotten clogged up.
 
