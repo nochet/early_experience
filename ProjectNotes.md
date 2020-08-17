@@ -38,7 +38,8 @@ STEP 4: A Bayesian approach
 
 
 
-
+# 2020-08-14 (EN)
+Trying out timeSplit() in Greg package to deal with unpromportional hazards.
 
 # 2020-08-13 (EN)
 library(coxphw): Weighted Cox Regression Using the R Package coxphw. Dunkler et al, 2018.
