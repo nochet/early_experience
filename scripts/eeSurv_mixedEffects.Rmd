@@ -42,6 +42,7 @@ eelife <- read.csv("../processed/eeAlldat.csv")
 # Basic model
 
 age ~ larv + adult +sex + cluster(larv) : LarvalTreatDR becomes very sig
+
 ```{r}
 
 M <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + sex, 
@@ -87,22 +88,44 @@ M7
 ```{r}
 .rs.restartR()
 
+suppressPackageStartupMessages()
 library(rstanarm)
 library(bayesplot)
 library(dplyr)
 library(ggplot2)
 library(broom)
 
+set.seed(245387)
+iter = 2000
+```
+
+```{r}
+#devtools::dev_mode(on=T)
+library(rstanarm)
+
+source("stan_surv.R")
 eelife <- read.csv("../processed/eeAlldat.csv")
 
 eelife <- eelife %>% 
   select(-X)
 
-stg1 <- stan_lmer(age ~ larvalTreat + adultTreat + (1 + larvalTreat | cageID), data = eelife)
+mod1 <- stan_surv(formula = Surv(age,status==2) ~ larvalTreat + adultTreat + 
+                    sex,
+                    status==2, 
+                    data = eelife, 
+                    chains = 4, 
+                    cores = 2, 
+                    seed = 234961, 
+                    iter = 2000)
+
+
+
 
 summary(stg1)
 prior_summary(stg1)
 pp_check(stg1, nreps=100)
+
+#devtools::devmode(on=F)
 ```
 
 
