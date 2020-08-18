@@ -19,7 +19,7 @@ editor_options:
 
 ```{r}
 library(survival)
-library(coxme)
+#library(coxme)
 library(brms)
 library(tidyverse) 
 library(bayesplot)
@@ -83,52 +83,6 @@ M7
 # Bayesian survival models
 
 
-# rstanarm
-
-```{r}
-.rs.restartR()
-
-suppressPackageStartupMessages()
-library(rstanarm)
-library(bayesplot)
-library(dplyr)
-library(ggplot2)
-library(broom)
-
-set.seed(245387)
-iter = 2000
-```
-
-```{r}
-#devtools::dev_mode(on=T)
-library(rstanarm)
-
-source("stan_surv.R")
-eelife <- read.csv("../processed/eeAlldat.csv")
-
-eelife <- eelife %>% 
-  select(-X)
-
-mod1 <- stan_surv(formula = Surv(age,status==2) ~ larvalTreat + adultTreat + 
-                    sex,
-                    status==2, 
-                    data = eelife, 
-                    chains = 4, 
-                    cores = 2, 
-                    seed = 234961, 
-                    iter = 2000)
-
-
-
-
-summary(stg1)
-prior_summary(stg1)
-pp_check(stg1, nreps=100)
-
-#devtools::devmode(on=F)
-```
-
-
 # brms
 
 ```{r brm_models, cache=TRUE}
@@ -143,12 +97,11 @@ eelife$censored <- ifelse(eelife[,"status"] == 2, 1, 0)
   # mutate(censored = 0)
 
 bm2 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
-             sex + (1 | cageID),data = eelife,family = weibull(),
-           prior = c(set_prior("normal(0,5)", class = "b"),
-                     set_prior("cauchy(0,2)", class = "sd")),
-                     #set_prior("lkj(2)", class = "cor")),
-           warmup = 1000, iter = 2000, chains = 4,
-           control = list(adapt_delta = 0.95))
+             sex + (1 | cageID),data = eelife,family = lognormal())
+           
+plot(bm2, ask = FALSE)
+plot(conditional_effects(bm2), ask = FALSE)
+
 summary(bm2)
 prior_summary(bm2)
 pp_check(bm2, nreps=100)
@@ -158,28 +111,28 @@ if (FALSE) {
   # student_t(3, 4, 10) for intercept
   # student_t(3, 0, 10) for sd
   bm1 <- brm(age | cens(censored) ~ 1,
-             data = eelife_2,
+             data = eelife,
+             family = gaussian(),
+             inits = "0",
+             cores = 4)
+  bm2 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + sex,
+             data = eelife,
              family = weibull(),
              inits = "0",
              cores = 4)
-  bm2 <- brm(age | cens(censored) ~ adultTreat,
-             data = eelife_2,
+  bm3 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
+               larvalTreat*adultTreat,
+             data = eelife,
              family = weibull(),
              inits = "0",
              cores = 4)
-  bm3 <- brm(age | cens(censored) ~ larvalTreat,
-             data = eelife_2,
+  bm4 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + (1 | cageID),
+             data = eelife,
              family = weibull(),
              inits = "0",
              cores = 4)
-  bm4 <- brm(age | cens(censored) ~ lvadComb,
-             data = eelife_2,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  
-  #stop here
-  bm3 <- brm(age | cens(censored) ~ diet + (1 | sireid),
+
+  bm5 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + (1 | larvalTreat:adultTreat),
              data = eelife_2,
              family = weibull(),
              inits = "0",

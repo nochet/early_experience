@@ -37,6 +37,15 @@ STEP 4: A Bayesian approach
 ## Project Notes 
 
 
+# 2020-08-17 (EN)
+Do Bayesian models in brms - spooky???
+
+Do Bayesian multilevel models in rstanarm
+
+Clone the development version of rstanarm:
+git clone --single-branch --branch feature/frailty-models https://github.com/stan-dev/rstanarm.git
+
+https://discourse.mc-stan.org/t/huge-r-hat-and-low-effective-size-in-piecewise-exponential-model-when-using-more-than-one-predictor-and-interval/10968/8
 
 # 2020-08-14 (EN)
 Trying out timeSplit() in Greg package to deal with unpromportional hazards.
