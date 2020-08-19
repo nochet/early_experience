@@ -63,58 +63,86 @@ pm4
 
 ```
 
-# CoxPH models hazard ratio (HR) plots
-
-```{r}
-# Forestplot
-
-#########################
-#example
-library(survival)
-library(rms)
-ddist <- datadist(ovarian)
-options(datadist='ddist')
-
-ovarian$rx <- factor(ovarian$rx)
-fit1 = cph(Surv(futime, fustat) ~ rx + rcs(age, 3), ovarian, x=TRUE, y=TRUE)
-
-# The plot.summary.rms
-plot(summary(fit1, age=c(50,60)), q=c(.6, .8, .95), log=T, 
-                 col=c("orange", "gold", "blue"))
-
-#########################
-
-# Example
-# fit.coxph <- coxph(surv_object ~ rx + resid.ds + age_group + ecog.ps, 
-#                    data = ovarian)
-
-#eelife$larv_adult <- factor(eelife$larv_adult)
-
-lad <- coxph(Surv(NewAge, status==2) ~ larv_adult, 
-                   data = eelife)
-ggforest(lad, data = eelife)
-
-
-larv <- coxph(Surv(NewAge, status==2) ~ larvalTreat, 
-                   data = eelife)
-ggforest(larv, data = eelife)
-
-
-ad <- coxph(Surv(NewAge, status==2) ~ adultTreat, 
-                   data = eelife)
-ggforest(ad, data = eelife)
-
-
-la <- coxph(Surv(NewAge, status==2) ~ larvalTreat + adultTreat, 
-                   data = eelife)
-ggforest(la, data = eelife)
-
-
-```
-
 # Reaction norms for fig 2 in Monaghan et al, 2008
+# Need medians in different columns for each treatment
 
 ```{r}
+react <- eelife[eelife$status !=3,]
+react$NewAge <- as.numeric(react$NewAge)
 
+# Calculate medians
+
+# Get the four main treatments
+rich.early <- subset(react,larvalTreat=="C")
+poor.early <- subset(react,larvalTreat=="DR")
+
+# rich.rich <- subset(react,c(larvalTreat=="C" & adultTreat=="C"))
+
+re_med <- rich.early %>%
+  group_by(adultTreat) %>%
+  summarise(med_age = median(NewAge), n = n())
+colnames(re_med) <- c("adult", "age", "N")
+re_med$grp <- "RichEarly"
+
+pe_med <- poor.early %>%
+  group_by(adultTreat) %>%
+  summarise(med_age = median(NewAge), n = n())
+colnames(pe_med) <- c("adult", "age", "N")
+pe_med$grp <- "PoorEarly"
+
+med.dat <- rbind(re_med,pe_med)
+
+# Join data frames
+med.dat <- select(med.dat, grp,adult,age)
+
+med.piv <- pivot_wider(med.dat,
+    names_from = adult,
+    values_from = age,
+    values_fill = 0
+    )
 ```
+
+# Reaction norms for sire families
+
+```{r}
+med.piv <- select(med.piv, grp,DR,C)
+
+pdf("~/MyGithub/early_experience/plots/life_norms.pdf",width=4, height=4)
+
+par(mar=c(6,6,1,2.5))
+matplot(t(med.piv[,2:3]),
+        type='b',lty=1, lwd=2,pch=16,
+        col = 1:6,
+        ylab="Median Lifespan (days)",xlab="Adult Diet",
+        axes=FALSE,cex.lab=1)
+#col='black'
+box()
+axis(2,cex.axis=1.0)
+axis(1, at=c(1,2), labels=c("DR","C"),cex.axis=1.0)
+
+dev.off()
+```
+
+
+```{r}
+#reorder x-axis (ggplot default is alphabetical)
+mlife1$diet <- as.character(mlife1$diet) 
+mlife1$diet <- factor(mlife1$diet, levels = unique(mlife1$diet)) #back to ordered factor
+
+# plot reaction norms for sire families
+ggplot(mlife1, aes(x = diet, y = age, color = sireid)) +
+  geom_point(size = 3) +
+  geom_line(aes(group = sireid), alpha = 0.5, size = 1) +
+  xlab("Diet") +
+  ylab("Median lifespan (days)") +
+  theme(legend.position = "none") +
+  coord_cartesian(xlim = c(1.5, 2.5)) +
+  my_theme
+Lifespan_GxE <- last_plot()
+
+ggsave(file = "../../Figures/h2life_reaction_norms.pdf",
+       width = 4, height = 4)
+save(Lifespan_GxE, file = "../../Figures/Lifespan_GxE.Rda")
+```
+
 

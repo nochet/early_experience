@@ -1,0 +1,171 @@
+---
+title: "Mixed effects Cox Regression"
+author: "Enoch Ng'oma"
+date: "7/4/2018"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Analysis of diet-dependent developmental plasticity in D. melanogaster lifespan
+
+# Load packages
+
+```{r}
+library(survival)
+#library(coxme)
+library(brms)
+library(tidyverse) 
+library(bayesplot)
+library(broom)
+
+#source("color_map.R")
+#source("ggplot_theme.R")
+```
+
+## Load data & combine female and male events
+
+```{r}
+
+# Data has both male and female events
+
+eelife <- read.csv("../processed/eeAlldat.csv")
+
+```
+
+# Basic model
+
+age ~ larv + adult +sex + cluster(larv) : LarvalTreatDR becomes very sig
+
+```{r}
+
+M <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + sex, 
+                   data = eelife)
+M
+
+# Model with robust SE via clustering
+M2 <- coxph(Surv(age, status==2) ~ larvalTreat + 
+              adultTreat + sex + cluster(larvalTreat), data = eelife)
+M2
+``` 
+
+# Mixed effects model
+
+```{r}
+M3 <- coxme(Surv(age, status==2) ~ larvalTreat + adultTreat + 
+              sex  + (1 | cageID), data = eelife)
+M3
+
+M4 <- coxme(Surv(age, status==2) ~ larvalTreat + sex  + 
+              (1 | adultTreat), data = eelife)
+M4
+
+M5 <- coxme(Surv(age, status==2) ~ larvalTreat + adultTreat + sex +
+              (1 | cageID), data = eelife)
+M5
+
+M6 <- coxme(Surv(age, status==2) ~ larvalTreat + adultTreat +
+              (1 | sex), data = eelife)
+M6
+
+M7 <- coxme(Surv(age, status==2) ~ larvalTreat + adultTreat +
+              (1 | sex) + (1 | cageID), data = eelife)
+M7
+```
+
+
+# Bayesian survival models
+
+
+# brms
+
+```{r brm_models, cache=TRUE}
+eelife <- read.csv("../processed/eeAlldat.csv")
+
+eelife <- eelife %>% 
+  select(-X) 
+
+eelife$censored <- ifelse(eelife[,"status"] == 2, 1, 0)
+
+  # filter(status == 2) %>% 
+  # mutate(censored = 0)
+
+bm2 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
+             sex + (1 | cageID),data = eelife,family = weibull(),
+           prior = c(set_prior("normal(0,5)", class = "b"),
+                     set_prior("cauchy(0,2)", class = "sd"),
+                     set_prior("lkj(2)", class = "cor")))
+
+#################
+
+# LKJ is shape parameter (ζ) of a symmetric beta distribution (implying correlations of zero) 
+
+#  If ζ= 1 (the default in brms) the density is uniform over correlation matrices of the respective dimension. 
+
+# If ζ >1, the identity matrix is the mode of the prior, with a sharper peak in the density for larger values of ζ. 
+
+# If 0< ζ <1 the prior is U-shaped having a trough at the identity matrix, which leads to higher probabilities for non-zero correlations.  
+
+###################
+
+plot(bm2, ask = FALSE)
+plot(conditional_effects(bm2), ask = FALSE)
+
+summary(bm2)
+prior_summary(bm2)
+pp_check(bm2, nreps=100)
+
+if (FALSE) {
+  # gamma(0.01, 0.01) shape by default
+  # student_t(3, 4, 10) for intercept
+  # student_t(3, 0, 10) for sd
+  bm1 <- brm(age | cens(censored) ~ 1,
+             data = eelife,
+             family = gaussian(),
+             inits = "0",
+             cores = 4)
+  bm2 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + sex,
+             data = eelife,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+  bm3 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
+               (1 | cageID),
+             data = eelife,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+  bm4 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
+               (1 | larvalTreat : adultTreat),
+             data = eelife,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+  bm5 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
+               (1 | larvalTreat : adultTreat) + (1 | cageID),
+             data = eelife,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+
+  loo_comp <- loo(bm1, bm2, bm3, bm4, bm5)
+  model_wts <- model_weights(bm1, bm2, bm3, bm4, bm5)
+
+  save(list = c("bm1", "bm2", "bm3", "bm4", "bm5", 
+                "loo_comp", "model_wts"),
+       file = "../Data/Processed/Surv_models_bayes.Rda")
+}
+```
+
+```{r}
+load("../../Data/Processed/Surv_models_bayes.Rda")
+
+loo_comp
+data.frame(weight = round(model_wts, 3))
+```

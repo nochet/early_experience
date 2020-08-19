@@ -1,0 +1,126 @@
+---
+title: "timeSplitter() for non-proportional hazards"
+author: "Enoch Ng'oma"
+date: "8/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(magrittr)
+library(survival)
+library(survminer)
+library(htmlTable)
+library(ggplot2)
+library(Greg)
+library(meta)
+library(metafor)
+
+```
+
+# Prep data
+
+```{r}
+
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-c(X,cageID,larv_adult))
+
+eelife <- eelife %<>% 
+  mutate(status = factor(status),
+        larvalTreat = factor(larvalTreat),
+        adultTreat = factor(adultTreat),
+        sex = factor(sex))
+
+```
+
+# Now we can fit a regular cox regression:
+
+```{r}
+
+regular_model <- coxph(Surv(age, status == 2) ~ larvalTreat + 
+                         adultTreat + sex, data = eelife,
+                       x = TRUE, y = TRUE)
+summary(regular_model)
+
+```
+
+# Now, split dataset and repeat model
+
+```{r}
+spl_eelife <-
+  eelife %>% 
+  timeSplitter(by = 0.5,
+               event_var = "status",
+               event_start_status = 3,
+               time_var = "age")
+
+interval_model <-
+  update(regular_model, 
+         Surv(Start_time, Stop_time, status == 2) ~ .,
+         data = spl_eelife)
+
+summary(interval_model)
+```
+
+# As you can see the difference between the models is negligible:
+
+```{r}
+
+cbind(Regular = coef(regular_model),
+      Interval = coef(interval_model),
+      Difference = coef(regular_model) - coef(interval_model)) %>% 
+  txtRound(digits = 5) %>% 
+  knitr::kable(align = "r")
+```
+
+# Now, look for time varying coefficients with survival::cox.zph() 
+
+```{r}
+
+cox.zph(regular_model) %>% 
+  extract2("table") %>% 
+  txtRound(digits = 2) %>% 
+  knitr::kable(align = "r")
+
+# larvalTreat and sex are time-variable
+```
+
+# Update split-time model with interaction
+
+```{r}
+time_int_model <- 
+  update(interval_model,
+         .~.+larvalTreat:Start_time,
+         .~.+sex:Start_time)
+summary(time_int_model)
+
+sx <- cox.zph(time_int_model)
+sx
+
+ggcoxzph(sx)
+
+#ggforest(time_int_model, data = spl_eelife)
+
+ggforest(
+  time_int_model,
+  data = spl_eelife,
+  main = NULL,
+  cpositions = c(0.02, 0.22, 0.4),
+  fontsize = 0.7,
+  refLabel = "reference",
+  noDigits = 2
+)
+
+
+
+# Adjusted survival curve for cox model
+ggadjustedcurves(regular_model, data = eelife,
+                    variable  = eelife[, "larvalTreat"],
+                   legend.title = "Larval Treatment", )
+```
+
+
+
+  
