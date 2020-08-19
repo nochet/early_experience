@@ -97,8 +97,23 @@ eelife$censored <- ifelse(eelife[,"status"] == 2, 1, 0)
   # mutate(censored = 0)
 
 bm2 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
-             sex + (1 | cageID),data = eelife,family = lognormal())
-           
+             sex + (1 | cageID),data = eelife,family = weibull(),
+           prior = c(set_prior("normal(0,5)", class = "b"),
+                     set_prior("cauchy(0,2)", class = "sd"),
+                     set_prior("lkj(2)", class = "cor")))
+
+#################
+
+# LKJ is shape parameter (ζ) of a symmetric beta distribution (implying correlations of zero) 
+
+#  If ζ= 1 (the default in brms) the density is uniform over correlation matrices of the respective dimension. 
+
+# If ζ >1, the identity matrix is the mode of the prior, with a sharper peak in the density for larger values of ζ. 
+
+# If 0< ζ <1 the prior is U-shaped having a trough at the identity matrix, which leads to higher probabilities for non-zero correlations.  
+
+###################
+
 plot(bm2, ask = FALSE)
 plot(conditional_effects(bm2), ask = FALSE)
 
@@ -121,42 +136,29 @@ if (FALSE) {
              inits = "0",
              cores = 4)
   bm3 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
-               larvalTreat*adultTreat,
+               (1 | cageID),
              data = eelife,
              family = weibull(),
              inits = "0",
              cores = 4)
-  bm4 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + (1 | cageID),
+  bm4 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
+               (1 | larvalTreat : adultTreat),
+             data = eelife,
+             family = weibull(),
+             inits = "0",
+             cores = 4)
+  bm5 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
+               (1 | larvalTreat : adultTreat) + (1 | cageID),
              data = eelife,
              family = weibull(),
              inits = "0",
              cores = 4)
 
-  bm5 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + (1 | larvalTreat:adultTreat),
-             data = eelife_2,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  bm4 <- brm(age | cens(censored) ~ diet + (1 | sireid:damid),
-             data = eelife_2,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  bm5 <- brm(age | cens(censored) ~ diet + (1 | sireid) + (1 | sireid:damid),
-             data = eelife_2,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  bm6 <- brm(age | cens(censored) ~ diet + (1 | sireid) + (1 | sireid:damid) +
-               (1 | diet:sireid),
-             data = eelife_2,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  loo_comp <- loo(bm1, bm2, bm3, bm4)
-  model_wts <- model_weights(bm1, bm2, bm3, bm4)
+  loo_comp <- loo(bm1, bm2, bm3, bm4, bm5)
+  model_wts <- model_weights(bm1, bm2, bm3, bm4, bm5)
 
-  save(list = c("bm1", "bm2", "bm3", "bm4", "bm5", "bm6", "loo_comp", "model_wts"),
+  save(list = c("bm1", "bm2", "bm3", "bm4", "bm5", 
+                "loo_comp", "model_wts"),
        file = "../Data/Processed/Surv_models_bayes.Rda")
 }
 ```
