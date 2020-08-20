@@ -1,0 +1,29 @@
+---
+title: "NewCountComparisons"
+author: "Andrew Jones"
+date: "8/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{Load Libraries}
+library(car)
+library(MASS)
+library(tidyverse)
+library(cowplot)
+library(ggpubr)
+library(colorblindr)
+library(data.table)
+```
+
+## Including Plots
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
