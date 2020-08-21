@@ -3,6 +3,8 @@ title: "NewCountComparisons"
 author: "Andrew Jones"
 date: "8/20/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -16,14 +18,38 @@ library(MASS)
 library(tidyverse)
 library(cowplot)
 library(ggpubr)
-library(colorblindr)
 library(data.table)
 ```
 
-## Including Plots
+## Getting Name Conversion
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+Random <- read.table("~/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+#Setting Up Randomized Table 
+```{Strsplt Names}
+split <- strsplit(Random$V1, "-")
+
+head(split)
+
+Organized <- data.frame(matrix(unlist(split), ncol = 2, byrow = TRUE))
+
+colnames(Organized) <- c("Number", "Image_id")
+ 
+ 
+ Ordered <- Organized[order(Organized[,2]),]
+ 
+ row.names(Ordered) <- c(1:280)
+```
+
+#Integrating Two New Tables
+```{r}
+CountsAJ <- read.table("~/early_experience/original/ee_temp_Values_Sheet_AJ.txt", header = FALSE,stringsAsFactors = FALSE)
+
+CountsDD <- read.table("~/early_experience/original/EE_counts_DD.txt", header = FALSE,stringsAsFactors = FALSE)
+```
+
+
+
+
