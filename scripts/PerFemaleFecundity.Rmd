@@ -198,7 +198,8 @@ ggplot(PerFemaleFec, aes(x=id, y= EggsPerFemale, color = id)) +
   geom_line(na.rm = TRUE)
 
 ggplot(PerFemaleFec, aes(x=id, y= EggsPerFemale, color = id)) +
-  geom_point(na.rm = TRUE)
+  geom_point(na.rm = TRUE) + 
+  labs(x = "Diet Combination", y = "Eggs Per Female", color = "Diet Combination")
 
 ```
 
@@ -254,6 +255,14 @@ pairwise.t.test(TotalF$Mean, TotalF$lvadComb, p.adjust.method = "none")
 pairwise.t.test(TotalF$EggsPerFemale, TotalF$lvadComb, p.adjust.method = "none")
 ```
 
+
+```{r}
+ggplot(TotalF, aes(x = age, y = EggsPerFemale, color = lvadComb)) +
+  xlim(0, 80) +
+  geom_point(na.rm = TRUE) +
+  geom_smooth(method = lm, se = F) +
+  labs(x = "Age(Days)", y = "Eggs Per Female", color = "Diet Combination")
+```
 
 
 
