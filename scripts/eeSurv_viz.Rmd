@@ -385,8 +385,8 @@ Assupmtion: Proportional hazards (effects of all covariates do not change over t
 Non-PH therefore under- or overestimated risk
 
 PH assumption (i.e. residuals independent of time) violated
-Early:Adult diet interaction sig, albeit skewed residuals
-Intearction of non-PH variables with age non-convergent (diet interacts heavily with age - nothing else is significant)
+Early: Adult diet interaction sig, albeit skewed residuals
+Interaction of non-PH variables with age non-convergent (diet interacts heavily with age - nothing else is significant)
 Models on age-classes not significant for either diet, but a large effect of sex.
 
 Larval treatment effect depends on adult age 

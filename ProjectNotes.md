@@ -37,6 +37,28 @@ STEP 4: A Bayesian approach
 ## Project Notes 
 
 
+# 2020-08-18
+stan_surv() again:
+
+To install just the function ontop of the CRAN package, do `remotes::install_github("stan-dev/rstanarm", ref = "feature/survival") ` instead of the git clone (thanks to Kevin Middleton for identifying this approach)
+
+The documentation module of rstanarm however fails to compile and seems to deactivate package-wide - at least on nivalis.
+
+Useful online guides:
+
+https://github.com/stan-dev/rstanarm/blob/feature/survival/vignettes/surv.Rmd
+
+https://rstudio-pubs-static.s3.amazonaws.com/438966_3b8a25efb9b84454b8d69b7a15e3ebc5.html
+
+This is for a piece-wise exponential model:
+https://rpubs.com/kaz_yos/surv_stan_piecewise1
+
+stan_jm:
+https://rstudio-pubs-static.s3.amazonaws.com/430561_45236316f46f4edc99d00ca045a17a4a.html
+
+Copies saved to the Documents section of this repo.
+
+
 # 2020-08-17 (EN)
 Do Bayesian models in brms - spooky???
 
