@@ -20,8 +20,10 @@ editor_options:
 ```{r}
 library(survival)
 #library(coxme)
+library(rstanarm)
 library(brms)
-library(tidyverse) 
+library(tidyverse)
+library(tidybayes)
 library(bayesplot)
 library(broom)
 
@@ -81,6 +83,123 @@ M7
 
 
 # Bayesian survival models
+
+# rstanarm
+
+```{r}
+
+## Weibull
+mod1 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
+                    adultTreat + sex, 
+                  data    = eelife,
+                  basehaz = "weibull",
+                  chains  = 4, 
+                  cores   = 4, 
+                  seed    = 29,
+                  iter    = 2000)
+
+prior_summary(mod1)
+summary(mod1)
+print(mod1, digits = 3)
+
+# Plot the baseline hazard function
+plot(mod1) + coord_cartesian(ylim = c(0, 0.1))
+
+tidybayes::tidy_draws(mod1)
+
+
+# Gompertz
+mod2 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
+                    adultTreat + sex, 
+                  data    = eelife,
+                  basehaz = "gompertz",
+                  chains  = 4, 
+                  cores   = 4, 
+                  seed    = 29,
+                  iter    = 2000)
+
+summary(mod2)
+print(mod2, digits = 3)
+
+# Plot the baseline hazard function
+plot(mod2) + coord_cartesian(ylim = c(0, 0.1))
+
+tidybayes::tidy_draws(mod2)
+
+
+# Cubic M-Spline - slower
+mod3 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
+                    adultTreat + sex, 
+                  data    = eelife,
+                  basehaz = "ms",
+                  chains  = 4, 
+                  cores   = 4, 
+                  seed    = 29,
+                  iter    = 2000)
+
+summary(mod3)
+print(mod2, digits = 3)
+plot(mod3) + coord_cartesian(ylim = c(0, 0.1))
+
+tidybayes::tidy_draws(mod3)
+
+## Cubic B-spline - quite slow!
+mod4 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
+                    adultTreat + sex, 
+                  data    = eelife,
+                  basehaz = "bs",
+                  chains  = 4, 
+                  cores   = 4, 
+                  seed    = 29,
+                  iter    = 2000)
+
+summary(mod4)
+print(mod4, digits = 3)
+plot(mod4) + coord_cartesian(ylim = c(0, 0.1))
+
+tidybayes::tidy_draws(mod4)
+
+# Exponential
+mod5 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
+                    adultTreat + sex, 
+                  data    = eelife,
+                  basehaz = "exp",
+                  chains  = 4, 
+                  cores   = 4, 
+                  seed    = 29,
+                  iter    = 2000)
+
+summary(mod5)
+print(mod5, digits = 3)
+plot(mod5) + coord_cartesian(ylim = c(0, 0.1))
+
+tidybayes::tidy_draws(mod5)
+
+# Baseline hazard function comparison
+
+bayesplot::bayesplot_grid(plot(mod1),
+                          plot(mod2),
+                          plot(mod3),
+                          plot(mod4),
+                          ylim = c(-0.01, 0.15))
+
+## Record execution time and multicore use
+end_time <- Sys.time()
+diff_time <- difftime(end_time, start_time, units = "auto")
+cat("Started  ", as.character(start_time), "\n",
+    "Finished ", as.character(end_time), "\n",
+    "Time difference of ", diff_time, " ", attr(diff_time, "units"), "\n",
+    "Used ", foreach::getDoParWorkers(), " cores\n",
+    "Used ", foreach::getDoParName(), " as backend\n",
+    sep = "")
+
+
+# Compare the fit of models using `loo` method for stansurv objects
+loo_compare(loo(mod1),
+            loo(mod2),
+            loo(mod3),
+            loo(mod4))
+```
 
 
 # brms
