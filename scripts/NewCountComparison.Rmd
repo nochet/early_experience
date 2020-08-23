@@ -74,20 +74,20 @@ CombinedDD$Image_id <-  as.numeric(CombinedDD$Image_id)
 eeFec <- read.table("../processed/Early_Experience_LiFec.txt",
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
-fec <- eeFec[,c(5:7,11)]
-colnames(fec) <- c("id", "larvalTreat", "adultTreat", "Image_id")
+fec <- eeFec[,c(4:7,11)]
+colnames(fec) <- c("Age", "id", "larvalTreat", "adultTreat", "Image_id")
 fec <- fec %>% 
   mutate(id = sub('EE_', '', id))
-fec <- fec[,c(1:4)]
+fec <- fec[,c(1:5)]
 
 FullAJ <- left_join(fec, CombinedAJ, by = NULL, copy = FALSE)
-FullAJ <- FullAJ[,c(1:4,6)]
+FullAJ <- FullAJ[,c(1:5,7)]
 FullAJ <- na.omit(FullAJ)
 FullAJ <- FullAJ %>%
   unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
 
 FullDD <- left_join(fec, CombinedDD, by = NULL, copy = FALSE)
-FullDD <- FullDD[,c(1:4,6)]
+FullDD <- FullDD[,c(1:5,7)]
 FullDD <- na.omit(FullDD)
 FullDD <- FullDD %>%
   unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
@@ -96,7 +96,29 @@ FullDD <- FullDD %>%
 
 #Graphing
 ```{r}
+ggplot(FullAJ, aes(Count, color = lvadComb)) +
+  geom_density(alpha = 0.5) +
+  coord_cartesian(xlim = c(-10, 620), ylim = c(0, 0.013))
 
+ggplot(FullDD, aes(Count, color = lvadComb)) +
+  geom_density(alpha = 0.5) +
+  coord_cartesian(xlim = c(-10, 750), ylim = c(0, 0.013))
+
+ggplot(FullAJ, aes(Age, Count, color = lvadComb)) +
+  geom_line() +
+  coord_cartesian(xlim = c(-5, 60), ylim = c(0, 1200)) +
+  geom_smooth()
+
+ggplot(FullDD, aes(Age, Count, color = lvadComb)) +
+  geom_line() +
+  coord_cartesian(xlim = c(-5, 60), ylim = c(0, 1200)) +
+  geom_smooth()
+
+ggplot(FullAJ, aes(Age, Count, color = lvadComb)) +
+  geom_point()
+
+ggplot(FullDD, aes(Age, Count, color = lvadComb)) +
+  geom_point()
 ```
 
 
