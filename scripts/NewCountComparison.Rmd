@@ -119,6 +119,42 @@ ggplot(FullAJ, aes(Age, Count, color = lvadComb)) +
 
 ggplot(FullDD, aes(Age, Count, color = lvadComb)) +
   geom_point()
+
+ggplot(FullAJ, aes(x = lvadComb,y = Count, color = id))+
+  geom_boxplot(alpha = 0.5)
+
+ggplot(FullDD, aes(x = lvadComb,y = Count, color = id))+
+  geom_boxplot(alpha = 0.5)
+
+ggplot(FullAJ, aes(x = Age, y = Count, color = lvadComb)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+
+ggplot(FullDD, aes(x = Age, y = Count, color = lvadComb)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+
+ggplot(FullAJ, aes(x = lvadComb, y = Count, color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.1)
+
+ggplot(FullAJ, aes(x = lvadComb, y = log(Count), color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.05)
+
+ggplot(FullDD, aes(x = lvadComb, y = Count, color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.04)
+
+ggplot(FullAJ, aes(x = lvadComb, y = log(Count), color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.03)
+
+ggplot(FullAJ, aes(x = lvadComb, y = Count, color = lvadComb)) +
+  geom_violin()
+
+ggplot(FullDD, aes(x = lvadComb, y = Count, color = lvadComb)) +
+  geom_violin()
 ```
 
 
