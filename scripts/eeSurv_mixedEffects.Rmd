@@ -1,5 +1,5 @@
 ---
-title: "Mixed effects Cox Regression"
+title: "Mixed effects Cox & Bayesian Regression"
 author: "Enoch Ng'oma"
 date: "7/4/2018"
 output:
@@ -23,6 +23,7 @@ library(survival)
 library(rstanarm)
 library(brms)
 library(tidyverse)
+library(cowplot)
 library(tidybayes)
 library(bayesplot)
 library(broom)
@@ -86,205 +87,187 @@ M7
 
 # rstanarm
 
+## Non-PHs modelled with a smooth cubic B-spline function for the time-varying log hazard ratio
+
 ```{r}
 
-## Weibull
-mod1 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
-                    adultTreat + sex, 
+eelife <- read.csv("../processed/eeAlldat.csv")
+eelife$status <- ifelse(eelife[,"status"] == 2, 1, 0)
+eelife <- select(eelife, -X)
+
+start_time <- Sys.time()
+
+set.seed(989898)
+test_CHAINS <- 1
+test_CORES  <- 1
+test_SEED   <- 12345
+test_ITER   <- 1000
+
+### M-splines is the default in stan_surv() 
+
+# Baseline hazard function - assuming covariate effect of zero
+mod0 <- stan_surv(formula = Surv(age, status==2) ~ tve(larvalTreat) + 
+                     tve(adultTreat) + tve(sex), 
                   data    = eelife,
-                  basehaz = "weibull",
-                  chains  = 4, 
-                  cores   = 4, 
-                  seed    = 29,
-                  iter    = 2000)
-
-prior_summary(mod1)
-summary(mod1)
-print(mod1, digits = 3)
-
-# Plot the baseline hazard function
-plot(mod1) + coord_cartesian(ylim = c(0, 0.1))
-
-tidybayes::tidy_draws(mod1)
+                  chains  = test_CHAINS, 
+                  cores   = test_CORES, 
+                  seed    = test_SEED,
+                  iter    = test_ITER)
+print(mod0, digits = 3)
+plot(mod0) + coord_cartesian(ylim = c(0, 0.1))
 
 
-# Gompertz
-mod2 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
-                    adultTreat + sex, 
-                  data    = eelife,
-                  basehaz = "gompertz",
-                  chains  = 4, 
-                  cores   = 4, 
-                  seed    = 29,
-                  iter    = 2000)
+# Test different parametric hazards
+# i.e. fit several models, each with a different baseline hazard
 
-summary(mod2)
-print(mod2, digits = 3)
+mod1_exp      <- update(mod0, basehaz = "exp") #47min
+mod1_weibull  <- update(mod0, basehaz = "weibull") # ~ 2hrs
+mod1_gompertz <- update(mod0, basehaz = "gompertz") # 94s - not converged
+mod1_bspline  <- update(mod0, basehaz = "bs") # 98.5 min
+mod1_mspline1 <- update(mod0, basehaz = "ms") # 52.9 min
+mod1_mspline2 <- update(mod0, basehaz = "ms", 
+                        basehaz_ops = list(df = 10))
 
-# Plot the baseline hazard function
-plot(mod2) + coord_cartesian(ylim = c(0, 0.1))
-
-tidybayes::tidy_draws(mod2)
+# save(mod0,mod1_exp,mod1_weibull,mod1_gompertz,mod1_bspline,
+#        mod1_mspline1,mod1_mspline2, file="../processed/BaseHaz.Rda")
 
 
-# Cubic M-Spline - slower
-mod3 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
-                    adultTreat + sex, 
-                  data    = eelife,
-                  basehaz = "ms",
-                  chains  = 4, 
-                  cores   = 4, 
-                  seed    = 29,
-                  iter    = 2000)
+# Plot the baseline hazards with 95% posterior uncertainty limits
+load("../processed/BaseHaz.Rda")
 
-summary(mod3)
-print(mod2, digits = 3)
-plot(mod3) + coord_cartesian(ylim = c(0, 0.1))
+plotfun <- function(model, title) {
+  plot(model, plotfun = "basehaz") +              
+    coord_cartesian(ylim = c(0,0.4)) +            
+    labs(title = title) +                        
+    theme(plot.title = element_text(hjust = 0.5,size = 11),
+          axis.title = element_text(size = 10)) + 
+    theme_set(theme_cowplot()) +
+    theme_half_open() 
+}
+p_exp      <- plotfun(mod1_exp,      title = "Exponential")
+p_weibull  <- plotfun(mod1_weibull,  title = "Weibull")
+p_gompertz <- plotfun(mod1_gompertz, title = "Gompertz")
+p_bspline  <- plotfun(mod1_bspline,  title = "B-splines with df = 5")
+p_mspline1 <- plotfun(mod1_mspline1, title = "M-splines with df = 5")
+p_mspline2 <- plotfun(mod1_mspline2, title = "M-splines with df = 10")
+cs <-bayesplot::bayesplot_grid(p_exp,
+                          p_weibull,
+                          p_gompertz,
+                          p_bspline,
+                          p_mspline1,
+                          p_mspline2,
+                          grid_args = list(ncol = 3))
 
-tidybayes::tidy_draws(mod3)
+ggplot2::ggsave(cs,filename="../plots/baseHaz_tve_fixedEffs.pdf",height = 6, width=10)
 
-## Cubic B-spline - quite slow!
-mod4 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
-                    adultTreat + sex, 
-                  data    = eelife,
-                  basehaz = "bs",
-                  chains  = 4, 
-                  cores   = 4, 
-                  seed    = 29,
-                  iter    = 2000)
+# Compare fits using `loo` for `stansurv` objects
 
-summary(mod4)
-print(mod4, digits = 3)
-plot(mod4) + coord_cartesian(ylim = c(0, 0.1))
-
-tidybayes::tidy_draws(mod4)
-
-# Exponential
-mod5 <- stan_surv(formula = Surv(age, status==2) ~ larvalTreat + 
-                    adultTreat + sex, 
-                  data    = eelife,
-                  basehaz = "exp",
-                  chains  = 4, 
-                  cores   = 4, 
-                  seed    = 29,
-                  iter    = 2000)
-
-summary(mod5)
-print(mod5, digits = 3)
-plot(mod5) + coord_cartesian(ylim = c(0, 0.1))
-
-tidybayes::tidy_draws(mod5)
-
-# Baseline hazard function comparison
-
-bayesplot::bayesplot_grid(plot(mod1),
-                          plot(mod2),
-                          plot(mod3),
-                          plot(mod4),
-                          ylim = c(-0.01, 0.15))
+lcomp <- loo_compare(loo(mod1_exp),
+            loo(mod1_weibull),
+            loo(mod1_gompertz),
+            loo(mod1_bspline),
+            loo(mod1_mspline1),
+            loo(mod1_mspline2))
 
 ## Record execution time and multicore use
 end_time <- Sys.time()
-diff_time <- difftime(end_time, start_time, units = "auto")
-cat("Started  ", as.character(start_time), "\n",
-    "Finished ", as.character(end_time), "\n",
-    "Time difference of ", diff_time, " ", attr(diff_time, "units"), "\n",
-    "Used ", foreach::getDoParWorkers(), " cores\n",
-    "Used ", foreach::getDoParName(), " as backend\n",
-    sep = "")
+
+diff_time <- end_time - start_time
 
 
-# Compare the fit of models using `loo` method for stansurv objects
-loo_compare(loo(mod1),
-            loo(mod2),
-            loo(mod3),
-            loo(mod4))
 ```
 
-
-# brms
-
-```{r brm_models, cache=TRUE}
-eelife <- read.csv("../processed/eeAlldat.csv")
-
-eelife <- eelife %>% 
-  select(-X) 
-
-eelife$censored <- ifelse(eelife[,"status"] == 2, 1, 0)
-
-  # filter(status == 2) %>% 
-  # mutate(censored = 0)
-
-bm2 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
-             sex + (1 | cageID),data = eelife,family = weibull(),
-           prior = c(set_prior("normal(0,5)", class = "b"),
-                     set_prior("cauchy(0,2)", class = "sd"),
-                     set_prior("lkj(2)", class = "cor")))
-
-#################
-
-# LKJ is shape parameter (ζ) of a symmetric beta distribution (implying correlations of zero) 
-
-#  If ζ= 1 (the default in brms) the density is uniform over correlation matrices of the respective dimension. 
-
-# If ζ >1, the identity matrix is the mode of the prior, with a sharper peak in the density for larger values of ζ. 
-
-# If 0< ζ <1 the prior is U-shaped having a trough at the identity matrix, which leads to higher probabilities for non-zero correlations.  
-
-###################
-
-plot(bm2, ask = FALSE)
-plot(conditional_effects(bm2), ask = FALSE)
-
-summary(bm2)
-prior_summary(bm2)
-pp_check(bm2, nreps=100)
-
-if (FALSE) {
-  # gamma(0.01, 0.01) shape by default
-  # student_t(3, 4, 10) for intercept
-  # student_t(3, 0, 10) for sd
-  bm1 <- brm(age | cens(censored) ~ 1,
-             data = eelife,
-             family = gaussian(),
-             inits = "0",
-             cores = 4)
-  bm2 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + sex,
-             data = eelife,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  bm3 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
-               (1 | cageID),
-             data = eelife,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  bm4 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
-               (1 | larvalTreat : adultTreat),
-             data = eelife,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-  bm5 <- brm(age | cens(censored) ~ larvalTreat + adultTreat + 
-               (1 | larvalTreat : adultTreat) + (1 | cageID),
-             data = eelife,
-             family = weibull(),
-             inits = "0",
-             cores = 4)
-
-  loo_comp <- loo(bm1, bm2, bm3, bm4, bm5)
-  model_wts <- model_weights(bm1, bm2, bm3, bm4, bm5)
-
-  save(list = c("bm1", "bm2", "bm3", "bm4", "bm5", 
-                "loo_comp", "model_wts"),
-       file = "../Data/Processed/Surv_models_bayes.Rda")
-}
-```
+# Non-PHs modelled with a piecewise constant function
 
 ```{r}
-load("../../Data/Processed/Surv_models_bayes.Rda")
+# Piecewise constant: alternative to model tve() log hazard ratio
 
-loo_comp
-data.frame(weight = round(model_wts, 3))
+mod2 <- stan_surv(formula = Surv(age, status==2) ~ 
+                    tve(larvalTreat, degree = 0, knots = 2.5) + 
+                    tve(adultTreat, degree = 0, knots = 2.5) + 
+                    tve(sex, degree = 0, knots = 2.5),
+                    data    = eelife,
+                    basehaz = "ms", basehaz_ops = list(df = 10),
+                    chains  = test_CHAINS, 
+                    cores   = test_CORES, 
+                    seed    = test_SEED,
+                    iter    = test_ITER)
+
+save(mod2, file="../processed/pieceW_tve.Rda")
+
+plot(mod2) + coord_cartesian(ylim = c(0, 0.1)) # basehaz
+summary(mod2)
+
+plot(mod2, pars = "tve")
+
 ```
+
+
+# Multilevel models
+
+```{r}
+seed <- set.seed(787878)
+chains <- 12
+cores  <- 12
+#iter   <- 1000
+
+mod3 <- stan_surv(
+  formula = Surv(age, status) ~ larvalTreat + 
+    adultTreat + sex + (1 | cageID),
+  data    = eelife,
+  basehaz = "ms",
+  chains  = chains, 
+  cores   = cores, 
+  seed    = seed,
+  warmup = 15000,
+  iter    = 1e6)
+# Took about 12 hrs per chain (in parallel) - 13.12 hrs for the model
+
+# Estimates
+print(mod3, digits = 2)
+
+save(mod3, file="../processed/cageID_rand.Rda")
+
+
+# Does the random term matter? Fixed model
+mod3_fixed <- update(mod3, formula. = Surv(
+  age, status) ~ larvalTreat + adultTreat + sex) 
+# Note: "formula." re-fit named model
+# about 6.85 hrs per chain
+
+summary(mod3_fixed)
+
+save(mod3_fixed, file="../processed/cageID_fixed.Rda")
+
+# Calculate 'loo'
+lcomp3 <- loo_compare(loo(mod3_fixed),loo(mod3))
+            
+# loo_fixed <- loo(mod3_fixed)
+# loo_mod3 <- loo(mod3)
+# loo_compare(loo_fixed, loo_mod3)
+
+
+# Random intercept and random slope model
+mod4 <- stan_surv(formula = Surv(age, status) ~ 
+    larvalTreat + adultTreat + sex  + 
+    (larvalTreat | cageID) + 
+    (adultTreat | cageID) + 
+    (sex | cageID),
+  data    = eelife,
+  basehaz = "ms", basehaz_ops = list(df = 10),
+  chains  = chains, 
+  cores   = cores, 
+  seed    = seed,
+  warmup = 15000,
+  iter    = 5e5)
+
+save(mod4, file="../processed/cageID_multi_randints.Rda")
+
+print(mod4, digits = 2)
+
+# 'loo' all three models 
+loo_randtrt <- loo(mod_randtrt)
+loo_compare(loo_fixed, loo_randint, loo_randtrt)
+
+```
+
