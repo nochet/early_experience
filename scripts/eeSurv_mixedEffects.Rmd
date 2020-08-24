@@ -193,7 +193,7 @@ mod2 <- stan_surv(formula = Surv(age, status==2) ~
                     seed    = test_SEED,
                     iter    = test_ITER)
 
-# Took about 12 hrs per chain (in parallel) - 13.12 hrs for the model
+save(mod2, file="../processed/pieceW_tve.Rda")
 
 plot(mod2) + coord_cartesian(ylim = c(0, 0.1)) # basehaz
 summary(mod2)
@@ -209,7 +209,7 @@ plot(mod2, pars = "tve")
 seed <- set.seed(787878)
 chains <- 12
 cores  <- 12
-iter   <- 1000
+#iter   <- 1000
 
 mod3 <- stan_surv(
   formula = Surv(age, status) ~ larvalTreat + 
@@ -221,6 +221,7 @@ mod3 <- stan_surv(
   seed    = seed,
   warmup = 15000,
   iter    = 1e6)
+# Took about 12 hrs per chain (in parallel) - 13.12 hrs for the model
 
 # Estimates
 print(mod3, digits = 2)
@@ -232,21 +233,35 @@ save(mod3, file="../processed/cageID_rand.Rda")
 mod3_fixed <- update(mod3, formula. = Surv(
   age, status) ~ larvalTreat + adultTreat + sex) 
 # Note: "formula." re-fit named model
+# about 6.85 hrs per chain
 
+summary(mod3_fixed)
+
+save(mod3_fixed, file="../processed/cageID_fixed.Rda")
 
 # Calculate 'loo'
-loo_fixed   <- loo(mod3_fixed)
-loo_mod3 <- loo(mod3)
-loo_compare(loo_fixed, loo_mod3)
+lcomp3 <- loo_compare(loo(mod3_fixed),loo(mod3))
+            
+# loo_fixed <- loo(mod3_fixed)
+# loo_mod3 <- loo(mod3)
+# loo_compare(loo_fixed, loo_mod3)
 
 
 # Random intercept and random slope model
-mod4 <- update(
-  mod3, formula. = Surv(age, status) ~ 
+mod4 <- stan_surv(formula = Surv(age, status) ~ 
     larvalTreat + adultTreat + sex  + 
     (larvalTreat | cageID) + 
     (adultTreat | cageID) + 
-    (sex | cageID))
+    (sex | cageID),
+  data    = eelife,
+  basehaz = "ms", basehaz_ops = list(df = 10),
+  chains  = chains, 
+  cores   = cores, 
+  seed    = seed,
+  warmup = 15000,
+  iter    = 5e5)
+
+save(mod4, file="../processed/cageID_multi_randints.Rda")
 
 print(mod4, digits = 2)
 
