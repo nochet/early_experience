@@ -3,6 +3,8 @@ title: "NewCountComparisons"
 author: "Andrew Jones"
 date: "8/20/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -10,20 +12,93 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{Load Libraries}
+```{r}
 library(car)
 library(MASS)
 library(tidyverse)
 library(cowplot)
 library(ggpubr)
-library(colorblindr)
 library(data.table)
 ```
 
-## Including Plots
 
+## Getting Name Conversion
 ```{r pressure, echo=FALSE}
-plot(pressure)
+Random <- read.table("~/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+#Setting Up Randomized Table 
+```{r}
+split <- strsplit(Random$V1, "-")
+
+head(split)
+
+Organized <- data.frame(matrix(unlist(split), ncol = 2, byrow = TRUE))
+
+colnames(Organized) <- c("Number", "Image_id")
+ Organized$Number <-  as.numeric(Organized$Number)
+ 
+ Ordered <- Organized[order(Organized[,1]),]
+ 
+ row.names(Ordered) <- c(1:280)
+```
+
+
+#Integrating Two New Tables
+```{r}
+CountsAJ <- read.table("~/early_experience/original/ee_temp_Values_Sheet_AJ.txt", header = FALSE,stringsAsFactors = FALSE)
+
+colnames(CountsAJ) <- c("Number", "Count")
+
+CountsDD <- read.table("~/early_experience/original/EE_counts_DD.txt", header = FALSE,stringsAsFactors = FALSE)
+
+colnames(CountsDD) <- c("Number", "Count")
+
+CombinedAJ <- left_join(Ordered, CountsAJ, by = NULL, copy = FALSE)
+CombinedAJ <- CombinedAJ %>% 
+  mutate(Image_id = sub('IMG_', '', Image_id))
+CombinedAJ <- CombinedAJ %>% 
+  mutate(Image_id = sub('.JPG', '', Image_id))
+CombinedDD <- left_join(Ordered, CountsDD, by = NULL, copy = FALSE)
+CombinedDD <- CombinedDD %>% 
+  mutate(Image_id = sub('IMG_', '', Image_id))
+CombinedDD <- CombinedDD %>% 
+  mutate(Image_id = sub('.JPG', '', Image_id))
+
+CombinedAJ$Image_id <-  as.numeric(CombinedAJ$Image_id)
+CombinedDD$Image_id <-  as.numeric(CombinedDD$Image_id)
+```
+
+#Adding the Combined to the other variables
+```{r}
+eeFec <- read.table("../processed/Early_Experience_LiFec.txt",
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE) 
+fec <- eeFec[,c(5:7,11)]
+colnames(fec) <- c("id", "larvalTreat", "adultTreat", "Image_id")
+fec <- fec %>% 
+  mutate(id = sub('EE_', '', id))
+fec <- fec[,c(1:4)]
+
+FullAJ <- left_join(fec, CombinedAJ, by = NULL, copy = FALSE)
+FullAJ <- FullAJ[,c(1:4,6)]
+FullAJ <- na.omit(FullAJ)
+FullAJ <- FullAJ %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+FullDD <- left_join(fec, CombinedDD, by = NULL, copy = FALSE)
+FullDD <- FullDD[,c(1:4,6)]
+FullDD <- na.omit(FullDD)
+FullDD <- FullDD %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+```
+
+#Graphing
+```{r}
+
+```
+
+
+
+
