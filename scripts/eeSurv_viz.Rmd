@@ -23,8 +23,7 @@ library(tidyverse)
 library(forcats)
 library(cowplot)
 library(Greg)
-#library(coxme)
-#library(brms)
+
 
 source("color_map.R")
 source("ggplot_theme.R")
@@ -57,7 +56,9 @@ eelife <- rbind(eelifeF,eelifeM)
 #eelife$carried <- 0 
 eelife <- na.omit(eelife)
 
-write.csv(eelife, file="../processed/eeAlldat.csv")
+eelife$status <- ifelse(eelife[,"status"] == 2, 1, 0)
+
+write.csv(eelife, file="../processed/eeAlldat.csv, row.names = FALSE")
 ```
 
 # Descriptives
@@ -151,9 +152,9 @@ densPlot <- plot_grid(dens.list[[1]],dens.list[[2]],dens.list[[3]],
                       align = 'h', 
                       rel_widths = c(1.5,1.5, 1.5), 
                       label_size = 10)
-
-ggsave(last_plot(), file = "../plots/density_male_female.pdf",
-       width = 6, height = 4)
+densPlot
+# ggsave(last_plot(), file = "../plots/density_male_female.pdf",
+#        width = 6, height = 4)
 ```
 
 # Testing developmental theories
@@ -168,19 +169,17 @@ ggsave(last_plot(), file = "../plots/density_male_female.pdf",
 # Male and female combined
 
 ```{r}
-# Model
-eelife <- read.csv("../processed/eeAlldat.csv")
+
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-X)
 
 # Look at distribution of events
 eelife <- eelife %>% 
-  mutate(stats = ifelse(status == 2, 1, 0))
+  mutate(stats = ifelse(status == 2, 1, 0)) %>%
+  select(cageID,larvalTreat,adultTreat,age,status,sex)
 
-surv <- Surv(eelife$age, eelife$stats)
-ggsurvevents(surv, normalized = TRUE, type="fraction", 
-             censored.on.top = TRUE,
-             ggtheme = theme_survminer(title = "blank"))
 
-mf <- survfit(Surv(age, status == 2) ~ adultTreat,
+mf <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
@@ -202,10 +201,11 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                      font.tickslab = c(font_size),
                      font.main = 12,
                      risk.table = FALSE,
-                     legend = c(0.9, 0.8),
-                     title = "Females & Males",
+                     legend = "right",
+                    # title = "Females & Males",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
+                     #guides(colour = guide_legend(ncol = 1)) +
                      theme_survminer(font.main = 12)  +
   xlab("Age (days)")
 mf.plot
@@ -214,7 +214,7 @@ mf.plot
 survdiff(Surv(age) ~ adultTreat,
                      data = eelife, rho = 0) 
 
-quantile(mf,  probs = c(0.1, 0.5, 0.9))
+#quantile(mf,  probs = c(0.1, 0.5, 0.9))
 ```
 
 # EarlyRich (C diet) 
@@ -256,7 +256,7 @@ erf.plot
 survdiff(Surv(age, status==2) ~ adultTreat,
                      data = earlyRichF, rho = 0) 
 
-quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
+#quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
 
 ```
 
@@ -338,7 +338,7 @@ epf.plot
 survdiff(Surv(age, status==2) ~ adultTreat,
                      data = earlyPoorF, rho = 0) 
 
-quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
+#quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
 
 ```
 
@@ -394,29 +394,29 @@ Larval treatment effect depends on adult age
 ```{r}
 
 # All together
-cph1 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + sex, 
+cph1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex, 
                    data = eelife)
 cph1
 #ggforest(cph1, data = eelife)
 test.cph1 <- cox.zph(cph1)
 test.cph1
-ggcoxzph(test.cph1)
+#ggcoxzph(test.cph1)
 
 
-cph2 <- coxph(Surv(age, status==2) ~ larvalTreat+sex + adultTreat + 
+cph2 <- coxph(Surv(age, status) ~ larvalTreat + sex + adultTreat + 
               larvalTreat:adultTreat, data = eelife)
 cph2
 #ggforest(cph2, data = eelife)
 test.cph2 <- cox.zph(cph2)
 test.cph2
-ggcoxzph(test.cph2)
+#ggcoxzph(test.cph2)
 
 
 # Hazards are unproportional in both models 
 # see Fox and Weisberg (2018)
 
 # 1. Try interactions with age for non-PH variables (larvalTreat, sex)
-cph3 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + 
+cph3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                 larvalTreat:adultTreat + 
                 larvalTreat:age + sex + sex:age, data = eelife)
 # Does not converge
@@ -424,7 +424,7 @@ cph3
 #ggforest(cph1, data = eelife)
 test.cph3 <- cox.zph(cph3)
 test.cph3
-ggcoxzph(test.cph3)
+#ggcoxzph(test.cph3)
 
 
 # 2. Stratify the time variable
@@ -439,21 +439,21 @@ eelife$age.intv <- car::recode(eelife$age,
                               80:hi=5") 
 xtabs(~ age.intv, data=eelife)
 
-cph4 <- coxph(Surv(age, status==2) ~ larvalTreat + adultTreat + sex + 
+cph4 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex + 
                     strata(age.intv), data=eelife)
 cph4
 
 test.cph4 <- cox.zph(cph4)
 test.cph4
-ggcoxzph(test.cph4)
+#ggcoxzph(test.cph4)
 # Sex and global p-vals are still non-proportional
 
 
 # Add interaction back
-cph5 <- coxph(Surv(age, status==2) ~ adultTreat + larvalTreat + sex + 
-                    larvalTreat:adultTreat,strata(age.intv),
-              data=eelife)
-cph5
+# cph5 <- coxph(Surv(age, status) ~ adultTreat + larvalTreat + sex + 
+#                     larvalTreat:adultTreat,strata(age.intv),
+#               data=eelife)
+# cph5
 # ‘floor’ not meaningful for factors
 
 
@@ -461,16 +461,13 @@ cph5
 
 # Cox model with split-time variable
 
-Unsplit-time variable: Adult treatment has a large effect. Sex has a large treatment.Larval treat and sex have very non-PH
+Unsplit-time variable: Adult treatment has a large effect. Sex has a large effect. Larval treat and sex have very non-PH
 
 Split-time variable: Adult treatment and sex have large effects. Larval treat and sex have non-PH
 
 Splitting at interval of 0.5: Both treatments have PHs, but sex is still very much confounding.
 
 ```{r}
-
-eelife <- read.csv("../processed/eeAlldat.csv") %>%
-  select(-c(X,cageID,larv_adult))
 
 eelife <- eelife %<>% 
   mutate(status = factor(status),
@@ -480,11 +477,11 @@ eelife <- eelife %<>%
 
 
 
-# Now we can fit a regular cox regression:
+# A regular cox regression
+## Requires a defined status level
 
-regular_model <- coxph(Surv(age, status == 2) ~ larvalTreat + 
-                         adultTreat + sex, data = eelife,
-                       x = TRUE, y = TRUE)
+regular_model <- coxph(Surv(age, status==1) ~ larvalTreat + 
+                         adultTreat + sex, data = eelife)
 summary(regular_model)
 cox.zph(regular_model)
 
@@ -495,12 +492,12 @@ spl_eelife <-
   eelife %>% 
   timeSplitter(by = 0.5,
                event_var = "status",
-               event_start_status = 3,
+               event_start_status = 0,
                time_var = "age")
 
 interval_model <-
   update(regular_model, 
-         Surv(Start_time, Stop_time, status == 2) ~ .,
+         Surv(Start_time, Stop_time, status == 1) ~ .,
          data = spl_eelife)
 
 summary(interval_model)
@@ -552,9 +549,9 @@ ggforest(
 
 
 # Adjusted survival curve for cox model
-ggadjustedcurves(regular_model, data = eelife,
-                    variable  = eelife[, "larvalTreat"],
-                   legend.title = "Larval Treatment", )
+# ggadjustedcurves(regular_model, data = eelife,
+#                     variable  = eelife[, "larvalTreat"],
+#                    legend.title = "Larval Treatment", )
 ```
 
 
@@ -575,9 +572,6 @@ Split model: At 0.5, adult treat remains highly sig; Adult treatment depends on 
 This looks like a valid solution.
 
 ```{r}
-eelife <- read.csv("../processed/eeAlldat.csv") %>%
-  select(-c(X,cageID,larv_adult))
-
 female <- subset(eelife, eelife$sex=="F")
 
 female <- female %>% 
@@ -588,7 +582,7 @@ female <- female %>%
 
 
 # Fit a regular cox model
-regular_model <- coxph(Surv(age, status == 2) ~ larvalTreat + 
+regular_model <- coxph(Surv(age, status == 1) ~ larvalTreat + 
                          adultTreat, data = female)
 summary(regular_model)
 cox.zph(regular_model)
@@ -600,12 +594,12 @@ spl_female <-
   female %>% 
   timeSplitter(by = 0.5,
                event_var = "status",
-               event_start_status = 3,
+               event_start_status = 0,
                time_var = "age")
 
 interval_model <-
   update(regular_model, 
-         Surv(Start_time, Stop_time, status == 2) ~ .,
+         Surv(Start_time, Stop_time, status == 1) ~ .,
          data = spl_female)
 
 summary(interval_model)
@@ -640,7 +634,7 @@ summary(time_int_model)
 sx <- cox.zph(time_int_model)
 sx
 
-ggcoxzph(sx)
+#ggcoxzph(sx)
 
 #ggforest(time_int_model, data = spl_eelife)
 
@@ -654,7 +648,9 @@ FF <- ggforest(
   noDigits = 2
 )
 
-ggsave(FF,filename = "~/MyGithub/early_experience/Plots/Female_Greg_Forest_HR.pdf", height=3, width=6)
+FF
+
+# ggsave(FF,filename = "~/MyGithub/early_experience/Plots/Female_Greg_Forest_HR.pdf", height=3, width=6)
 
 ```
 
@@ -667,8 +663,6 @@ Split model: Has larval treat sig also (P=0.0195), with PHs for both larval trea
 This seems a satisfactory solution since we are interested in larval diet.
 
 ```{r}
-eelife <- read.csv("../processed/eeAlldat.csv") %>%
-  select(-c(X,cageID,larv_adult))
 
 male <- subset(eelife, eelife$sex=="M")
 
@@ -680,7 +674,7 @@ male <- male %>%
 
 
 # Fit a regular cox model
-regular_model <- coxph(Surv(age, status == 2) ~ larvalTreat + 
+regular_model <- coxph(Surv(age, status==1) ~ larvalTreat + 
                          adultTreat, data = male)
 summary(regular_model)
 cox.zph(regular_model)
@@ -692,12 +686,12 @@ spl_male <-
   male %>% 
   timeSplitter(by = 0.5,
                event_var = "status",
-               event_start_status = 3,
+               event_start_status = 0,
                time_var = "age")
 
 interval_model <-
   update(regular_model, 
-         Surv(Start_time, Stop_time, status == 2) ~ .,
+         Surv(Start_time, Stop_time, status == 1) ~ .,
          data = spl_male)
 
 summary(interval_model)
@@ -734,7 +728,7 @@ sx <- cox.zph(time_int_model)
 sx
 #adultTreat still non-PH
 
-ggcoxzph(sx)
+#ggcoxzph(sx)
 
 #ggforest(time_int_model, data = spl_eelife)
 
@@ -747,37 +741,38 @@ MM <- ggforest(
   refLabel = "reference",
   noDigits = 2
 )
+MM
 
 ggsave(FF,filename = "~/MyGithub/early_experience/Plots/male_Greg_Forest_HR.pdf", height=3, width=6)
-
+```
 
 # Diagnostics
 
-
+```{r}
 ## Influential cases
 
 # typeof residuals on Y axis: c(“martingale”, “deviance”, “score”, “schoenfeld”, “dfbeta”, “dfbetas”, “scaledsch”, “partial”).
-lin_mm <- ggcoxdiagnostics(time_int_model, type = "dfbeta",
-                 linear.predictions = FALSE, ggtheme = theme_bw())
-
-ggsave(lin_mm,filename = "~/MyGithub/early_experience/Plots/male_nonlinearity_test.pdf", height=5, width=9)
+# lin_mm <- ggcoxdiagnostics(time_int_model, type = "dfbeta",
+#                  linear.predictions = FALSE, ggtheme = theme_bw())
+# 
+# ggsave(lin_mm,filename = "~/MyGithub/early_experience/Plots/male_nonlinearity_test.pdf", height=5, width=9)
 
 
 ### Visualize deviance residuals to check for outliers
 
-dev_mm <- ggcoxdiagnostics(time_int_model, type = "deviance",
-                 linear.predictions = FALSE, ggtheme = theme_bw())
-
-dev_reg <- ggcoxdiagnostics(interval_model, type = "deviance",
-                 linear.predictions = FALSE, ggtheme = theme_bw())
-
-ggsave(dev_mm,filename = "~/MyGithub/early_experience/Plots/male_deviance_test.pdf", height=5, width=9)
+# dev_mm <- ggcoxdiagnostics(time_int_model, type = "deviance",
+#                  linear.predictions = FALSE, ggtheme = theme_bw())
+# 
+# dev_reg <- ggcoxdiagnostics(interval_model, type = "deviance",
+#                  linear.predictions = FALSE, ggtheme = theme_bw())
+# 
+# ggsave(dev_mm,filename = "~/MyGithub/early_experience/Plots/male_deviance_test.pdf", height=5, width=9)
 
 
 ## Testing non-linearity
 ### i.e. checking if functional form of model is correcctly specified
 
-ggcoxfunctional(Surv(age, status==2) ~ age + log(age) + sqrt(age), data = male)
+# ggcoxfunctional(Surv(age, status==2) ~ age + log(age) + sqrt(age), data = male)
 ```
 
 
