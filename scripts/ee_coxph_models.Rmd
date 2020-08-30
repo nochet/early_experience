@@ -28,8 +28,9 @@ Models on age-classes not significant for either diet, but a large effect of sex
 
 Larval treatment effect depends on adult age 
 
+# Simple models: Start complex and work downwards
 
-# All terms and a 3-way interaction
+## All terms and a 3-way interaction
 
 Interaction is not significant
 Non-PH in larval diet and sex
@@ -50,7 +51,7 @@ test.cph1
 
 ```
 
-# Code interaction as a compound variable (2 diets and sex)
+## Code interaction as a compound variable (2 diets and sex)
 
 All interactions are significant - likely due to sex
 cpd_var is non-PH
@@ -65,7 +66,7 @@ cox.zph(cph2)
 
 ```
 
-# Fit sex additively in cph2
+## Fit sex additively in cph2
 
 All terms are significant
 Sex is non-PH
@@ -76,7 +77,7 @@ summary(cph3)
 cox.zph(cph3)
 ```
 
-# Fit larval diet additively
+## Fit larval diet additively
 
 Terms with sex are all sig, larval diet nsig
 Both covariates non-PH
@@ -92,10 +93,33 @@ summary(cph4)
 cox.zph(cph4)
 ```
 
-# Take from simple models
+# Test effect of cageID
+
+cageID is significant in two diet/replicate combinations (C_DR2 and DR_DR1)
+Sex and cageID are non-PH
+
+```{r}
+cph5 <- coxph(Surv(age, status) ~ larvalTreat + 
+                adultTreat + sex + cageID, 
+              data = eelife)
+summary(cph5)
+#ggforest(cph2, data = eelife)
+cox.zph(cph5)
+
+# Drop sex
+cph6 <- coxph(Surv(age, status) ~ larvalTreat + 
+                adultTreat + cageID, 
+              data = eelife)
+summary(cph6)
+#ggforest(cph2, data = eelife)
+cox.zph(cph6)
+```
+
+
+## Take from simple models
 1. LOOKS LIKE SEX HAS A MAJOR IMPACT - CONSIDER SEXES SEPARATELY
 2. DEAL WITH NON-PH COVARIATES
-
+3. cageID HAS EFFECT, SO SHOULD BE CONTROLLED FOR AS RANDOM EFFECT
 
 
 

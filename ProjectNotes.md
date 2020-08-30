@@ -45,7 +45,7 @@ Model with larval diet fit additively
 # Summary from these simple models
 1. LOOKS LIKE SEX HAS A MAJOR IMPACT - CONSIDER SEXES SEPARATELY
 2. DEAL WITH NON-PH COVARIATES
-
+3. cageID HAS EFFECT, SO SHOULD BE CONTROLLED FOR AS RANDOM EFFECT
 
 ### 2020-08-28 (EN)
 Suggestions from DataPhiles:
