@@ -21,7 +21,6 @@ editor_options:
 library(survival)
 #library(coxme)
 library(rstanarm)
-library(brms)
 library(tidyverse)
 library(cowplot)
 library(tidybayes)
