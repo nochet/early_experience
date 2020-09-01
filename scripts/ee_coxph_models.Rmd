@@ -28,25 +28,46 @@ Models on age-classes not significant for either diet, but a large effect of sex
 
 Larval treatment effect depends on adult age 
 
-# Simple models: Start complex and work downwards
 
-## All terms and a 3-way interaction
+# Data
+
+```{r}
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex)
+```
+
+## A complex linear model
+
+Only sex is sig
+Non-PH: larval diet, cageID, sex, and the interaction term
+see Fox and Weisberg (2018)
+
+```{r}
+# 4-way interaction
+cph1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                sex + cageID + larvalTreat:adultTreat:sex:cageID, 
+              data = eelife)
+summary(cph1)
+#ggforest(cph1, data = eelife)
+cox.zph(cph1)
+#ggcoxzph(test.cph1)
+
+```
 
 Interaction is not significant
 Non-PH in larval diet and sex
 see Fox and Weisberg (2018)
 
-```{r}
-eelife <- read.csv("../processed/eeAlldat.csv") %>%
-  select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex)
+# Drop cageID - likely a RE
 
-cph1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex +
-                larvalTreat:adultTreat:sex, 
+```{r}
+# 3-way interaction
+cph2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                sex + cageID + larvalTreat:adultTreat:sex, 
               data = eelife)
-summary(cph1)
+summary(cph2)
 #ggforest(cph1, data = eelife)
-test.cph1 <- cox.zph(cph1)
-test.cph1
+cox.zph(cph2)
 #ggcoxzph(test.cph1)
 
 ```
@@ -60,99 +81,52 @@ cpd_var is non-PH
 eelife <- eelife %>% unite(cpd_var, larv_adult, sex, 
                            sep = "_", remove = FALSE)
 
-cph2 <- coxph(Surv(age, status) ~ cpd_var, data = eelife)
-summary(cph2)
-cox.zph(cph2)
-
-```
-
-## Fit sex additively in cph2
-
-All terms are significant
-Sex is non-PH
-
-```{r}
-cph3 <- coxph(Surv(age, status) ~ larv_adult + sex, data = eelife)
+cph3 <- coxph(Surv(age, status) ~ cpd_var, data = eelife)
 summary(cph3)
 cox.zph(cph3)
+
 ```
 
-## Fit larval diet additively
+# Compare models
 
-Terms with sex are all sig, larval diet nsig
-Both covariates non-PH
+Seems to favor cph3 - interacting terms
 
 ```{r}
-eelife <- eelife %>% unite(adTreat_sex, adultTreat, sex, 
-                           sep = "_", remove = FALSE)
-
-cph4 <- coxph(Surv(age, status) ~ larvalTreat + adTreat_sex, 
-              data = eelife)
-summary(cph4)
-#ggforest(cph2, data = eelife)
-cox.zph(cph4)
+anova(cph1,cph2,cph3)
 ```
 
-# Test effect of cageID
-
-cageID is significant in two diet/replicate combinations (C_DR2 and DR_DR1)
-Sex and cageID are non-PH
-
-```{r}
-cph5 <- coxph(Surv(age, status) ~ larvalTreat + 
-                adultTreat + sex + cageID, 
-              data = eelife)
-summary(cph5)
-#ggforest(cph2, data = eelife)
-cox.zph(cph5)
-
-# Drop sex
-cph6 <- coxph(Surv(age, status) ~ larvalTreat + 
-                adultTreat + cageID, 
-              data = eelife)
-summary(cph6)
-#ggforest(cph2, data = eelife)
-cox.zph(cph6)
-```
-
-
-## Take from simple models
+## Take from linear models
 1. LOOKS LIKE SEX HAS A MAJOR IMPACT - CONSIDER SEXES SEPARATELY
 2. DEAL WITH NON-PH COVARIATES
 3. cageID HAS EFFECT, SO SHOULD BE CONTROLLED FOR AS RANDOM EFFECT
+4. THERE SEEMS TO BE INTERACTION EFFECTS TO WORRY ABOUT
 
 
 
 
-# 2. Stratify the time variable
+# Deal with the non-PH problem
+
+## Stratify the time variable for model cph3
+
+Does not correct non-PH
+
 ```{r}
 hist(eelife$age)
 
 eelife$age.intv <- car::recode(eelife$age, 
-                              "lo:19=1; 
-                              20:39=2; 
-                              40:59=3; 
-                              60:79=4; 
-                              80:hi=5") 
+                              "lo:10=1; 
+                              11:20=2; 
+                              21:30=3; 
+                              31:40=4;
+                              41:50=5;
+                              51:60=6;
+                              61:hi=7") 
 xtabs(~ age.intv, data=eelife)
 
-cph4 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex + 
-                    strata(age.intv), data=eelife)
-cph4
+cph4 <- coxph(Surv(age, status) ~ cpd_var + strata(age.intv), data=eelife)
+summary(cph4)
 
-test.cph4 <- cox.zph(cph4)
-test.cph4
-#ggcoxzph(test.cph4)
-# Sex and global p-vals are still non-proportional
-
-
-# Add interaction back
-# cph5 <- coxph(Surv(age, status) ~ adultTreat + larvalTreat + sex + 
-#                     larvalTreat:adultTreat,strata(age.intv),
-#               data=eelife)
-# cph5
-# ‘floor’ not meaningful for factors
-
+cox.zph(cph4)
 
 ```
 
@@ -177,10 +151,7 @@ eelife <- eelife %<>%
 # A regular cox regression
 ## Requires a defined status level
 
-regular_model <- coxph(Surv(age, status==1) ~ larvalTreat + 
-                         adultTreat + sex, data = eelife)
-summary(regular_model)
-cox.zph(regular_model)
+regular_model <- cph4
 
 
 # Now, split dataset and repeat model

@@ -37,6 +37,8 @@ STEP 4: A Bayesian approach
 ## Project Notes 
 
 ### 2020-08-229 (EN)
+Move cox models in new script `ee_coxph_models.Rmd` - `eeSurv_viz.Rmd has gotten too long
+
 Model with all terms and a 3-way interaction
 Interaction model with a compound variable (2 diets and sex)
 Model where sex is fit additively
