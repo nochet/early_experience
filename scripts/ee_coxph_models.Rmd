@@ -40,6 +40,7 @@ eelife <- read.csv("../processed/eeAlldat.csv") %>%
 
 Only sex is sig
 Non-PH: larval diet, cageID, sex, and the interaction term
+cageID unlikely to interact with diet
 see Fox and Weisberg (2018)
 
 ```{r}
@@ -54,14 +55,13 @@ cox.zph(cph1)
 
 ```
 
-Interaction is not significant
-Non-PH in larval diet and sex
-see Fox and Weisberg (2018)
-
 # Drop cageID - likely a RE
 
+Interaction is not significant for one combi (cageIDDR_DR1)
+Non-PH in larval diet and sex
+
 ```{r}
-# 3-way interaction
+# 3-way interaction (drop cageID in the interaction term)
 cph2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                 sex + cageID + larvalTreat:adultTreat:sex, 
               data = eelife)
@@ -136,7 +136,7 @@ Unsplit-time variable: Adult treatment has a large effect. Sex has a large effec
 
 Split-time variable: Adult treatment and sex have large effects. Larval treat and sex have non-PH
 
-Splitting at interval of 0.5: Both treatments have PHs, but sex is still very much confounding.
+Splitting at interval of 0.5: sex and cageID non-PH.
 
 ```{r}
 
@@ -151,7 +151,7 @@ eelife <- eelife %<>%
 # A regular cox regression
 ## Requires a defined status level
 
-regular_model <- cph4
+regular_model <- cph1
 
 
 # Now, split dataset and repeat model
@@ -197,8 +197,7 @@ time_int_model <-
          .~.+sex:Start_time)
 summary(time_int_model)
 
-sx <- cox.zph(time_int_model)
-sx
+cox.zph(time_int_model)
 
 ggcoxzph(sx)
 
