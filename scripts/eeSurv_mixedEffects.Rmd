@@ -37,7 +37,8 @@ library(broom)
 
 # Data has both male and female events
 
-eelife <- read.csv("../processed/eeAlldat.csv")
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-X)
 
 ```
 
