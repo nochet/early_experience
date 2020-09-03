@@ -117,8 +117,7 @@ eelife$age.intv <- car::recode(eelife$age,
                               61:hi=7") 
 xtabs(~ age.intv, data=eelife)
 
-cph4 <- coxph(Surv(age, status) ~ cpd_var + (1 + cageID) +
-                strata(age.intv), data=eelife)
+cph4 <- coxph(Surv(age, status) ~ cpd_var + strata(age.intv), data=eelife)
 summary(cph4)
 
 cox.zph(cph4)
@@ -127,30 +126,33 @@ cox.zph(cph4)
 
 # Cox model with split-time variable
 
-Splitting at intervals  0.5 - 20: interaction still non-PH.
-Model sexes separately
-Proceed to stan_surv()
+Unsplit-time variable: Adult treatment has a large effect. Sex has a large effect. Larval treat and sex have very non-PH
+
+Split-time variable: Adult treatment and sex have large effects. Larval treat and sex have non-PH
+
+Splitting at interval of 0.5: sex and cageID non-PH.
 
 ```{r}
 
-# eelife <- eelife %<>% 
-#   mutate(status = factor(status),
-#         larvalTreat = factor(larvalTreat),
-#         adultTreat = factor(adultTreat),
-#         sex = factor(sex))
+eelife <- eelife %<>% 
+  mutate(status = factor(status),
+        larvalTreat = factor(larvalTreat),
+        adultTreat = factor(adultTreat),
+        sex = factor(sex))
+
 
 
 # A regular cox regression
 ## Requires a defined status level
 
-regular_model <- cph2
+regular_model <- cph1
 
 
-# Now, split data set and repeat model
+# Now, split dataset and repeat model
 
 spl_eelife <-
   eelife %>% 
-  timeSplitter(by = 20,
+  timeSplitter(by = 0.5,
                event_var = "status",
                event_start_status = 0,
                time_var = "age")
