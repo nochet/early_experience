@@ -25,7 +25,8 @@ source("ggplot_theme.R")
 eefecundity <- read.table('../processed/Early_Experience_Data_rechecked.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE)
-
+eefecundity <- eefecundity %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
 
 ```
 
@@ -90,6 +91,50 @@ xlab("Fecundity") +
  ylab("Point") +
   theme(legend.position = c(0.7, 0.8))
 ```
+
+
+```{r}
+ggplot(eefecundity, aes(numEggs, color = lvadComb)) +
+  geom_density(alpha = 0.5) +
+  coord_cartesian(xlim = c(-10, 620), ylim = c(0, 0.016)) +
+  labs(x = "Eggs", y = "Density", color = "Diet Combination", title = "AJ Density Old")
+
+ggplot(eefecundity, aes(age, numEggs, color = lvadComb)) +
+  geom_line() +
+  coord_cartesian(xlim = c(-5, 60), ylim = c(0, 1100)) +
+  geom_smooth() +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Counts Old")
+
+ggplot(eefecundity, aes(age, numEggs, color = lvadComb)) +
+  geom_point() +
+  coord_cartesian(xlim = c(-5, 95), ylim = c(0, 1100)) +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Counts Old")
+
+ggplot(eefecundity, aes(x = lvadComb,y = numEggs, color = id))+
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Diets Old")
+
+ggplot(eefecundity, aes(x = age, y = numEggs, color = lvadComb)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  coord_cartesian(xlim = c(-5, 80), ylim = c(0, 1100)) +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Line Old")
+
+ggplot(eefecundity, aes(x = lvadComb, y = numEggs, color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.1) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Point Old")
+
+ggplot(eefecundity, aes(x = lvadComb, y = log(numEggs), color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.05) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Log Point Old")
+
+ggplot(eefecundity, aes(x = lvadComb, y = numEggs, color = lvadComb)) +
+  geom_violin() +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Violin Old")
+```
+
 
 #Means
 ```{r}
