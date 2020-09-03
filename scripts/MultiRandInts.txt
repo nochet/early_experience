@@ -102,3 +102,110 @@ Chain 6: Iteration:  15001 / 500000 [  3%]  (Sampling)
 Chain 1: Iteration:  15001 / 500000 [  3%]  (Sampling)
 Chain 4: Iteration:  15001 / 500000 [  3%]  (Sampling)
 Chain 2: Iteration:  15001 / 500000 [  3%]  (Sampling)
+Chain 5: Iteration:  65000 / 500000 [ 13%]  (Sampling)
+Chain 3: Iteration:  65000 / 500000 [ 13%]  (Sampling)
+Chain 1: Iteration:  65000 / 500000 [ 13%]  (Sampling)
+Chain 4: Iteration:  65000 / 500000 [ 13%]  (Sampling)
+Chain 2: Iteration:  65000 / 500000 [ 13%]  (Sampling)
+Chain 5: Iteration: 115000 / 500000 [ 23%]  (Sampling)
+Chain 3: Iteration: 115000 / 500000 [ 23%]  (Sampling)
+Chain 4: Iteration: 115000 / 500000 [ 23%]  (Sampling)
+Chain 1: Iteration: 115000 / 500000 [ 23%]  (Sampling)
+Chain 6: Iteration:  65000 / 500000 [ 13%]  (Sampling)
+Chain 2: Iteration: 115000 / 500000 [ 23%]  (Sampling)
+Chain 5: Iteration: 165000 / 500000 [ 33%]  (Sampling)
+Chain 3: Iteration: 165000 / 500000 [ 33%]  (Sampling)
+Chain 4: Iteration: 165000 / 500000 [ 33%]  (Sampling)
+Chain 1: Iteration: 165000 / 500000 [ 33%]  (Sampling)
+Chain 2: Iteration: 165000 / 500000 [ 33%]  (Sampling)
+Chain 5: Iteration: 215000 / 500000 [ 43%]  (Sampling)
+Chain 4: Iteration: 215000 / 500000 [ 43%]  (Sampling)
+Chain 3: Iteration: 215000 / 500000 [ 43%]  (Sampling)
+Chain 1: Iteration: 215000 / 500000 [ 43%]  (Sampling)
+Chain 6: Iteration: 115000 / 500000 [ 23%]  (Sampling)
+Chain 2: Iteration: 215000 / 500000 [ 43%]  (Sampling)
+Chain 5: Iteration: 265000 / 500000 [ 53%]  (Sampling)
+Chain 3: Iteration: 265000 / 500000 [ 53%]  (Sampling)
+Chain 4: Iteration: 265000 / 500000 [ 53%]  (Sampling)
+Chain 1: Iteration: 265000 / 500000 [ 53%]  (Sampling)
+Chain 5: Iteration: 315000 / 500000 [ 63%]  (Sampling)
+Chain 3: Iteration: 315000 / 500000 [ 63%]  (Sampling)
+Chain 4: Iteration: 315000 / 500000 [ 63%]  (Sampling)
+Chain 1: Iteration: 315000 / 500000 [ 63%]  (Sampling)
+Chain 6: Iteration: 165000 / 500000 [ 33%]  (Sampling)
+Chain 2: Iteration: 265000 / 500000 [ 53%]  (Sampling)
+Chain 5: Iteration: 365000 / 500000 [ 73%]  (Sampling)
+Chain 3: Iteration: 365000 / 500000 [ 73%]  (Sampling)
+Chain 4: Iteration: 365000 / 500000 [ 73%]  (Sampling)
+Chain 1: Iteration: 365000 / 500000 [ 73%]  (Sampling)
+Chain 2: Iteration: 315000 / 500000 [ 63%]  (Sampling)
+Chain 5: Iteration: 415000 / 500000 [ 83%]  (Sampling)
+Chain 3: Iteration: 415000 / 500000 [ 83%]  (Sampling)
+Chain 4: Iteration: 415000 / 500000 [ 83%]  (Sampling)
+Chain 1: Iteration: 415000 / 500000 [ 83%]  (Sampling)
+Chain 6: Iteration: 215000 / 500000 [ 43%]  (Sampling)
+Chain 2: Iteration: 365000 / 500000 [ 73%]  (Sampling)
+Chain 5: Iteration: 465000 / 500000 [ 93%]  (Sampling)
+Chain 3: Iteration: 465000 / 500000 [ 93%]  (Sampling)
+Chain 4: Iteration: 465000 / 500000 [ 93%]  (Sampling)
+Chain 1: Iteration: 465000 / 500000 [ 93%]  (Sampling)
+Chain 5: Iteration: 500000 / 500000 [100%]  (Sampling)
+Chain 5: 
+Chain 5:  Elapsed Time: 1592.37 seconds (Warm-up)
+Chain 5:                37889.3 seconds (Sampling)
+Chain 5:                39481.7 seconds (Total)
+Chain 5: 
+Chain 3: Iteration: 500000 / 500000 [100%]  (Sampling)
+Chain 3: 
+Chain 3:  Elapsed Time: 1576.74 seconds (Warm-up)
+Chain 3:                38137.6 seconds (Sampling)
+Chain 3:                39714.4 seconds (Total)
+Chain 3: 
+Chain 4: Iteration: 500000 / 500000 [100%]  (Sampling)
+Chain 4: 
+Chain 4:  Elapsed Time: 1627.78 seconds (Warm-up)
+Chain 4:                38163.6 seconds (Sampling)
+Chain 4:                39791.4 seconds (Total)
+Chain 4: 
+Chain 1: Iteration: 500000 / 500000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 1622.38 seconds (Warm-up)
+Chain 1:                38282.2 seconds (Sampling)
+Chain 1:                39904.6 seconds (Total)
+Chain 1: 
+Chain 2: Iteration: 415000 / 500000 [ 83%]  (Sampling)
+Chain 6: Iteration: 265000 / 500000 [ 53%]  (Sampling)
+Chain 2: Iteration: 465000 / 500000 [ 93%]  (Sampling)
+Chain 2: Iteration: 500000 / 500000 [100%]  (Sampling)
+Chain 2: 
+Chain 2:  Elapsed Time: 1662.4 seconds (Warm-up)
+Chain 2:                46672 seconds (Sampling)
+Chain 2:                48334.4 seconds (Total)
+Chain 2: 
+Chain 6: Iteration: 315000 / 500000 [ 63%]  (Sampling)
+Chain 6: Iteration: 365000 / 500000 [ 73%]  (Sampling)
+Chain 6: Iteration: 415000 / 500000 [ 83%]  (Sampling)
+Chain 6: Iteration: 465000 / 500000 [ 93%]  (Sampling)
+Chain 6: Iteration: 500000 / 500000 [100%]  (Sampling)
+Chain 6: 
+Chain 6:  Elapsed Time: 1612.52 seconds (Warm-up)
+Chain 6:                75054.2 seconds (Sampling)
+Chain 6:                76666.8 seconds (Total)
+Chain 6: 
+Warning messages:
+1: There were 28090 divergent transitions after warmup. See
+http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+to find out why this is a problem and how to eliminate them. 
+2: Examine the pairs() plot to diagnose sampling problems
+ 
+> 
+> end_time <- Sys.time()
+> diff.t <- end_time-start_time
+> 
+> save(mod4, file="../processed/cageID_multi_randints.Rda")
+> 
+> 
+> 
+> proc.time()
+      user     system    elapsed 
+286084.913     86.674  78922.326 

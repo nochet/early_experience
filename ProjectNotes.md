@@ -36,6 +36,35 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+### 2020-08-229 (EN)
+Move cox models in new script `ee_coxph_models.Rmd` - `eeSurv_viz.Rmd has gotten too long
+
+Model with all terms and a 3-way interaction
+Interaction model with a compound variable (2 diets and sex)
+Model where sex is fit additively
+Model with larval diet fit additively
+
+# Summary from these simple models
+1. LOOKS LIKE SEX HAS A MAJOR IMPACT - CONSIDER SEXES SEPARATELY
+2. DEAL WITH NON-PH COVARIATES
+3. cageID HAS EFFECT, SO SHOULD BE CONTROLLED FOR AS RANDOM EFFECT
+
+### 2020-08-28 (EN)
+Suggestions from DataPhiles:
+
+1. cph: Start with a model that fits all terms additively plus a three-way interaction (larval:adult:sex); progressively drop nsig terms
+
+2. Alternatively, explore simplified models - with just one term each on the right side of "~". See how results agrees with KM plots. 
+e.g.:
+    - split data by sex
+    - combine larval_adult diet ids
+    - fit model
+Then carefully build models that are more complex from intuition gained
+
+3. Before trying cageID as a random effect, fit it as fixed effect first. If sig, then use as random effect, otherwise drop it.
+
+4. Do pp_checks in Bayesian models to discount inadequate models
+
 
 ### 2020-08-23 (EN)
 

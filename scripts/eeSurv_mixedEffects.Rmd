@@ -21,7 +21,6 @@ editor_options:
 library(survival)
 #library(coxme)
 library(rstanarm)
-library(brms)
 library(tidyverse)
 library(cowplot)
 library(tidybayes)
@@ -171,7 +170,6 @@ lcomp <- loo_compare(loo(mod1_exp),
 
 ## Record execution time and multicore use
 end_time <- Sys.time()
-
 diff_time <- end_time - start_time
 
 
@@ -193,7 +191,8 @@ mod2 <- stan_surv(formula = Surv(age, status==2) ~
                     seed    = test_SEED,
                     iter    = test_ITER)
 
-save(mod2, file="../processed/pieceW_tve.Rda")
+#save(mod2, file="../processed/pieceW_tve.Rda")
+load("../processed/pieceW_tve.Rda")
 
 plot(mod2) + coord_cartesian(ylim = c(0, 0.1)) # basehaz
 summary(mod2)
@@ -226,8 +225,8 @@ mod3 <- stan_surv(
 # Estimates
 print(mod3, digits = 2)
 
-save(mod3, file="../processed/cageID_rand.Rda")
-
+#save(mod3, file="../processed/cageID_rand.Rda")
+load("../processed/cageID_rand.Rda")
 
 # Does the random term matter? Fixed model
 mod3_fixed <- update(mod3, formula. = Surv(
@@ -236,15 +235,16 @@ mod3_fixed <- update(mod3, formula. = Surv(
 # about 6.85 hrs per chain
 
 summary(mod3_fixed)
-
+ps_check(mod3_fixed)
 save(mod3_fixed, file="../processed/cageID_fixed.Rda")
+load("../processed/cageID_fixed.Rda")
 
-# Calculate 'loo'
+# Calculate 'loo' (integer overflow error!!!)
 lcomp3 <- loo_compare(loo(mod3_fixed),loo(mod3))
             
-# loo_fixed <- loo(mod3_fixed)
-# loo_mod3 <- loo(mod3)
-# loo_compare(loo_fixed, loo_mod3)
+waic_fixed <- waic(mod3_fixed)
+loo_mod3 <- loo(mod3)
+loo_compare(loo_fixed, loo_mod3)
 
 
 # Random intercept and random slope model
@@ -261,12 +261,15 @@ mod4 <- stan_surv(formula = Surv(age, status) ~
   warmup = 15000,
   iter    = 5e5)
 
-save(mod4, file="../processed/cageID_multi_randints.Rda")
+#save(mod4, file="../processed/cageID_multi_randints.Rda")
+load("../processed/cageID_multi_randints.Rda")
 
 print(mod4, digits = 2)
+summary(mod4)
+
 
 # 'loo' all three models 
-loo_randtrt <- loo(mod_randtrt)
+loo_randCage <- loo(mod4)
 loo_compare(loo_fixed, loo_randint, loo_randtrt)
 
 ```
