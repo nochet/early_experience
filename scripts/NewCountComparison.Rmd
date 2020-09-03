@@ -98,63 +98,83 @@ FullDD <- FullDD %>%
 ```{r}
 ggplot(FullAJ, aes(Count, color = lvadComb)) +
   geom_density(alpha = 0.5) +
-  coord_cartesian(xlim = c(-10, 620), ylim = c(0, 0.013))
+  coord_cartesian(xlim = c(-10, 620), ylim = c(0, 0.013)) +
+  labs(x = "Eggs", y = "Density", color = "Diet Combination", title = "AJ Density")
 
 ggplot(FullDD, aes(Count, color = lvadComb)) +
   geom_density(alpha = 0.5) +
-  coord_cartesian(xlim = c(-10, 750), ylim = c(0, 0.013))
+  coord_cartesian(xlim = c(-10, 750), ylim = c(0, 0.013)) +
+  labs(x = "Eggs", y = "Density", color = "Diet Combination", title = "DD Density")
 
 ggplot(FullAJ, aes(Age, Count, color = lvadComb)) +
   geom_line() +
   coord_cartesian(xlim = c(-5, 60), ylim = c(0, 1200)) +
-  geom_smooth()
+  geom_smooth() +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Counts")
 
 ggplot(FullDD, aes(Age, Count, color = lvadComb)) +
   geom_line() +
   coord_cartesian(xlim = c(-5, 60), ylim = c(0, 1200)) +
-  geom_smooth()
+  geom_smooth() +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "DD Counts")
+  
 
 ggplot(FullAJ, aes(Age, Count, color = lvadComb)) +
-  geom_point()
+  geom_point() +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Counts")
+  
 
 ggplot(FullDD, aes(Age, Count, color = lvadComb)) +
-  geom_point()
+  geom_point() +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "DD Counts")
+  
 
 ggplot(FullAJ, aes(x = lvadComb,y = Count, color = id))+
-  geom_boxplot(alpha = 0.5)
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Diets")
+  
 
 ggplot(FullDD, aes(x = lvadComb,y = Count, color = id))+
-  geom_boxplot(alpha = 0.5)
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "DD Diets")
 
 ggplot(FullAJ, aes(x = Age, y = Count, color = lvadComb)) +
   geom_point() +
-  geom_smooth(method = "lm", se = F)
+  geom_smooth(method = "lm", se = F) +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Line")
 
 ggplot(FullDD, aes(x = Age, y = Count, color = lvadComb)) +
   geom_point() +
-  geom_smooth(method = "lm", se = F)
+  geom_smooth(method = "lm", se = F) +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "DD Line")
 
 ggplot(FullAJ, aes(x = lvadComb, y = Count, color = lvadComb)) +
   geom_point() +
-  geom_jitter(width = 0.1)
+  geom_jitter(width = 0.1) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Point")
 
 ggplot(FullAJ, aes(x = lvadComb, y = log(Count), color = lvadComb)) +
   geom_point() +
-  geom_jitter(width = 0.05)
+  geom_jitter(width = 0.05) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Log Point")
 
 ggplot(FullDD, aes(x = lvadComb, y = Count, color = lvadComb)) +
   geom_point() +
-  geom_jitter(width = 0.04)
+  geom_jitter(width = 0.04) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "DD Point")
 
-ggplot(FullAJ, aes(x = lvadComb, y = log(Count), color = lvadComb)) +
+ggplot(FullDD, aes(x = lvadComb, y = log(Count), color = lvadComb)) +
   geom_point() +
-  geom_jitter(width = 0.03)
+  geom_jitter(width = 0.03) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "DD Log Point")
 
 ggplot(FullAJ, aes(x = lvadComb, y = Count, color = lvadComb)) +
-  geom_violin()
+  geom_violin() +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Violin")
 
 ggplot(FullDD, aes(x = lvadComb, y = Count, color = lvadComb)) +
-  geom_violin()
+  geom_violin() +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "DD Violin")
 ```
 
 
