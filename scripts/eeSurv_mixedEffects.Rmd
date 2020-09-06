@@ -37,7 +37,8 @@ library(broom)
 
 # Data has both male and female events
 
-eelife <- read.csv("../processed/eeAlldat.csv")
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-X)
 
 ```
 
@@ -90,9 +91,8 @@ M7
 
 ```{r}
 
-eelife <- read.csv("../processed/eeAlldat.csv")
-eelife$status <- ifelse(eelife[,"status"] == 2, 1, 0)
-eelife <- select(eelife, -X)
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-X)
 
 start_time <- Sys.time()
 
@@ -105,16 +105,16 @@ test_ITER   <- 1000
 ### M-splines is the default in stan_surv() 
 
 # Baseline hazard function - assuming covariate effect of zero
-mod0 <- stan_surv(formula = Surv(age, status==2) ~ tve(larvalTreat) + 
+mod1 <- stan_surv(formula = Surv(age, status) ~ tve(larvalTreat) + 
                      tve(adultTreat) + tve(sex), 
                   data    = eelife,
                   chains  = test_CHAINS, 
                   cores   = test_CORES, 
                   seed    = test_SEED,
                   iter    = test_ITER)
-print(mod0, digits = 3)
-plot(mod0) + coord_cartesian(ylim = c(0, 0.1))
-
+print(mod1, digits = 3)
+plot(mod1) + coord_cartesian(ylim = c(0, 0.1))
+# 1000 iter for 30 min
 
 # Test different parametric hazards
 # i.e. fit several models, each with a different baseline hazard
