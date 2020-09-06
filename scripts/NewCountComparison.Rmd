@@ -177,6 +177,29 @@ ggplot(FullDD, aes(x = lvadComb, y = Count, color = lvadComb)) +
   labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "DD Violin")
 ```
 
+#Getting Mean of All Three Tables
+```{r}
+Rechecked <- read.table("../processed/Early_Experience_Data_rechecked.txt",
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE)
+Rechecked <- Rechecked[,c(4:7,11:12)]
+colnames(Rechecked) <- c("Age", "id", "larvalTreat", "adultTreat", "Image_id", "Count")
+Rechecked <- Rechecked %>% 
+  mutate(id = sub('EE_', '', id))
+Rechecked <- Rechecked %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+Test1 <- merge(Rechecked, merge(FullAJ, FullDD, by = "Image_id"), by = "Image_id")
+
+
+CombinedFull <- Test1[,c(1:7,13,19)]
+
+colnames(CombinedFull) <- c("Image_id", "Age", "id", "lvadComb", "larvalTreat", "adultTreat", "Count_Rechecked", "Count_AJ", "Count_DD")
+
+CombinedFull$Mean <- rowMeans(CombinedFull[,7:9])
+
+
+```
 
 
 
