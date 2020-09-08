@@ -35,6 +35,9 @@ STEP 4: A Bayesian approach
 
 
 ## Project Notes 
+## 2020-09-07 (AJ)
+Got three rechecked data table combined and mean taken of them.IMG_9318 DR_C2 has a large number of eggs: 2867. 
+
 
 ### 2020-08-229 (EN)
 Move cox models in new script `ee_coxph_models.Rmd` - `eeSurv_viz.Rmd has gotten too long
