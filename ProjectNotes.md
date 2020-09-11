@@ -1,7 +1,7 @@
 
 ---
 title: "Early Experience Project Record & Notes"
-author: "Enoch Ng'oma (EN), and Elizabeth King (EK)"
+author: "Enoch Ng'oma (EN), Andrew Jones (AJ) and Elizabeth King (EGK)"
 date: "7/17/2018"
 ---
 

@@ -1,11 +1,12 @@
 # Load packages
 
+library(tidyverse)
 library(survival)
 library(rstanarm)
-library(tidyverse)
+
 
 eelife <- read.csv("../processed/eeAlldat.csv") %>%
-  select(-X)
+  select(-c(X,larv_adult))
 
 
 # Bayesian survival models
@@ -18,38 +19,33 @@ start_time <- Sys.time()
 mod1 <- stan_surv(formula = Surv(age, status) ~ tve(larvalTreat) + 
                     tve(adultTreat) + tve(sex), 
                   data    = eelife,
-                  chains  = 8, 
+                  chains  = 4, 
                   cores   = 4, 
                   seed    = 414867,
-                  iter    = 1e5)
+                  iter    = 1e3)
 print(mod1, digits = 3)
+summary(mod1)
 # 1000 iter for 30 min
+
+save(mod1, file="../processed/BaseHaz_mod1.Rda")
 
 # Test different parametric hazards
 # i.e. fit several models, each with a different baseline hazard
 
-mod1_exp      <- update(mod0, basehaz = "exp") 
-mod1_weibull  <- update(mod0, basehaz = "weibull") 
-mod1_gompertz <- update(mod0, basehaz = "gompertz") 
-mod1_bspline  <- update(mod0, basehaz = "bs") 
-mod1_mspline1 <- update(mod0, basehaz = "ms") 
-mod1_mspline2 <- update(mod0, basehaz = "ms", 
+mod1_exp      <- update(mod1, basehaz = "exp") 
+mod1_weibull  <- update(mod1, basehaz = "weibull") 
+mod1_gompertz <- update(mod1, basehaz = "gompertz") 
+mod1_bspline  <- update(mod1, basehaz = "bs") 
+mod1_mspline1 <- update(mod1, basehaz = "ms") 
+mod1_mspline2 <- update(mod1, basehaz = "ms", 
                         basehaz_ops = list(df = 10))
 
-save(mod0,mod1_exp,mod1_weibull,mod1_gompertz,mod1_bspline,
-        mod1_mspline1,mod1_mspline2, file="../processed/BaseHaz_new.Rda")
+save(mod1,mod1_exp,mod1_weibull,mod1_gompertz,mod1_bspline,
+        mod1_mspline1,mod1_mspline2, file="../processed/BaseHaz_Compare.Rda")
 
-# Compare fits using `loo` for `stansurv` objects
-
-lcomp <- loo_compare(loo(mod1_exp),
-                     loo(mod1_weibull),
-                     loo(mod1_gompertz),
-                     loo(mod1_bspline),
-                     loo(mod1_mspline1),
-                     loo(mod1_mspline2))
 
 # Plot the baseline hazards with 95% posterior uncertainty limits
-load("../processed/BaseHaz.Rda")
+# load("../processed/BaseHaz.Rda")
 
 plotfun <- function(model, title) {
   plot(model, plotfun = "basehaz") +              
@@ -76,6 +72,16 @@ cs <-bayesplot::bayesplot_grid(p_exp,
 
 ggplot2::ggsave(cs,filename="../plots/baseHaz_tve_fixedEffs_new.pdf",height = 6, width=10)
 
+
+
+# Compare fits using `loo` for `stansurv` objects
+
+loo_compare(loo(mod1_exp),
+                     loo(mod1_weibull),
+                     loo(mod1_gompertz),
+                     loo(mod1_bspline),
+                     loo(mod1_mspline1),
+                     loo(mod1_mspline2))
 
 ## Record execution time and multicore use
 end_time <- Sys.time()
