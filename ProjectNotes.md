@@ -35,6 +35,10 @@ STEP 4: A Bayesian approach
 
 
 ## Project Notes 
+
+## 2020-09-12 (EN)
+Start final time-varying model in stan_surv
+
 ## 2020-09-07 (AJ)
 Got three rechecked data table combined and mean taken of them.IMG_9318 DR_C2 has a large number of eggs: 2867. 
 
