@@ -257,11 +257,24 @@ pairwise.t.test(TotalF$EggsPerFemale, TotalF$lvadComb, p.adjust.method = "none")
 
 
 ```{r}
-ggplot(TotalF, aes(x = age, y = EggsPerFemale, color = lvadComb)) +
+ggplot(TotalF, aes(x = age, y = EggsPerFemale, color = lvadComb, shape = lvadComb)) +
   xlim(0, 80) +
   geom_point(na.rm = TRUE) +
   geom_smooth(method = lm, se = F) +
-  labs(x = "Age(Days)", y = "Eggs Per Female", color = "Diet Combination")
+  labs(x = "Age(Days)", y = "Eggs Per Female", color = "Diet Combination", shape = "Diet Combination", title = "Eggs Per Female vs. Age(Days") +
+  theme_half_open()
+
+ggplot(TotalF, aes(x=age, y=EggsPerFemale, color = lvadComb)) +
+  geom_line(na.rm = TRUE)+
+  coord_cartesian(xlim = c(0,85))
+
+ggplot(TotalF, aes(x=age, y=EggsPerFemale, color = lvadComb)) +
+  geom_smooth(na.rm = TRUE, span = .229, se = F) +
+  labs(x = "Age(Days", y = "Eggs Per Female", color = "Diet Combination", title = "Eggs Per Female Vs. Age(Days)")
+  theme_half_open()
+  
+  ggplot(TotalF, aes(x = lvadComb, y = EggsPerFemale, color = lvadComb)) +
+    geom_boxplot(na.rm = TRUE)
 ```
 
 

@@ -227,6 +227,14 @@ ggplot(CombinedFull, aes(x = Age, y = Mean, color = lvadComb)) +
   geom_smooth(method = "lm", se = F) +
   labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "Mean Line")
 
+ggplot(CombinedFull, aes(x = Age, y = log(Mean), color = lvadComb, shape = lvadComb)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  coord_cartesian(xlim = c(0, 57), ylim = c(1, 7)) +
+  labs(x = "Age (Days)", y = "(Log)Fecundity", color = "Diet Combination", shape = "Diet Combination", title = "Logarithmic Number of Eggs vs. Age(Days)") +
+  theme_half_open()
+  
+
 ggplot(CombinedFull, aes(x = lvadComb, y = Mean, color = lvadComb)) +
   geom_point() +
   geom_jitter(width = 0.1) +
@@ -240,6 +248,10 @@ ggplot(CombinedFull, aes(x = lvadComb, y = log(Mean), color = lvadComb)) +
 ggplot(CombinedFull, aes(x = lvadComb, y = Mean, color = lvadComb)) +
   geom_violin() +
   labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "Mean Violin")
+
+ggplot(CombinedFull, aes(x = lvadComb,y = Mean, color = lvadComb))+
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "Mean Diets")
 ```
 
 
