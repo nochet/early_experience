@@ -97,8 +97,8 @@ eelife <- read.csv("../processed/eeAlldat.csv") %>%
 start_time <- Sys.time()
 
 set.seed(989898)
-test_CHAINS <- 1
-test_CORES  <- 1
+test_CHAINS <- 4
+#test_CORES  <- 1
 test_SEED   <- 12345
 test_ITER   <- 1000
 
@@ -108,10 +108,10 @@ test_ITER   <- 1000
 mod1 <- stan_surv(formula = Surv(age, status) ~ tve(larvalTreat) + 
                      tve(adultTreat) + tve(sex), 
                   data    = eelife,
-                  chains  = test_CHAINS, 
-                  cores   = test_CORES, 
-                  seed    = test_SEED,
-                  iter    = test_ITER)
+                  chains  = 8, 
+                  cores   = 4, 
+                  seed    = 414867,
+                  iter    = 1e5)
 print(mod1, digits = 3)
 plot(mod1) + coord_cartesian(ylim = c(0, 0.1))
 # 1000 iter for 30 min
