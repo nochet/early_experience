@@ -252,6 +252,12 @@ summary(a2)
 
 pairwise.t.test(TotalF$Mean, TotalF$lvadComb, p.adjust.method = "none")
 
+a2.5 <- aov(EggsPerFemale ~ lvadComb, data = TotalF)
+summary(a2.5)
+
+test2 <- aov(EggsPerFemale ~ lvadComb * age, data = TotalF)
+summary(test2)
+
 pairwise.t.test(TotalF$EggsPerFemale, TotalF$lvadComb, p.adjust.method = "none")
 ```
 
@@ -270,13 +276,60 @@ ggplot(TotalF, aes(x=age, y=EggsPerFemale, color = lvadComb)) +
 
 ggplot(TotalF, aes(x=age, y=EggsPerFemale, color = lvadComb)) +
   geom_smooth(na.rm = TRUE, span = .229, se = F) +
-  labs(x = "Age(Days", y = "Eggs Per Female", color = "Diet Combination", title = "Eggs Per Female Vs. Age(Days)")
+  labs(x = "Age(Days", y = "Eggs Per Female", color = "Diet Combination", title = "Eggs Per Female Vs. Age(Days)") +
   theme_half_open()
   
   ggplot(TotalF, aes(x = lvadComb, y = EggsPerFemale, color = lvadComb)) +
     geom_boxplot(na.rm = TRUE)
+  
+  
 ```
 
+#Recovering Lost Plots
+```{r}
+# Collapse replicates
+dat <- fcd %>%
+  unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
+  unite(date_treat,age,treat,sep="_",remove=FALSE)
+#dat <- dat[order(dat$age),]
+
+##############
+#test grouping by multiple columns
+test <- rbind(
+  subset(dat,dat$age==1 & dat$treat=="DR_DR"),
+  subset(dat,dat$age==8 & dat$treat=="DR_DR"),
+  subset(dat,dat$age==1 & dat$treat=="C_DR"),
+  subset(dat,dat$age==8 & dat$treat=="C_DR")
+)
+test <- test[,c(3,5,10,12)]
+
+te <- test %>%
+  group_by(treat, age) %>%
+  summarize(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
+ #############
+
+
+collapse.dat <- dat %>%
+  group_by(treat, age) %>%
+  summarize(mean_eggs = mean(numEggs, na.rm = TRUE))
+
+ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) +
+  geom_boxplot(na.rm = TRUE) +
+  geom_jitter() +
+  labs(x = "Diet Combination", y = "Mean Number of Eggs", color = "Diet Combination", title = "Mean No. of Eggs by Diet Combination") +
+  theme_half_open() 
+
+a3 <- aov(mean_eggs ~ treat, data = collapse.dat)
+summary(a3)
+
+pairwise.t.test(collapse.dat$mean_eggs, collapse.dat$treat, p.adjust.method = "none")
+
+ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
+  geom_line() +
+  geom_jitter() +
+  #scale_colour_OkabeIto() +
+  theme_half_open()
+```
 
 
 

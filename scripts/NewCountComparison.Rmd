@@ -233,6 +233,9 @@ ggplot(CombinedFull, aes(x = Age, y = log(Mean), color = lvadComb, shape = lvadC
   coord_cartesian(xlim = c(0, 57), ylim = c(1, 7)) +
   labs(x = "Age (Days)", y = "(Log)Fecundity", color = "Diet Combination", shape = "Diet Combination", title = "Logarithmic Number of Eggs vs. Age(Days)") +
   theme_half_open()
+
+testaov <- aov(log(Mean) ~ lvadComb, data = CombinedFull)
+summary(testaov)
   
 
 ggplot(CombinedFull, aes(x = lvadComb, y = Mean, color = lvadComb)) +
