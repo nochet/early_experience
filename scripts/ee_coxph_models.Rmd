@@ -239,7 +239,7 @@ anova(mph1.2,mph1.1,mph1.3,mph1.0,mph2,mph2.1)
 ```
 
 # Correct the preferred model for PH
-# No REs needed
+# No random effects needed
 
 
 ```{r}
@@ -315,7 +315,7 @@ ggsave(FF,filename = "~/MyGithub/early_experience/Plots/Female_Greg_Forest_HR.pd
 
 ### Males
 
-Unsplit model: Adult DR is higly sig in males also; Both larval and adult treat are non-PH.
+Unsplit model: Adult DR is highly sig in males also; Both larval and adult treat are non-PH.
 
 Split model: Has larval treat sig also (P=0.0195), with PHs for both larval treat and larval treat*time; However, non-PH for adult treat.
 

@@ -36,11 +36,46 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+
+## 2020-11-09 (EN)
+Select best model based on leave-one-out (loo)
+Plot model results
+Script `stanSurvEval.Rmd`
+
+
+## 2020-11-08 (EN)
+stan_surv() for time varying models can accept "delayed entry" data (i.e. left truncated). Our data is 'right-censored', so we do not need the "start-stop" data structure (https://arxiv.org/pdf/2002.09633.pdf, page 11)
+
+The tve() function is used in the model formula to state that we want a time-varying effect (i.e. a time-varying coefficient) to be estimated for a variable. By default, a cubic B-spline basis with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots) is used for modeling the time-varying log hazard ratio. To place more knots inside the time interval, use df>4 e.g. Surv(eventtime, status) ~ tve(trt, df = 4, degree = 2).
+
+Hazard ratio = effect of treatment on the hazard of the event
+
+Interpretation of hazard rate vs time plots:
+From Figure 4 we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 2.5 years post-baseline. (https://arxiv.org/pdf/2002.09633.pdf, page 33)
+
+## 2020-10-28 (EN)
+Reporting example:
+["Comparing the models on PSIS-LOO reveals an estimated difference in elpd of 10.2 (with a standard error of 5.1) in favor of Model A."]
+
+Do loo (leave one out) cross-validation for each model
+loop.bs <- loo(mod1_bspline)
+Warning message:
+Found 1 observation(s) with a pareto_k > 0.7. We recommend calling 'loo' again with argument 'k_threshold = 0.7' in order to calculate the ELPD without the assumption that these observations are negligible. This will refit the model 1 times to compute the ELPDs for the problematic observations directly.
+
+loo gives us warnings about the Pareto diagnostics, which indicate that for some observations the leave-one-out posteriors are different enough from the full posterior that importance-sampling is not able to correct the difference.https://mc-stan.org/loo/articles/loo2-example.html
+
+Interpretation of loo:
+
+elpd_loo = expected log predictive density 
+
+When a model is well-specified,  we expect the estimated effective number of parameters (p_loo) to be smaller than or similar to the total number of parameters in the model. If not, it is indication of model misspecification.
+
+
 ## 2020-09-12 (EN)
 Start final time-varying model in stan_surv
 
 ## 2020-09-07 (AJ)
-Got three rechecked data table combined and mean taken of them.IMG_9318 DR_C2 has a large number of eggs: 2867. 
+Got three rechecked data table combined and mean taken of them. IMG_9318 DR_C2 has a large number of eggs: 2867. 
 
 
 ### 2020-08-229 (EN)
