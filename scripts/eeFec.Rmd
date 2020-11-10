@@ -43,13 +43,13 @@ names(eelife)[1]<-"event"
 eelife$cageID <- as.character(eelife$cageID)
 head(eelife)
 
-ff <- subset(eelife, eelife$Sex == "Female")
+ff <- subset(eelife, eelife$sex == "F")
 head(ff)
 
 # Get medians
 
 # by treatment combinations
-ffm <- survfit(Surv(NewAge, status == 2) ~ adultTreat,
+ffm <- survfit(Surv(age, status == 2) ~ adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
@@ -133,12 +133,10 @@ ggplot(fk, aes(x=age, y=Mean, color = cageID)) +
 
 zz <- ggplot(fk, aes(x=cageID, y=log(Mean), color = cageID)) + 
   geom_jitter(size = 2, width=0.1, height=0.5) +
-  geom_point(data = fkk, size = 5, shape = 2) +
+  geom_point(data = fkk, size = 4, shape = 0) +
   #geom_point(data = fif, size = 5, shape = 23) +
-  labs(x = "Diet", y = "log(mean No. of eggs per day)") +
-  theme_half_open()
-zz + theme(legend.title = element_blank())
-
+  labs(x = "Diet", y = "log(mean No. of eggs per day)", color = "Diet Combination", title = "Logarithmic Mean No. of Eggs by Diet") + theme_half_open()
+zz
 ####
 ggline(fec, x = "cageID", y = "numEggs", 
        add = c("mean_se", "jitter"), 
