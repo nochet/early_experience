@@ -25,18 +25,22 @@ theme_set(bayesplot::theme_default(base_family = "sans"))
 ```{r}
 
 mod0 <- readRDS("../processed/bhaz_mod0.rds")
-#mod1 <- readRDS("../processed/bhaz_mod1.rds")
 load("../processed/bhaz_Compare.Rda")
+
+ps_check(mod0)
+ps_check(mod1) #takes time
 ```
 
 # Examine posteriors
 
 ```{r}
-
-# Central posterior uncertainty intervals
+# Inspect the marginal prior distributions for log HR for treatment
+# (aka Central posterior uncertainty intervals)
 # The default is to show 50% intervals (the thick segments) and 90% intervals (the thinner outer lines). These defaults can be changed using the prob and prob_outer arguments, respectively. Points in the plot are posterior medians.
 color_scheme_set("red")
-mcmc_intervals(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"))
+mcmc_intervals(mod1, pars = c(
+  "larvalTreatDR","adultTreatDR","sexM","(Intercept)")
+  )
 
 # Uncertainty intervals as shaded areas under the estimated posterior density curves
 color_scheme_set("red")
@@ -45,16 +49,40 @@ mcmc_areas(mod1,
            prob=0.8,prob_outer = .999,point_est = "mean")
 # Some marginals significantly away from zero
 
-
 # Change to a mixed color scheme to see differences between chains 
 color_scheme_set("mix-blue-red")
 mcmc_trace(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"), 
            facet_args = list(ncol = 1, strip.position = "left"))
 
-# Use points instead of lines and reduce opacity of all but one chain
+# Use points instead of lines and highlight one chain
 mcmc_trace_highlight(mod1, pars = "larvalTreatDR", highlight = 3)
 
 ```
+
+# LOO weights
+
+```{r}
+lpd1 <- loo(log_lik_list[[1]], r_eff = r_eff_list[[1]])$pointwise[,1]
+# Basic model (larval, adult, sex)
+loo_0 <- readRDS("../processed/loo_0.rds")
+
+# Basic model (tve)
+loo_1 <- readRDS("../processed/loo_1.rds")
+
+# B_splines model
+loo_2 <- readRDS("../processed/loo_2.rds")
+
+
+# stacking weights
+loo_list <- list(list(mod0, mod1, mod1_bspline))
+
+
+wts <- loo::loo_model_weights(mod_list, 
+                              method = "pseudobma")
+print(wts)
+
+```
+
 
 # Model comparison
 
@@ -123,6 +151,26 @@ save(mm.sum,mm.post,mm.plot, file="../processed/bhaz_mm.Rda")
 
 ```
 
+# Prior vs posterior checks for mod1
+
+```{r}
+plot_grid(
+  
+bayesplot_grid(mcmc_intervals(mod1),
+               mcmc_intervals(mod1_mspline2),
+               titles = c("Prior", "Posterior"), 
+               xlim = c(-2, 1),
+               grid_args = list(ncol = 2)),
+
+bayesplot_grid(mcmc_hist(mod1), 
+               mcmc_hist(mod1_mspline2),
+               titles = c("Prior", "Posterior"), 
+               grid_args = list(nrow = 2)),
+ncol = 2 )
+
+
+```
+
 # Plot the best model
 
 ```{r}
@@ -173,5 +221,14 @@ loop_pick <- loo_compare(loo(mod1),
                           loo(mod1_bspline))
 
 saveRDS(loop_pick, file="../processed/loop_pick.rds")
+```
+
+# Model weights
+
+```{r}
+best_list <- stanreg_list(mod0, mod1, mod1_bspline)
+loo_wts <- loo_model_weights(best_list,cores=getOption("mc.cores",4))
+loo_wt <- loo_model_weights(best_list,cores=getOption("mc.cores",4))
+saveRDS(loo_wts, file="../processed/loo_wts_BasicMods.rds")
 ```
 

@@ -10,7 +10,7 @@ library(cowplot)
 library(bayesplot)
 #theme_set(bayesplot::theme_default())
 theme_set(bayesplot::theme_default(base_family = "sans"))
-
+ggplot2::theme_set(bayesplot::theme_default())
 
 eelife <- read.csv("../processed/eeAlldat.csv") %>%
   select(-c(X,larv_adult))
@@ -35,10 +35,18 @@ print(mod0, digits = 3)
 summary(mod0)
 mcmc_areas(as.matrix(mod0), prob_outer = .999)
 saveRDS(mod0, file="../processed/bhaz_mod0.rds")
-
-loop0 <- loo(mod0)
-
 mod0 <- readRDS("../processed/bhaz_mod0.rds")
+
+log_lik0 <- log_lik(mod0) 
+
+
+reff0 <- as.array(mod0)
+r_eff <- loo::relative_eff(exp(reff0))
+loo_0 <- loo.array(reff0, r_eff = r_eff, 
+             cores=getOption("mc.cores",2))
+print(loo_0)
+
+saveRDS(loo_0, file = "../processed/loo_0.rds")
 
 # Estimate a time-varying effect (coefficient) to be estimated for each variable
 mod1 <- stan_surv(formula = Surv(age, status) ~ tve(larvalTreat) + 
@@ -51,9 +59,14 @@ mod1 <- stan_surv(formula = Surv(age, status) ~ tve(larvalTreat) +
 print(mod1, digits = 3)
 summary(mod1)
 save(mod1, file="../processed/bhaz_mod1.Rda")
-loop <- loo(mod1)
 
-saveRDS(loop, file = "../processed/loop_mod1.rds")
+reff1 <- as.array(mod1)
+r_eff1 <- loo::relative_eff(exp(reff1))
+loo_1 <- loo.array(reff1, r_eff = r_eff1, 
+                   cores=getOption("mc.cores",4))
+print(loo_1)
+
+saveRDS(loo_1, file = "../processed/loo_1.rds")
 
 # Test different parametric hazards
 # i.e. fit several models, each with a different baseline hazard
@@ -68,6 +81,16 @@ mod1_mspline2 <- update(mod1, basehaz = "ms",
 
 save(mod1,mod1_exp,mod1_weibull,mod1_gompertz,mod1_bspline,
         mod1_mspline1,mod1_mspline2, file="../processed/bhaz_Compare.Rda")
+
+reff2 <- as.array(mod1_bspline)
+r_eff2 <- loo::relative_eff(exp(reff2))
+loo_2 <- loo.array(reff2, r_eff = r_eff2, 
+                   cores=getOption("mc.cores",4),
+                   moment_match=FALSE,
+                   k_threshold=0.7)
+print(loo_2)
+
+saveRDS(loo_2, file = "../processed/loo_2.rds")
 
 
 load("../processed/bhaz_Compare.Rda")

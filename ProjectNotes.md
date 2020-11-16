@@ -37,6 +37,14 @@ STEP 4: A Bayesian approach
 ## Project Notes 
 
 
+## 2020-11-03 (EN)
+Try Bayesian peicewise regression on mod1 (the favored model), 5e4 iter
+Chain 4:  Elapsed Time: 38.51 hrs
+Chain 3:  Elapsed Time: 38.95 hrs
+Chain 2:  Elapsed Time: 38.98 hrs
+Chain 1:  Elapsed Time: 39.16 hrs
+This is for one model (tve, df=5)!!!!! Cancel and reduce iter to 1e4
+
 ## 2020-11-09 (EN)
 Select best model based on leave-one-out (loo)
 Plot model results

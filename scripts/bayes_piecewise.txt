@@ -1,0 +1,3 @@
+R CMD BATCH --quiet --no-restore --no-save Bayes_Piecewise.R &
+
+Rscript Bayes_Piecewise.R > out_bayes_pw.txt 2>error_bayes_pw.txt &
