@@ -25,76 +25,139 @@ source("color_map_blindr.R")
 
 ```{r pressure, echo=FALSE}
 
-fcd <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
+# Andrew data 1
+aj1 <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
 
-fcd <- na.omit(fcd)
+which(is.na(aj1))
+which(is.na(aj1$numEggs))
+aj1[which(is.na(aj1$numEggs)),] 
+
+# no eggs beyond age 77 days - remove rows
+aj1 <- na.omit(aj1)
 
 # Check duplicated camera_id
-dup_ids <- which(duplicated(fcd$camera_id)) # 2 images dupl.
-k <- fcd[which(duplicated(fcd$camera_id)), ]
+dup_ids <- which(duplicated(aj1$camera_id)) # 2 images dupl.
+aj1[which(duplicated(aj1$camera_id)), ]
 
-# Seemsimages 9834 (33 eggs) & 9835 15 eggs) are duplicated 
-kk <- rbind(subset(fcd, fcd$camera_id=="9834") , 
-            subset(fcd, fcd$camera_id=="9835"))
-
-######################################
-#### TO OMIT OR NOT TO OMIT - ANDREW
-######################################
+# Seems images 9834 (33 eggs) & 9835 15 eggs) are duplicated 
+rbind(subset(aj1, aj1$camera_id=="9834") , 
+            subset(aj1, aj1$camera_id=="9835"))
 
 # For now, trash all 4
-fcd <- fcd[which(!duplicated(fcd$camera_id)), ]
-fcd <- fcd[,c(2:3,5:8,10:12)]
+# aj1 <- aj1[which(!duplicated(aj1$camera_id)), ]
+
+
+# Retain the first occurence of each
+aj1 <- aj1[-c(189,190), ]
+aj1 <- aj1[,c(2:3,5:8,10:12)]
 
 # Recalculate age, then delete dates
-fcd$startDate <- as.Date(fcd$startDate , "%m/%d/%y")
-fcd$sampleDate <- as.Date(fcd$sampleDate , "%m/%d/%y")
-fcd$age <- (fcd$sampleDate - fcd$startDate)
-fcd$age <- as.numeric(fcd$age)
+aj1$startDate <- as.Date(aj1$startDate , "%m/%d/%y")
+aj1$sampleDate <- as.Date(aj1$sampleDate , "%m/%d/%y")
+aj1$age <- (aj1$sampleDate - aj1$startDate)
+aj1$age <- as.numeric(aj1$age)
+aj1 <- aj1 %>% 
+  dplyr::select(-c(startDate,sampleDate))
+aj1$id <- gsub("EE_","",aj1$id)
 
-#fcd <- na.omit(fcd) 
-#fcd <- fcd[!is.na(fcd$camera_id),]
-
-# Check re-counted images
-# Original #s: IMG_9318 2491, IMG_9389-1136, and 9397-1461
-# Recounts:  9318-1043, 9389-645, and 9397-709
+# Check re-counted images (original data was altered for new counts)
+  # Original #s: IMG_9318 2491, IMG_9389-1136, and 9397-1461
+  # Recounts:  9318-1043, 9389-645, and 9397-709
 
 cam_id <- c("9318","9389","9397")
-
 #new_count <- c(1043,645,709)
 
-which(fcd$camera_id %in% cam_id)
-fcd[c(22,30,38),]
+which(aj1$camera_id %in% cam_id)
+aj1[c(22,30,38),]
 
 # Percent censored - about 11%
-sum(fcd$censored)
-sum(fcd$deadFemale)
-((sum(fcd$censored))/(sum(fcd$deadFemale)+sum(fcd$censored)))*100
+sum(aj1$censored)
+sum(aj1$deadFemale)
+((sum(aj1$censored))/(sum(aj1$deadFemale)+sum(aj1$censored)))*100
 # ~5% for each sex - ignore censored for per/female analysis
 
 # Count females - dead and censored
-sum(fcd$deadFemale)+sum(fcd$censored)
-cf_eggs <- fcd %>%
+sum(aj1$deadFemale)+sum(aj1$censored)
+
+# Sum eggs in each replicate
+cf_eggs <- aj1 %>%
   group_by(id) %>%
   summarise(sum(numEggs)) %>%
   pull() #output vector
 
 # Check means per cage
-scheck <- fcd %>%
+scheck <- aj1 %>%
   group_by(id) %>%
-  summarise(mean(numEggs), n=n())
+  summarise(sum(numEggs), n=n())
 
 # Number of dead females in a cage on each age
-fcd$ndead <- fcd$deadFemale + fcd$censored
-cf_dead <- fcd %>%
+aj1$ndead <- aj1$deadFemale + aj1$censored
+cf_dead <- aj1 %>%
   group_by(id) %>%
   summarise(sum(ndead)) %>%
   pull()
 ```
 
+# Investigate 31 aj1 recounts - outliers
+
+```{r}
+recs <- read.csv("~/MyGithub/early_experience/processed/Recount_ImagesFlagged_extremeOutliers.csv")
+
+names(recs)[1] <- "camera_id"
+names(recs)[2] <- "numEggs"
+recs$camera_id <- str_split(recs$camera_id, "_", simplify = TRUE)[,2]
+
+aj1$camera_id <- as.character(aj1$camera_id)
+
+
+llP <- left_join(recs, aj1, by="camera_id")
+llP <- dplyr::select(llP,camera_id,numEggs.x,numEggs.y)
+llP$dif <- ((llP$numEggs.x-llP$numEggs.y)/llP$numEggs.x)*100
+llP <- llP[order(llP$camera_id),] 
+
+# Use new numbers and repeat plotting
+
+ffQ <- left_join(aj1,recs, by="camera_id")
+
+ffQ <- aj1 %>%
+  dplyr::select(1:4,6:8)
+
+ff <- subset(ffQ,ffQ$camera_id %in% recs$camera_id)
+for(i in ff$camera_id) 
+  if(i %in% recs$camera_id) 
+    ff$numEggs[ff$numEggs <- recs$numEggs]
+
+ffQ <- ffQ[which(!ffQ$camera_id==ff$camera_id),]
+
+
+# Check if values correctly replaced
+#aj1 <- aj1[order(aj1$camera_id),] 
+subset(aj1,aj1$camera_id %in% recs$camera_id)
+
+
+```
+
+# Integrate blind recounts
+
+```{r}
+# Masking file
+mask <- read.table("~/MyGithub/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
+# 
+aj2 <- read.table(
+  "~//MyGithub/early_experience/original/ee_temp_Values_Sheet_AJ.txt", 
+  header = FALSE,stringsAsFactors = FALSE)
+colnames(aj2) <- c("inum", "icount")
+
+dd1 <- read.table(
+  "~//MyGithub/early_experience/original/EE_counts_DD.txt", 
+  header = FALSE,stringsAsFactors = FALSE)
+colnames(dd1) <- c("inum", "icount")
+```
+
 # Assign cf_start to each cage
 
 ```{r}
-fcd$NstartF <- recode(fcd$id, 
+aj1$NstartF <- recode(aj1$id, 
                       "EE_C_C1" = cf_dead[1],
                       "EE_C_C2" = cf_dead[2],
                       "EE_C_DR1" = cf_dead[3],
@@ -109,52 +172,52 @@ fcd$NstartF <- recode(fcd$id,
 # Calculate surviving females at each date
 
 ```{r}
-ureps <- unique(fcd$id)
+ureps <- unique(aj1$id)
 
-fcd$alive <- rep(NA, nrow(fcd))
+aj1$alive <- rep(NA, nrow(aj1))
 
-fcd.t <- fcd[0,]
+aj1.t <- aj1[0,]
 
 for(k in ureps) {
-  fcd.s <- subset(fcd, id==k)
-  for(i in 1:nrow(fcd.s)) {
+  aj1.s <- subset(aj1, id==k)
+  for(i in 1:nrow(aj1.s)) {
     if(i == 1) {
-      fcd.s[i,'alive'] <- fcd.s$NstartF[1]
+      aj1.s[i,'alive'] <- aj1.s$NstartF[1]
     } else {
-      if(is.na(fcd.s$deadFemale[i])) {
-        fcd.s[i,'alive'] <- fcd.s[(i-1),'alive']
+      if(is.na(aj1.s$deadFemale[i])) {
+        aj1.s[i,'alive'] <- aj1.s[(i-1),'alive']
       } else {
-        nDead <- fcd.s[i,'deadFemale']
-        fcd.s[i,'alive'] <- fcd.s[(i-1),'alive']-nDead
+        nDead <- aj1.s[i,'deadFemale']
+        aj1.s[i,'alive'] <- aj1.s[(i-1),'alive']-nDead
       }
     }
   }
-  fcd.t <- rbind(fcd.t, fcd.s)
+  aj1.t <- rbind(aj1.t, aj1.s)
 }
 
-fcd <- fcd.t
+aj1 <- aj1.t
 
-min(fcd$alive,na.rm=TRUE)
-which(is.na(fcd$alive))
-fcd[which(fcd$alive<0),]
-hist(fcd[which(fcd$alive<0),'alive'])
+min(aj1$alive,na.rm=TRUE)
+which(is.na(aj1$alive))
+aj1[which(aj1$alive<0),]
+hist(aj1[which(aj1$alive<0),'alive'])
 
-hist(fcd$alive)
+hist(aj1$alive)
 
 # Per female per date fecundity
-#fcd <- fcd[,c(3:5,8:13)]
-fcd$eggpDay <- fcd$numEggs*8
-fcd$eggpFemDay <- fcd$eggpDay/fcd$alive
+#aj1 <- aj1[,c(3:5,8:13)]
+aj1$eggpDay <- aj1$numEggs*8
+aj1$eggpFemDay <- aj1$eggpDay/aj1$alive
 
 # Check that start values are assigned correctly
-subset(fcd,fcd$id=="EE_DR_DR1") #176
-subset(fcd,fcd$id=="EE_DR_DR2") #361
-subset(fcd,fcd$id=="EE_DR_C1") #235
-subset(fcd,fcd$id=="EE_DR_C2") #426
-subset(fcd,fcd$id=="EE_C_C1") #190
-subset(fcd,fcd$id=="EE_C_C2") #251
-subset(fcd,fcd$id=="EE_C_DR1") #139
-subset(fcd,fcd$id=="EE_C_DR2") #274
+subset(aj1,aj1$id=="EE_DR_DR1") #176
+subset(aj1,aj1$id=="EE_DR_DR2") #361
+subset(aj1,aj1$id=="EE_DR_C1") #235
+subset(aj1,aj1$id=="EE_DR_C2") #426
+subset(aj1,aj1$id=="EE_C_C1") #190
+subset(aj1,aj1$id=="EE_C_C2") #251
+subset(aj1,aj1$id=="EE_C_DR1") #139
+subset(aj1,aj1$id=="EE_C_DR2") #274
 
 ```
 
@@ -162,7 +225,7 @@ subset(fcd,fcd$id=="EE_C_DR2") #274
 
 ```{r}
 # Collapse replicates
-dat <- fcd %>%
+dat <- aj1 %>%
   unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
   unite(date_treat,age,treat,sep="_",remove=FALSE)
 #dat <- dat[order(dat$age),]
@@ -231,7 +294,7 @@ spot.check <- rbind(dat[which(dat$eggpFemDay>10),],dat[which(dat$eggpFemDay<1 & 
 # A faceted figure
 ```{r}
 # Use facet_grid or facet_wrap to split up graphs by factors
-gplot(mydata, aes(Var1, Var2)) + geom_point() + facet_grid(~ Variety)
+ggplot(mydata, aes(Var1, Var2)) + geom_point() + facet_grid(~ Variety)
 ```
 
 
@@ -241,47 +304,10 @@ gplot(mydata, aes(Var1, Var2)) + geom_point() + facet_grid(~ Variety)
 
 ```
 
-
-# Investigate recounts of 31 images
-
-```{r}
-recs <- read.csv("~/MyGithub/early_experience/processed/Recount_ImagesFlagged_extremeOutliers.csv")
-
-names(recs)[1] <- "camera_id"
-names(recs)[2] <- "numEggs"
-recs$camera_id <- str_split(recs$camera_id, "_", simplify = TRUE)[,2]
-
-fcd$camera_id <- as.character(fcd$camera_id)
-
-
-llP <- left_join(recs, fcd, by="camera_id")
-llP <- select(llP,camera_id,numEggs.x,numEggs.y)
-llP$dif <- ((llP$numEggs.x-llP$numEggs.y)/llP$numEggs.x)*100
-llP <- llP[order(llP$camera_id),] 
-
-# Use new numbers and repeat plotting
-ffQ <- fcd %>%
-  select(2:5,7:8,12)
-
-ff <- subset(ffQ,ffQ$camera_id %in% recs$camera_id)
-for(i in ff$camera_id) 
-  if(i %in% recs$camera_id) 
-    ff$numEggs[ff$numEggs <- recs$numEggs]
-
-ffQ <- ffQ[which(!ffQ$camera_id==ff$camera_id),]
-
-
-# Check if values correctly replaced
-#fcd <- fcd[order(fcd$camera_id),] 
-subset(fcd,fcd$camera_id %in% recs$camera_id)
-
-
-```
-
 # Reaction norms
 
 ```{r}
-norms <- fcd[,c(4:5,15)]
+norms <- aj1[,c(4:5,15)]
 
 # Calculate medians
 

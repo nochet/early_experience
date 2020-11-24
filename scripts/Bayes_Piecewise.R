@@ -31,6 +31,7 @@ mod1.pw5 <- update(mod1,
                    cores = CORES,
                    iter = ITER,
                    seed = SEED)
+saveRDS(mod1.pw5, file="../processed/mod1_pecewise5.rds")
 
 # piecewise constant model (with df=10)
 mod1.pw10 <- update(mod1, 
@@ -41,34 +42,47 @@ mod1.pw10 <- update(mod1,
                     iter = ITER,
                     seed = SEED)
 
-saveRDS(mod1.pw5,mod1.pw10, file="../processed/mod1_pecewise.rds")
+saveRDS(mod1.pw10, file="../processed/mod1_pecewise10.rds")
 
-mod1_fits <- list(
-  "constant" = mod1_exp,
-  "Gompertz" = mod1_gompertz,
-  "Weibull" = mod1_weibull,
-  "MS1" = mod1_mspline1,
-  "MS2" = mod1_mspline2,
-  "PW (df = 5)" = mod1.pw5,
-  "PW (df = 10)" = mod1.pw10
-)
+# mod1_fits <- list(
+#   "constant" = mod1_exp,
+#   "Gompertz" = mod1_gompertz,
+#   "Weibull" = mod1_weibull,
+#   "MS1" = mod1_mspline1,
+#   "MS2" = mod1_mspline2,
+#   "PW (df = 5)" = mod1.pw5,
+#   "PW (df = 10)" = mod1.pw10
+# )
 
-# plots <- map(mod1_fits, plot) 
+plots <- map(mod1_fits, plot) 
 
 pw <- bayesplot_grid(
-                    plots = plots,
-                    ylim = c(0, 0.5),
-                    titles = names(mod1_fits),
-                    grid_args = list(ncol = 3))
+  plots = plots,
+  ylim = c(0, 0.5),
+  titles = names(mod1_fits),
+  grid_args = list(ncol = 3))
 
 ggplot2::ggsave(pw,filename="../plots/piecewise_mod1.pdf",height = 6, width=10)
 
 # LOOs
-loos <- map(mod1_fits, loo, cores=getOption("mc.cores",4)) 
-lc_pw <- loo_compare(loos, cores=getOption("mc.cores",4))
-saveRDS(loos,lc_pw, file="../processed/loos_pw.rds")
+
+loo_mod1_pw5 <- loo(mod1.pw5, cores=getOption("mc.cores",4))
+saveRDS(loo_mod1_pw5, file="../processed/loo_mod1_pw5.rds")
+
+loo_mod1_pw10 <- loo(mod1.pw10,cores=getOption("mc.cores",4))
+saveRDS(loo_mod1_pw10, file="../processed/loo_mod1_pw10.rds")
+
+# Fix class type issue for loo_compare()
+# loo_compare_pw <- loo_compare(loo_mod1_pw5,loo_mod1_pw10,
+#                               cores=getOption("mc.cores",4))
+# saveRDS(loo_compare_pw, file="../processed/loo_compare_pw.rds")
+
 
 # Weights
-best_pw <- stanreg_list(mod1_fits)
+
+best_pw <- stanreg_list(mod1.pw5,mod1.pw10)
 loo_wt_pw <- loo_model_weights(best_pw,cores=getOption("mc.cores",4))
 saveRDS(loo_wt_pw, file="../processed/loo_wt_pw.rds")
+
+
+

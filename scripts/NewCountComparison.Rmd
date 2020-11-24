@@ -24,7 +24,7 @@ library(data.table)
 
 ## Getting Name Conversion
 ```{r pressure, echo=FALSE}
-Random <- read.table("~/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
+Random <- read.table("~/MyGithub/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
 ```
 
 #Setting Up Randomized Table 

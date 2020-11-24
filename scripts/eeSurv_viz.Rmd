@@ -179,7 +179,7 @@ eelife <- eelife %>%
   select(cageID,larvalTreat,adultTreat,age,status,sex)
 
 
-mf <- survfit(Surv(age, status) ~ adultTreat,
+mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
@@ -191,27 +191,35 @@ summary(mf)$table[, "median"]
 
 mf.plot <- ggsurvplot(mf, data = eelife, 
                      conf.int = FALSE,
-                     palette = c("#999999", "#E69F00", 
-                                 "#56B4E9", "#009E73"),
+                     break.time.by = 20,
+                     palette = pal,
                      fun = "pct", 
                      surv.median.line = "hv",
                     # font.y = c(14),
                      font.x = c(font_size),
                      font.y = c(font_size),
                      font.tickslab = c(font_size),
-                     font.main = 12,
-                     risk.table = FALSE,
-                     legend = "right",
+                     #font.main = 11,
+                     #risk.table = FALSE,
+                     legend = "none",
+                     risk.table = TRUE,
+                     risk.table.col = "strata",
+                     risk.table.height = 0.5,
                     # title = "Females & Males",
-                     legend.labs = c("C", "DR"),
-                     legend.title = "Adult Diet") +
-                     #guides(colour = guide_legend(ncol = 1)) +
-                     theme_survminer(font.main = 12)  +
+                     legend.labs = c("C-C-F","C-C-M",
+                                     "C-DR-F","C-DR-M",
+                                     "DR-C-F","DR-C-M",
+                                     "DR-DR-F","DR-DR-M"),
+                     legend.title = "Diet-Sex \n combination") +
+                     guides(colour = guide_legend(nrow = 8)) +
+                     theme_survminer(font.main = 11)  +
   xlab("Age (days)")
 mf.plot
 
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable.pdf", height=6, width=8, print(mf.plot))
+
 # Test significance
-survdiff(Surv(age) ~ adultTreat,
+survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
                      data = eelife, rho = 0) 
 
 #quantile(mf,  probs = c(0.1, 0.5, 0.9))
@@ -235,6 +243,7 @@ summary(erf)$table[, "median"]
 
 erf.plot <- ggsurvplot(erf, data = earlyRichF, 
                      conf.int = FALSE,
+                     break.time.by = 20,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
@@ -242,13 +251,15 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
                      font.x = c(font_size),
                      font.y = c(font_size),
                      font.tickslab = c(font_size),
-                     font.main = 12,
+                     #font.main = 12,
                      risk.table = FALSE,
+                     #title="A",  
+                     #legend="none", #does not work
                      legend = c(0.9, 0.8),                     
-                     title = "Early-Rich Females",
+                     title = "Early-C Females",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
-  theme_survminer(font.main = 12)  +
+  theme_survminer(font.main = 11)  +
   xlab("Age (days)")
 erf.plot
 
@@ -278,6 +289,7 @@ summary(erm)$table[, "median"]
 
 erm.plot <- ggsurvplot(erm, data = earlyRichM, 
                      conf.int = FALSE,
+                     break.time.by = 20,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
@@ -285,13 +297,14 @@ erm.plot <- ggsurvplot(erm, data = earlyRichM,
                      font.x = c(font_size),
                      font.y = c(font_size),
                      font.tickslab = c(font_size),
-                     font.main = 12,
+                     #font.main = 12,
                      risk.table = FALSE,
+                     #legend="none",
                      legend = c(0.9, 0.8),                     
-                     title = "Early-Rich Males",
+                     title = "Early-C Males",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
-  theme_survminer(font.main = 12) +
+  theme_survminer(font.main = 11) +
   xlab("Age (days)")
 erm.plot
 
@@ -317,6 +330,7 @@ summary(epf)$table[, "median"]
 
 epf.plot <- ggsurvplot(epf, data = earlyPoorF, 
                      conf.int = FALSE,
+                     break.time.by = 20,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
@@ -324,13 +338,14 @@ epf.plot <- ggsurvplot(epf, data = earlyPoorF,
                      font.x = c(font_size),
                      font.y = c(font_size),
                      font.tickslab = c(font_size),
-                     font.main = 12,
+                     #font.main = 12,
                      risk.table = FALSE,
+                     #legend="none",
                      legend = c(0.9, 0.8),                     
-                     title = "Early-Poor Females",
+                     title = "Early-DR Females",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
-  theme_survminer(font.main = 12)  +
+  theme_survminer(font.main = 11)  +
   xlab("Age (days)")
 epf.plot
 
@@ -358,6 +373,7 @@ summary(epm)$table[, "median"]
 
 epm.plot <- ggsurvplot(epm, data = earlyPoorM, 
                      conf.int = FALSE,
+                     break.time.by = 20,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
@@ -365,18 +381,39 @@ epm.plot <- ggsurvplot(epm, data = earlyPoorM,
                      font.x = c(font_size),
                      font.y = c(font_size),
                      font.tickslab = c(font_size),
-                     font.main = 12,
+                     #font.main = 12,
                      risk.table = FALSE,
+                     #legend="none",
                      legend = c(0.9, 0.8),                     
-                     title = "Early-Rich Males",
+                     title = "Early-DR Males",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
-  theme_survminer(font.main = 12) +
+  theme_survminer(font.main = 11) +
   xlab("Age (days)")
 epm.plot
 
 survdiff(Surv(age, status ==2) ~ adultTreat,
                      data = earlyPoorM, rho = 0) 
+```
+
+# Arrange plots
+
+```{r}
+splots <- list()
+splots[[1]] <- erf.plot
+splots[[2]] <- erm.plot
+splots[[3]] <- epf.plot
+splots[[4]] <- epm.plot
+
+
+if (FALSE) {
+# Arrange and save into pdf file
+res <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2,
+                            print = FALSE)
+}
+
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_larvalDiet.pdf", height=6, width=8,res)
+
 ```
 
 

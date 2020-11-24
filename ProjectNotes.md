@@ -36,7 +36,18 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+## 2020-11-23 (EN)
+Process three independent egg counts for final analysis: `Fec_perFem.Rmd`
 
+
+
+## 2020-11-13 (EN)
+Piecewise regression: 
+ 1) 1e4 iter, tve mod1, df=5 - slowest chain took 9.3 hrs
+ 2) 1e4 iter, tve mod1, df=10 - slowest chain took 9.3 hrs
+ 
+ loos were halted.
+ 
 ## 2020-11-03 (EN)
 Try Bayesian peicewise regression on mod1 (the favored model), 5e4 iter
 Chain 4:  Elapsed Time: 38.51 hrs
@@ -126,7 +137,7 @@ Multi-level models with stan_surv()
 ### 2020-08-18 (EN)
 stan_surv() again:
 
-To install just the function ontop of the CRAN package, do `remotes::install_github("stan-dev/rstanarm", ref = "feature/survival") ` instead of the git clone (thanks to Kevin Middleton for identifying this approach)
+To install just the function on top of the CRAN package, do `remotes::install_github("stan-dev/rstanarm", ref = "feature/survival") ` instead of the git clone (thanks to Kevin Middleton for identifying this approach)
 
 The documentation module of rstanarm however fails to compile and seems to deactivate package-wide - at least on nivalis.
 
