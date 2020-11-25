@@ -117,22 +117,34 @@ llP <- llP[order(llP$camera_id),]
 
 # Use new numbers and repeat plotting
 
-ffQ <- left_join(aj1,recs, by="camera_id")
-
 ffQ <- aj1 %>%
   dplyr::select(1:4,6:8)
 
 ff <- subset(ffQ,ffQ$camera_id %in% recs$camera_id)
+ff <- ff[order(ff$camera_id),] 
+recs <- recs[order(recs$camera_id),] 
+
 for(i in ff$camera_id) 
   if(i %in% recs$camera_id) 
     ff$numEggs[ff$numEggs <- recs$numEggs]
 
-ffQ <- ffQ[which(!ffQ$camera_id==ff$camera_id),]
+# Delete rows with old egg values
+ffQ <- ffQ[!ffQ$camera_id %in% ff$camera_id, ]
+
+#Check a few
+ffQ[ffQ$camera_id== 9316,]
+
+# Merge with the subset containing new values
+ffQ <- ffQ[order(ffQ$camera_id),]
+ffQ <- rbind(ffQ,ff)
 
 
 # Check if values correctly replaced
 #aj1 <- aj1[order(aj1$camera_id),] 
-subset(aj1,aj1$camera_id %in% recs$camera_id)
+ffQ[ffQ$camera_id==9306,]
+ffQ[ffQ$camera_id==9820,]
+
+subset(ffQ,ffQ$camera_id %in% recs$camera_id)
 
 
 ```
@@ -141,17 +153,33 @@ subset(aj1,aj1$camera_id %in% recs$camera_id)
 
 ```{r}
 # Masking file
-mask <- read.table("~/MyGithub/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
-# 
+mask <- read.table("~/MyGithub/early_experience/scripts/name_conversion.txt", 
+                   header = FALSE)
+colnames(mask) <- c("inum")
+mask$rnum <- str_split(mask$inum, "-", simplify = TRUE)[,1] 
+mask$itm <- str_split(mask$inum, "_", simplify = TRUE)[,2]
+camera_id <- strsplit(mask$itm, ".", fixed = TRUE)
+mask$camera_id <- unlist(lapply(camera_id, function(x) x[1]))
+
+mask <- mask[order(mask$camera_id),]
+
 aj2 <- read.table(
   "~//MyGithub/early_experience/original/ee_temp_Values_Sheet_AJ.txt", 
-  header = FALSE,stringsAsFactors = FALSE)
-colnames(aj2) <- c("inum", "icount")
+  header = FALSE)
+colnames(aj2) <- c("aj2_rnum", "aj2_count")
 
 dd1 <- read.table(
-  "~//MyGithub/early_experience/original/EE_counts_DD.txt", 
+  "~/MyGithub/early_experience/original/EE_counts_DD.txt", 
   header = FALSE,stringsAsFactors = FALSE)
-colnames(dd1) <- c("inum", "icount")
+colnames(dd1) <- c("dd_rnum", "dd_count")
+
+# Fix differing rownums
+nn <- ffQ[,c("camera_id","numEggs")]
+
+which(!ffQ$camera_id %in% aj2$aj2_rnum)
+
+all_equal(nn,aj2,dd1)
+all_equal(nn,aj2,ignore_row_order = TRUE,convert = TRUE)
 ```
 
 # Assign cf_start to each cage
