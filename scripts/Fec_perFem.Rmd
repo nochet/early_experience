@@ -163,17 +163,12 @@ mask$camera_id <- unlist(lapply(camera_id, function(x) x[1]))
 
 mask <- mask[order(mask$camera_id),]
 
-aj2 <- read.table(
-  "~//MyGithub/early_experience/original/ee_temp_Values_Sheet_AJ.txt", 
-  header = FALSE)
-colnames(aj2) <- c("aj2_rnum", "aj2_count")
-
-dd1 <- read.table(
-  "~/MyGithub/early_experience/original/EE_counts_DD.txt", 
-  header = FALSE,stringsAsFactors = FALSE)
-colnames(dd1) <- c("dd_rnum", "dd_count")
+recounts <- read.csv("~/MyGithub/early_experience/processed/recounts_checked.csv")
 
 # Fix differing rownums
+#subset(aj2, !(aj2$rnum %in% dd1$rnum))
+
+
 nn <- ffQ[,c("camera_id","numEggs")]
 
 which(!ffQ$camera_id %in% aj2$aj2_rnum)
