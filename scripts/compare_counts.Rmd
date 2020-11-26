@@ -1,0 +1,113 @@
+---
+title: "NewCountComparisons"
+author: "Andrew Jones"
+date: "8/20/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(car)
+library(MASS)
+library(tidyverse)
+library(cowplot)
+library(ggpubr)
+library(data.table)
+```
+
+## Getting Name Conversion
+
+```{r pressure, echo=FALSE}
+Random <- read.table("/Users/ngomae/MyGithub/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
+```
+
+# Setting Up Randomized Table 
+
+```{r}
+split <- strsplit(Random$V1, "-")
+
+head(split)
+
+Organized <- data.frame(matrix(unlist(split), ncol = 2, byrow = TRUE))
+
+colnames(Organized) <- c("rand_num", "Image_id")
+Organized$rand_num <-  as.numeric(Organized$rand_num)
+ 
+Ordered <- Organized[order(Organized[,1]),]
+ 
+ row.names(Ordered) <- c(1:280)
+```
+
+
+# Integrating Two New Tables
+
+```{r}
+CountsAJ <- read.table("/Users/ngomae/MyGithub/early_experience/original/ee_temp_Values_Sheet_AJ.txt", header = FALSE,stringsAsFactors = FALSE)
+
+colnames(CountsAJ) <- c("rand_num", "countAJ")
+
+CountsDD <- read.table("/Users/ngomae/MyGithub/early_experience/original/EE_counts_DD.txt", header = FALSE,stringsAsFactors = FALSE)
+
+colnames(CountsDD) <- c("rand_num", "Count")
+
+CombinedAJ <- left_join(Ordered, CountsAJ, by = NULL, copy = FALSE)
+CombinedAJ <- CombinedAJ %>% 
+  mutate(Image_id = sub('IMG_', '', Image_id))
+CombinedAJ <- CombinedAJ %>% 
+  mutate(Image_id = sub('.JPG', '', Image_id))
+CombinedDD <- left_join(Ordered, CountsDD, by = NULL, copy = FALSE)
+CombinedDD <- CombinedDD %>% 
+  mutate(Image_id = sub('IMG_', '', Image_id))
+CombinedDD <- CombinedDD %>% 
+  mutate(Image_id = sub('.JPG', '', Image_id))
+
+CombinedAJ$Image_id <-  as.numeric(CombinedAJ$Image_id)
+CombinedDD$Image_id <-  as.numeric(CombinedDD$Image_id)
+```
+
+# Adding the Combined to the other variables
+
+```{r}
+eeFec <- read.table("/Users/ngomae/MyGithub/early_experience/processed/Early_Experience_LiFec.txt",
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE) 
+################
+
+which(!is.na(eeFec$numEggs))
+# Only 200 of 354 obs has a value for egg count
+eeFec[,"camera_id"]
+
+# eeFec has only 200 image_ids
+# Project contains 282 image_ids
+
+###############
+
+fec <- eeFec[,c(4:7,11)]
+colnames(fec) <- c("Age", "id", "larvalTreat", "adultTreat", "Image_id")
+fec <- fec %>% 
+  mutate(id = sub('EE_', '', id))
+#fec <- fec[,c(1:5)]
+
+FullAJ <- left_join(fec, CombinedAJ, by = NULL, copy = FALSE)
+# FullAJ <- FullAJ[,c(1:5,7)]
+# FullAJ <- na.omit(FullAJ)
+# FullAJ <- FullAJ %>%
+#   unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+# FullDD <- left_join(fec, CombinedDD, by = NULL, copy = FALSE)
+# FullDD <- FullDD[,c(1:5,7)]
+# FullDD <- na.omit(FullDD)
+# FullDD <- FullDD %>%
+#   unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+colnames(CombinedDD) <- c("rand_num","Image_id","countsDD")
+combAll <- left_join(FullAJ, CombinedDD, 
+                     by = c("rand_num","Image_id"), copy = FALSE)
+```
+
