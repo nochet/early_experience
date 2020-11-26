@@ -36,9 +36,13 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+
+
+## 2020-11-25 (EN)
+Thorough check of the recounts. A few mis-typed image numbers observed and manually rechecked with original files. Excel spreadsheet written `/processed/recounts_checked.xlsx`. The rows with color is where reconciliation was done. The original recounts by Andrew `/original/ee_temp_Values_Sheet_AJ.xlsx` and De'anne `/original/EE_counts_DD.xlsx` may be read to confirm. The images found in the random number file but missing in recounts are non-egg images (markers). The file for further analysis is `/processed/recounts_checked.csv`.
+
 ## 2020-11-23 (EN)
 Process three independent egg counts for final analysis: `Fec_perFem.Rmd`
-
 
 
 ## 2020-11-13 (EN)
