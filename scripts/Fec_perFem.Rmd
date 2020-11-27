@@ -156,17 +156,43 @@ subset(ffQ,ffQ$camera_id %in% recs$camera_id)
 mask <- read.table("~/MyGithub/early_experience/scripts/name_conversion.txt", 
                    header = FALSE)
 colnames(mask) <- c("inum")
+
 mask$rnum <- str_split(mask$inum, "-", simplify = TRUE)[,1] 
 mask$itm <- str_split(mask$inum, "_", simplify = TRUE)[,2]
 camera_id <- strsplit(mask$itm, ".", fixed = TRUE)
 mask$camera_id <- unlist(lapply(camera_id, function(x) x[1]))
-
 mask <- mask[order(mask$camera_id),]
 
 recounts <- read.csv("~/MyGithub/early_experience/processed/recounts_checked.csv")
 
 # Fix differing rownums
-#subset(aj2, !(aj2$rnum %in% dd1$rnum))
+subset(mask, !(mask$rnum %in% recounts$rnum)) # non-egg images
+mask <- subset(mask, (mask$rnum %in% recounts$rnum))
+
+# Duplicates
+mask[!(mask$rnum %in% recounts$rnum),]
+which(duplicated(mask$rnum))
+mask[which(duplicated(mask$rnum)),]
+mask <- mask[order(mask$rnum),]
+
+# Add camera ids to recounts
+recounts$rnum <- as.character(recounts$rnum)
+recounts <- recounts[order(recounts$rnum),]
+get_camnum <- cbind(mask,recounts)
+
+# Add first counts
+ffQ <- ffQ[order(ffQ$camera_id),]
+get_camnum[!(get_camnum$camera_id %in% ffQ$camera_id),]
+
+  # Rename camera_id in aj1: 1000, 1001, and 1002 to 0001, 0002, and 0003 
+  # see notes
+ffQ$camera_id[ffQ$camera_id == "1000"] <- "0001"
+ffQ$camera_id[ffQ$camera_id == "1001"] <- "0002"
+ffQ$camera_id[ffQ$camera_id == "1002"] <- "0003"
+
+# Fix lengths
+
+tri_count <- cbind(get_camnum,aj1)
 
 
 nn <- ffQ[,c("camera_id","numEggs")]
