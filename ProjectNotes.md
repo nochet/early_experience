@@ -37,6 +37,9 @@ STEP 4: A Bayesian approach
 ## Project Notes 
 
 
+## 2020-11-25 (EN)
+In Andrew initial count (aja1), images labeled 1000, 1001, 1002 don't exist on server. However, set2 on server contains images 0001, 0002, and 0003. The camera numbering had hit the limit of 9999 and restarted from 1 in a new folder called set2. I am therefore renaming 1000, 1001, and 1002 to 0001, 0002, and 0003 in the analysis. After all, tallies seem to agree.
+
 
 ## 2020-11-25 (EN)
 Thorough check of the recounts. A few mis-typed image numbers observed and manually rechecked with original files. Excel spreadsheet written `/processed/recounts_checked.xlsx`. The rows with color is where reconciliation was done. The original recounts by Andrew `/original/ee_temp_Values_Sheet_AJ.xlsx` and De'anne `/original/EE_counts_DD.xlsx` may be read to confirm. The images found in the random number file but missing in recounts are non-egg images (markers). The file for further analysis is `/processed/recounts_checked.csv`.
