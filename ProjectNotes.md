@@ -36,9 +36,45 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+## 2020-11-27 (EN)
+Rename `Fec_perFem.Rmd` to `process_fecund.Rmd`. This script is reserved for general processing for the fecundity data. Start a new script for visualization `eefecund_viz.Rmd`.
+
+Visualize.
+
 
 ## 2020-11-25 (EN)
 In Andrew initial count (aja1), images labeled 1000, 1001, 1002 don't exist on server. However, set2 on server contains images 0001, 0002, and 0003. The camera numbering had hit the limit of 9999 and restarted from 1 in a new folder called set2. I am therefore renaming 1000, 1001, and 1002 to 0001, 0002, and 0003 in the analysis. After all, tallies seem to agree.
+
+Also, the following images are absent in aj1: IMG_9884.JPG and IMG_9885.JPG. Both have been recounted by both people in recounts. Images 9834 and 9835 are duplicated. The date of flip clearly suggest the duplicates on 4/2/18 really belong to 4/16/18 matching 9834 and 9835. I there resolve the duplicate by transferring duplicates with a later date to 4/16/18:
+
+> aj1[aj1$sampleDate=="4/16/18",]
+    collectedEggs startDate sampleDate age        id  deadFemale deadMale censored camera_id numEggs 
+185        2/8/18   2/20/18    4/16/18  55 EE_DR_DR1           5        2        0      9888       7       
+186        2/8/18   2/20/18    4/16/18  55  EE_DR_C1           2        1        1      9883      19       
+187        2/8/18   2/20/18    4/16/18  55   EE_C_C1          11       14        2      9886       7       
+188        2/8/18   2/20/18    4/16/18  55  EE_C_DR1           2        3        0      9887      22       
+189        2/9/18   2/20/18    4/16/18  55 EE_DR_DR2           4        2        9      9834      33       
+190        2/9/18   2/20/18    4/16/18  55  EE_DR_C2           6        2        4      9835      15       
+191        2/9/18   2/20/18    4/16/18  55  EE_C_DR2           9        3        3      9889      18       
+192        2/9/18   2/20/18    4/16/18  55   EE_C_C2           5        2        1      9882      35       
+> aj1[aj1$sampleDate=="4/2/18",]
+    collectedEggs startDate sampleDate age        id  deadFemale deadMale censored camera_id numEggs 
+137        2/8/18   2/20/18     4/2/18  41 EE_DR_DR1          13        4        0      9834      19      
+138        2/8/18   2/20/18     4/2/18  41  EE_DR_C1          10        4        0      9841      14      
+139        2/8/18   2/20/18     4/2/18  41   EE_C_C1           4        3        0      9838       5      
+140        2/8/18   2/20/18     4/2/18  41  EE_C_DR1           2        1        0      9837       9      
+141        2/9/18   2/20/18     4/2/18  41 EE_DR_DR2          23        7        0      9836      17      
+142        2/9/18   2/20/18     4/2/18  41  EE_DR_C2          17        4        0      9839      18      
+143        2/9/18   2/20/18     4/2/18  41  EE_C_DR2          19        6        1      9835      24      
+144        2/9/18   2/20/18     4/2/18  41   EE_C_C2           7        4        0      9840       4      
+
+Flanking 9884 and 9885
+> aj1[aj1$camera_id==9883,]
+    collectedEggs startDate sampleDate age       id deadFemale deadMale censored camera_id numEggs 
+186        2/8/18   2/20/18    4/16/18  55 EE_DR_C1            2        1        1      9883      19       
+> aj1[aj1$camera_id==9886,]
+    collectedEggs startDate sampleDate age      id  deadFemale deadMale censored camera_id numEggs 
+187        2/8/18   2/20/18    4/16/18  55 EE_C_C1            11       14        2      9886       7 
 
 
 ## 2020-11-25 (EN)
@@ -266,6 +302,10 @@ Using script created by Enoch yesterday, PerFemaleFec was modified and a new dat
 
 ### 2020-04-17
 Started script `/scripts/Fec_perFem.Rmd` to calculate number of females at each egg quantification time.
+
+Corrections made to the data file read in the script:
+cam_id <- c("9318","9389","9397")
+new_count <- c(1043,645,709)
 
 ### 2020-04-13
 Andrew recounted eggs on 3 unreasonably outlier images. On April 7th he reported these counts (below). The original data was copied to a new file called `Early_Experience_Data_rechecked.txt` and saved to `/early_experience/processed`. This data should be used for further analysis. (Note, the original raw data remains unaltered in `/early_experience/original`.) Slack message from Andrew:

@@ -1,0 +1,273 @@
+---
+title: "PerFemaleFecundity"
+author: "Enoch Ng'oma"
+date: "4/14/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(tidyverse)
+
+```
+
+# Look at data
+
+```{r pressure, echo=FALSE}
+
+# Andrew data 1
+aj1 <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)
+
+which(is.na(aj1))
+which(is.na(aj1$numEggs))
+aj1[which(is.na(aj1$numEggs)),] 
+
+# no eggs beyond age 77 days - remove rows
+aj1 <- na.omit(aj1)
+
+# Check duplicated camera_id
+dup_ids <- which(duplicated(aj1$camera_id)) # 2 images dupl.
+aj1[which(duplicated(aj1$camera_id)), ]
+
+# Seems images 9834 (33 eggs) & 9835 15 eggs) are duplicated 
+rbind(subset(aj1, aj1$camera_id=="9834") , 
+            subset(aj1, aj1$camera_id=="9835"))
+
+# For now, trash all 4
+# aj1 <- aj1[which(!duplicated(aj1$camera_id)), ]
+
+# Replace duplicated camera ids 9834 and 9835 for 4/16/18 to 9884 and 9885
+# See notes 2020-11-25 (EN)
+aj1[aj1$sampleDate=="4/16/18" & aj1$camera_id=="9834", "camera_id"] <- "9884"
+aj1[aj1$sampleDate=="4/16/18" & aj1$camera_id=="9835", "camera_id"] <- "9885"
+
+
+# Recalculate age, then delete dates
+aj1$startDate <- as.Date(aj1$startDate , "%m/%d/%y")
+aj1$sampleDate <- as.Date(aj1$sampleDate , "%m/%d/%y")
+aj1$age <- (aj1$sampleDate - aj1$startDate)
+aj1$age <- as.numeric(aj1$age)
+aj1 <- aj1 %>% 
+  dplyr::select(-c(startDate,sampleDate))
+aj1$id <- gsub("EE_","",aj1$id)
+
+# Check re-counted images (original data was altered for new counts)
+  # Original #s: IMG_9318 2491, IMG_9389-1136, and 9397-1461
+  # Recounts:  9318-1043, 9389-645, and 9397-709
+
+# Percent censored - about 11%
+sum(aj1$censored)
+sum(aj1$deadFemale)
+((sum(aj1$censored))/(sum(aj1$deadFemale)+sum(aj1$censored)))*100
+# ~5% for each sex - ignore censored for per/female analysis
+
+# Count females - dead and censored
+sum(aj1$deadFemale)+sum(aj1$censored)
+
+# Sum eggs in each replicate
+cf_eggs <- aj1 %>%
+  group_by(id) %>%
+  summarise(sum(numEggs)) %>%
+  pull() #output vector
+
+# Check means per cage
+scheck <- aj1 %>%
+  group_by(id) %>%
+  summarise(sum(numEggs), n=n())
+
+# Number of dead females in a cage on each age
+aj1$ndead <- aj1$deadFemale + aj1$censored
+cf_dead <- aj1 %>%
+  group_by(id) %>%
+  summarise(sum(ndead)) %>%
+  pull()
+```
+
+# Investigate 31 aj1 recounts - outliers
+
+```{r}
+recs <- read.csv("~/MyGithub/early_experience/processed/Recount_ImagesFlagged_extremeOutliers.csv")
+
+names(recs)[1] <- "camera_id"
+names(recs)[2] <- "numEggs"
+recs$camera_id <- str_split(recs$camera_id, "_", simplify = TRUE)[,2]
+
+aj1$camera_id <- as.character(aj1$camera_id)
+
+
+llP <- left_join(recs, aj1, by="camera_id")
+llP <- dplyr::select(llP,camera_id,numEggs.x,numEggs.y)
+llP$dif <- ((llP$numEggs.x-llP$numEggs.y)/llP$numEggs.x)*100
+llP <- llP[order(llP$camera_id),] 
+```
+
+# Integrate with main file
+
+```{r}
+# Use new numbers and repeat plotting
+ffQ <- aj1 
+
+ff <- subset(ffQ,ffQ$camera_id %in% recs$camera_id)
+ff <- ff[order(ff$camera_id),] 
+recs <- recs[order(recs$camera_id),] 
+
+for(i in ff$camera_id) 
+  if(i %in% recs$camera_id) 
+    ff$numEggs[ff$numEggs <- recs$numEggs]
+
+# Delete rows with old egg values
+ffQ <- ffQ[!ffQ$camera_id %in% ff$camera_id, ]
+
+#Check a few
+ffQ[ffQ$camera_id== 9316,]
+
+# Merge with the subset containing new values
+ffQ <- ffQ[order(ffQ$camera_id),]
+ffQ <- rbind(ffQ,ff)
+
+
+# Check if values correctly replaced
+#aj1 <- aj1[order(aj1$camera_id),] 
+ffQ[ffQ$camera_id==9306,]
+ffQ[ffQ$camera_id==9820,]
+
+#subset(ffQ,ffQ$camera_id %in% recs$camera_id)
+
+```
+
+# Integrate blind recounts
+
+```{r}
+# Masking file
+mask <- read.table("~/MyGithub/early_experience/scripts/name_conversion.txt", 
+                   header = FALSE)
+colnames(mask) <- c("inum")
+
+mask$rnum <- str_split(mask$inum, "-", simplify = TRUE)[,1] 
+mask$itm <- str_split(mask$inum, "_", simplify = TRUE)[,2]
+camera_id <- strsplit(mask$itm, ".", fixed = TRUE)
+mask$camera_id <- unlist(lapply(camera_id, function(x) x[1]))
+mask <- mask[order(mask$camera_id),]
+
+recounts <- read.csv("~/MyGithub/early_experience/processed/recounts_checked.csv")
+
+# Fix differing rownums
+subset(mask, !(mask$rnum %in% recounts$rnum)) # non-egg images
+mask <- subset(mask, (mask$rnum %in% recounts$rnum))
+
+# Duplicates
+mask[!(mask$rnum %in% recounts$rnum),]
+mask <- mask[order(mask$rnum),]
+
+# Add camera ids to recounts
+recounts$rnum <- as.character(recounts$rnum)
+recounts <- recounts[order(recounts$rnum),]
+get_camnum <- cbind(mask,recounts)
+
+# Add first counts (from aj1)
+ffQ <- ffQ[order(ffQ$camera_id),]
+get_camnum <- get_camnum[order(get_camnum$camera_id),]
+get_camnum[!(get_camnum$camera_id %in% ffQ$camera_id),]
+
+  # Rename camera_id in aj1: 1000, 1001, and 1002 to 0001, 0002, and 0003 
+  # see notes
+ffQ$camera_id[ffQ$camera_id == "1000"] <- "0001"
+ffQ$camera_id[ffQ$camera_id == "1001"] <- "0002"
+ffQ$camera_id[ffQ$camera_id == "1002"] <- "0003"
+
+# Fix lengths
+#get_camnum[!(get_camnum$camera_id %in% ffQ$camera_id),]
+
+# Join all three recounts
+get_camnum <- get_camnum %>%
+  rename(c(randn="rnum",cam_id="camera_id"))
+
+tri_count <- cbind(get_camnum,ffQ)
+
+tri_count <- tri_count %>%
+  rename(c(sampleDate="collectedEggs",aj1_count="numEggs"))
+
+# Mean of counts
+tri_count$numEggs <- format(
+  (tri_count$aj1_count+tri_count$aj2_count+tri_count$dd1_count)/3,
+  digits = 2)
+tri_count$numEggs <- as.numeric(tri_count$numEggs)
+
+```
+
+# Assign cf_start to each cage
+
+```{r}
+tri_count$NstartF <- recode(tri_count$id, 
+                      "C_C1" = cf_dead[1],
+                      "C_C2" = cf_dead[2],
+                      "C_DR1" = cf_dead[3],
+                      "C_DR2" = cf_dead[4],
+                      "DR_C1" = cf_dead[5],
+                      "DR_C2" = cf_dead[6],
+                      "DR_DR1" = cf_dead[7],
+                      "DR_DR2" = cf_dead[8])
+
+```
+
+# Calculate surviving females at each date
+
+```{r}
+ureps <- unique(tri_count$id)
+
+tri_count$alive <- rep(NA, nrow(tri_count))
+
+tri_count.t <- tri_count[0,]
+
+for(k in ureps) {
+  tri_count.s <- subset(tri_count, id==k)
+  for(i in 1:nrow(tri_count.s)) {
+    if(i == 1) {
+      tri_count.s[i,'alive'] <- tri_count.s$NstartF[1]
+    } else {
+      if(is.na(tri_count.s$deadFemale[i])) {
+        tri_count.s[i,'alive'] <- tri_count.s[(i-1),'alive']
+      } else {
+        nDead <- tri_count.s[i,'deadFemale']
+        tri_count.s[i,'alive'] <- tri_count.s[(i-1),'alive']-nDead
+      }
+    }
+  }
+  tri_count.t <- rbind(tri_count.t, tri_count.s)
+}
+
+tri_count <- tri_count.t
+
+min(tri_count$alive,na.rm=TRUE)
+which(is.na(tri_count$alive))
+tri_count[which(tri_count$alive<0),]
+#hist(tri_count[which(tri_count$alive<0),'alive'])
+
+hist(tri_count$alive)
+
+# Per female per date fecundity
+#tri_count <- tri_count[,c(3:5,8:13)]
+tri_count$eggpDay <- tri_count$numEggs*8
+tri_count$eggpFemDay <- format(tri_count$eggpDay/tri_count$alive,
+                               digits = 2)
+
+# Check that start values are assigned correctly
+subset(tri_count,tri_count$id=="DR_DR1") #176
+subset(tri_count,tri_count$id=="DR_DR2") #361
+subset(tri_count,tri_count$id=="DR_C1") #235
+subset(tri_count,tri_count$id=="DR_C2") #426
+subset(tri_count,tri_count$id=="C_C1") #190
+subset(tri_count,tri_count$id=="C_C2") #251
+subset(tri_count,tri_count$id=="C_DR1") #139
+subset(tri_count,tri_count$id=="C_DR2") #274
+
+write.table(tri_count, file="~/MyGithub/early_experience/processed/tricount.txt",
+            sep = '\t', row.names = FALSE)
+```
+
+
+
