@@ -188,6 +188,15 @@ mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
 
 summary(mf)$table[, "median"]
 
+members <- c("time", "n.risk", "n.event","surv") 
+declass <- data.frame(unclass(mf)[members])
+
+write.csv(declass, 
+          file = "../processed/survModel_larvAdulSex_declass.csv",
+          row.names = FALSE)
+
+# Alternative way:
+with(mf, data.frame(time, n.risk, n.event,surv))
 
 mf.plot <- ggsurvplot(mf, data = eelife, 
                      conf.int = FALSE,

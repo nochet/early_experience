@@ -9,7 +9,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(cowplot)
 library(colorblindr)
+library(forcats)
 
+#source("color_map.R")
 source("ggplot_theme.R")
 source("color_map_blindr.R")
 
@@ -26,24 +28,30 @@ zdn <-eggs %>%
 head(zdn)
 ```
 
-
+# Subset by 1) larval diet; 2) adult diet
 
 ```{r}
-zdn %>% 
+aa <- zdn %>% 
   ggplot(aes(x = age, y = eggpFemDay, color = larvalTreat, group = id)) +
-  geom_line(alpha = 0.25) +
-  geom_smooth(aes(group = larvalTreat), se = FALSE, color = "black") +
-  #tx_color_map() +
+  geom_line() +
+  geom_smooth(aes(group = larvalTreat), se = FALSE, color = "black",size=0.8) +
+  scale_color_manual(values=c("#999999", "#E69F00"),guide=FALSE) +
+  # scale_colour_OkabeIto() +
+  # tx_color_map() +
   facet_grid(. ~ larvalTreat) +
   labs(x = "Age (days)", y = "Eggs/female/3hrs") +
   #theme(legend.position = "none") +
   theme_half_open() +
   my_theme
+aa <- aa + theme(
+  plot.title = element_blank(),
+  axis.title.x = element_blank())
 
-zdn %>% 
+bb <- zdn %>%
   ggplot(aes(x = age, y = eggpFemDay, color = adultTreat, group = id)) +
-  geom_line(alpha = 0.25) +
+  geom_line() +
   geom_smooth(aes(group = adultTreat), se = FALSE, color = "black") +
+  scale_color_manual(values=c("#999999", "#E69F00"),guide=FALSE) +
   #tx_color_map() +
   facet_grid(. ~ adultTreat) +
   labs(x = "Age (days)", y = "Eggs/female/3hrs") +
@@ -51,146 +59,49 @@ zdn %>%
   theme_half_open() +
   my_theme
 
+bb <- bb + theme(
+  plot.title = element_blank(),
+  axis.title.x = element_blank())
 
-ggplot(zdn,aes(age,eggpFemDay)) +
-  geom_line()
-```
+bb <- bb + theme(strip.background = element_blank(),
+           strip.text.x = element_blank())
 
 
 
-# Visualize
+# Subset by larval-adult diet combinations
+zdn$tgroup <- gsub("\\d", "", zdn$id)
 
-```{r}
-# Collapse replicates
-dat <- recdat %>%
-  unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
-  unite(date_treat,age,treat,sep="_",remove=FALSE)
-#dat <- dat[order(dat$age),]
-names(dat)[3] <- "Treatment"
-
-collapse.dat <- dat %>%
-  group_by(treat, age) %>%
-  summarise(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
-
-# Cage-wise
-# collapse.dat <- dat %>%
-#   group_by(Treatment, age) %>%
-#   summarise(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
-
-collapse.dat <- collapse.dat[complete.cases(collapse.dat[,3]),]
-
-# Plot overall eggs per female per 3-hr sampling period
-pp <- ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) + 
-  stat_boxplot(geom ='errorbar',width = 0.3) + 
-  geom_boxplot() +
-  geom_jitter() +
-  scale_colour_OkabeIto() +
-  xlab("Larval_Adult diet treatment") + 
-  ylab("Mean eggs/Fem/date") +
-  theme_half_open() +
-  my_theme
-pp + theme(legend.position = "none")
-
-ggsave(pp, filename="~/MyGithub/early_experience/Plots/lifetime_eggs_perF_per3HR.pdf", height=4, width=4)
-
-# Plot time series of eggs per female per 3-hr sampling period
-qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
+cc <- zdn %>% 
+  ggplot(aes(x = age, y = eggpFemDay, color = larvalTreat, group = tgroup)) +
   geom_line() +
-  geom_point() +
-  scale_colour_OkabeIto() +
-  #scale_fill_OkabeIto() +
-  xlab("Age (days)") + 
-  ylab("Mean eggs/Fem/date") +
+  geom_smooth(aes(group = larvalTreat), se = FALSE, color = "black",size=0.8) +
+  scale_color_manual(values=c("#999999", "#E69F00"),guide=FALSE) +
+  # scale_colour_OkabeIto() +
+  # tx_color_map() +
+  facet_grid(. ~ larvalTreat) +
+  labs(x = "Age (days)", y = "Eggs/female/3hrs") +
+  #theme(legend.position = "none") +
   theme_half_open() +
   my_theme
-qq + theme(legend.position=c(0.7,1))
 
-ggsave(qq, filename="~/MyGithub/early_experience/Plots/Eggs_perF_per3HR_timeseries.pdf", height=4, width=4)
+cc <- cc + theme(strip.background = element_blank(),
+           strip.text.x = element_blank())
 
+# On the same page
+library(ggpubr)
+eggs <- ggarrange(aa,bb,cc, ncol = 1, nrow = 3, 
+                 labels = c("A", "B","C"))
 
-# Plot time series of eggs per female per 3-hr sampling period
-dat <- dat[complete.cases(dat[,c(3,5)]),]
-tt <- ggplot(dat,aes(x=as.numeric(age),y=eggpFemDay, col=treat)) +
-  geom_line() +
-  geom_point() +
-  scale_colour_OkabeIto() +
-  #scale_fill_OkabeIto() +
-  xlab("Age (days)") + 
-  ylab("Eggs/♀/date") +
-  theme_half_open() +
-  my_theme
-tt + theme(legend.position=c(0.4,1))
-
-# Pull these lines and give these images a quick check
-dat[which(dat$eggpFemDay>10),]
-dat[which(dat$eggpFemDay<1 & dat$age<36),]
-
-spot.check <- rbind(dat[which(dat$eggpFemDay>10),],dat[which(dat$eggpFemDay<1 & dat$age<36),])
-```
-
-# A faceted figure
-```{r}
-# Use facet_grid or facet_wrap to split up graphs by factors
-ggplot(mydata, aes(Var1, Var2)) + geom_point() + facet_grid(~ Variety)
-```
-
-
-# Use new counts to see what changes
-
-```{r}
+ggsave(eggs,file = "../plots/eggs_perFemale_per3Hrs.pdf",
+                width = 4,height=6)
 
 ```
 
-# Reaction norms
+# Relationship between lifespan and fecundity
 
 ```{r}
-norms <- tri_count[,c(4:5,15)]
-
-# Calculate medians
-
-# Get the four main treatments
-richEarly <- subset(norms,larvalTreat=="C")
-poorEarly <- subset(norms,larvalTreat=="DR")
-
-# rich.rich <- subset(react,c(larvalTreat=="C" & adultTreat=="C"))
-
-remed <- richEarly %>%
-  group_by(adultTreat) %>%
-  summarise(med_eggs = mean(eggpFemDay), n = n())
-colnames(remed) <- c("adult", "mean_eggs", "N")
-remed$grp <- "RichEarly"
-
-pemed <- poorEarly %>%
-  group_by(adultTreat) %>%
-  summarise(med_eggs = mean(eggpFemDay), n = n())
-colnames(pemed) <- c("adult", "mean_eggs", "N")
-pemed$grp <- "PoorEarly"
-
-med.all <- rbind(remed,pemed)
-
-# Join data frames
-med.all <- select(med.all, grp,adult,mean_eggs)
-
-all.piv <- pivot_wider(med.all,
-    names_from = adult,
-    values_from = mean_eggs,
-    values_fill = 0
-    )
-
-all.piv <- select(all.piv, grp,DR,C)
-
-pdf("~/MyGithub/early_experience/plots/fec_norms.pdf",width=4, height=4)
-
-par(mar=c(6,6,1,2.5))
-matplot(t(all.piv[,2:3]),
-        type='b',lty=1, lwd=2,pch=16,
-        col = 1:6,
-        ylab="Mean Eggs \n (3 hrs)",xlab="Adult Diet",
-        axes=FALSE,cex.lab=1)
-box()
-axis(2,cex.axis=1.0)
-axis(1, at=c(1,2), labels=c("DR","C"),cex.axis=1.0)
-
-dev.off()
+# Data written in eeSurv_viz.Rmd
+sdata <- read.csv("../processed/survModel_larvAdulSex_declass.csv")
+edata <- select(zdn, age,eggpFemDay)
 ```
 
