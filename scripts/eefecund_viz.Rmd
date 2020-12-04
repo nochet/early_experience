@@ -100,8 +100,76 @@ ggsave(eggs,file = "../plots/eggs_perFemale_per3Hrs.pdf",
 # Relationship between lifespan and fecundity
 
 ```{r}
-# Data written in eeSurv_viz.Rmd
-sdata <- read.csv("../processed/survModel_larvAdulSex_declass.csv")
-edata <- select(zdn, age,eggpFemDay)
+# Lifespan
+
+quants <- read.csv("../processed/quantiles.csv")
+#zdn$sgroup <- gsub("\\d", "", zdn$id)
+#edata <- edata[order(edata$age),]
+
+quants$X <- gsub("[a-z]", "", quants$X)
+quants$X <- gsub("T=", "", quants$X)
+quants$X <- gsub("=", "", quants$X)
+quants$X <- gsub(", ", "_", quants$X)
+quants$X <- gsub(" ", "", quants$X)
+
+quants <- quants%>%
+  rename(sgroup="X",
+         q25="quantile.25",ci25l="lower.25",ci25h="upper.25",
+         q50="quantile.50",ci50l="lower.50",ci50h="upper.50",
+         q75="quantile.75",ci75l="lower.75",ci75h="upper.75") %>%
+  unite("ci25",ci25l,ci25h,sep="-") %>%
+  unite("ci50",ci50l,ci50h,sep="-") %>%
+  unite("ci75",ci75l,ci75h,sep="-")
+
+qfemale <- quants %>%
+  filter(stringr::str_detect(sgroup, "_F"))
+
+qfemale$tgroup <- str_split(qfemale$sgroup, "_F", simplify = TRUE)[,1] 
+
+qfemale <- select(qfemale, tgroup,q25,q50,q75) %>%
+  pivot_longer(cols=2:4,names_to = "phase",values_to="surv_prob")
+
+# Mean eggs per quantile
+zdn$tgroup <- gsub("\\d", "", zdn$id)
+
+quantile(zdn$age)
+eggs_young <- filter(zdn, age <= quantile(zdn$age, probs = 0.25)) %>%
+  select(tgroup,age,eggpFemDay) %>%
+  group_by(tgroup) %>%
+  summarise(q25 = mean(eggpFemDay))
+
+eggs_mid <- filter(zdn, age <= quantile(zdn$age, probs = 0.50)) %>%
+  select(tgroup,age,eggpFemDay) %>%
+  group_by(tgroup) %>%
+  summarise(q50 = mean(eggpFemDay))
+
+eggs_old <- filter(zdn, age <= quantile(zdn$age, probs = 0.75)) %>%
+  select(tgroup,age,eggpFemDay) %>%
+  group_by(tgroup) %>%
+  summarise(q75 = mean(eggpFemDay))
+
+ 
+eggsf <- Reduce(function(x, y) merge(x, y, all=TRUE), 
+                    list(eggs_young,eggs_mid,eggs_old))
+eggsf <- pivot_longer(eggsf, cols=2:4,
+                     names_to="phase",
+                     values_to="eggs")
+
+le <- left_join(qfemale,eggsf) %>%
+  #rename(qlife="phase_eggs",surv_prob="life_phase") %>%
+  select(tgroup,phase,surv_prob,eggs) %>%
+  as.data.frame()
+  
+
+le %>% 
+  #group_by(phase) %>%
+  ggplot(aes(surv_prob,eggs),color=phase) +
+  geom_point() +
+  geom_line() +
+  facet_grid(. ~ tgroup) +
+  #facet_grid(cols=vars(tgroup), rows=vars(phase), scales= "free_x") +
+  scale_colour_OkabeIto() +
+  theme_half_open() 
+  #tx_color_map() 
 ```
 

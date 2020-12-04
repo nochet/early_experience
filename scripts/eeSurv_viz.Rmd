@@ -187,16 +187,16 @@ mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
                    data = eelife)
 
 summary(mf)$table[, "median"]
+sum_survfit <- surv_summary(mf, data = eelife)
 
-members <- c("time", "n.risk", "n.event","surv") 
-declass <- data.frame(unclass(mf)[members])
+write.csv(sum_survfit, 
+          file = "../processed/SummarySurvModel_larvAdulSex.csv",
+          row.names = FALSE) 
 
-write.csv(declass, 
-          file = "../processed/survModel_larvAdulSex_declass.csv",
-          row.names = FALSE)
+# Write quantiles
+write.csv(quantile(mf, probs = c(0.25, 0.5, 0.75)), 
+          file = "../processed/quantiles.csv")
 
-# Alternative way:
-with(mf, data.frame(time, n.risk, n.event,surv))
 
 mf.plot <- ggsurvplot(mf, data = eelife, 
                      conf.int = FALSE,
