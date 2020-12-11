@@ -36,6 +36,12 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+
+## 2020-12-11 (EN)
+Make final plots: 
+ - fecundity exploratory
+ - lifespan exploratory
+
 ## 2020-11-27 (EN)
 Rename `Fec_perFem.Rmd` to `process_fecund.Rmd`. This script is reserved for general processing for the fecundity data. Start a new script for visualization `eefecund_viz.Rmd`.
 

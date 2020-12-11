@@ -208,7 +208,7 @@ tf <- uq %>%
   facet_grid(cols=vars(tgroup), rows=vars(Quartile), scales= "free_y") +
   scale_colour_OkabeIto() +
   #tx_color_map() +
-  xlab("Age (Days)") + ylab("Eggs female (3 hrs/wk)") +
+  xlab("Age (Days)") + ylab("Eggs/female (3 hrs/wk)") +
   my_theme +
   theme_half_open() 
 tf + labs(fill = "Quartile")
