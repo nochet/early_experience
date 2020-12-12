@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(survival)
 library(survminer)
 library(coxme)
-library(splines) #needed by survival package
+library(splines) 
 library(tidyverse) 
 library(forcats)
 library(cowplot)
@@ -21,10 +21,10 @@ library(Greg)
 
 ## Summary results
 
-Assupmtion: Proportional hazards (effects of all covariates do not change over time)
+Assupmtion: Proportional hazards (i.e. effects of all covariates do not change over time)
 Non-PH therefore under- or overestimated risk
 
-Looks like the simplest model (larv + adult + sex) is prefered whether the data is split by sex or not
+Looks like the simplest model (larv + adult + sex) is preferred whether the data is split by sex or not
 
 Use this to correct the PH assumption
 
@@ -53,13 +53,14 @@ cph1.2 is better (`~ larvalTreat + adultTreat + sex`)
 cph1.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                 sex + cageID + larvalTreat:adultTreat:sex, 
               data = eelife)
-summary(cph1)
-cox.zph(cph1)
-
+summary(cph1.0)
+cox.zph(cph1.0)
+ggforest(cph1.0, data = eelife)
 
 cph1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                 sex + cageID, data = eelife)
 summary(cph1.1)
+ggforest(cph1.1, data = eelife)
 # There's robust effect of sex and cage, larval diet at 10% sig, 
 # adult diet nsig
 
@@ -68,6 +69,7 @@ cph1.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat +
                 sex, data = eelife)
 summary(cph1.2)
 cox.zph(cph1.2)
+ggforest(cph1.2, data = eelife)
 # Robust effect of adult diet and sex, larval diet nsig
 
 
@@ -111,7 +113,7 @@ eelife$status <- as.numeric(eelife$status)
 cph3 <- coxme(Surv(age, status) ~ cpd_var + (1 | cageID), data = eelife)
 summary(cph3)
 
-anova(cph1.3,cph1.2,cph1.1,cph2,cph3)
+anova(cph1.3,cph1.2,cph1.1,cph2,cph3,cph1.0)
 
 # A random effect seems unfavored
 # 3-way interaction alone seems similar to additive model with cageID
@@ -250,7 +252,7 @@ summary(regular_modelF)
 cox.zph(regular_modelF)
 
 
-# Now, split dataset and repeat model
+# Now, split dataset and repeat model (Greg package)
 
 spl_female <-
   female %>% 

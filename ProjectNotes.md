@@ -41,6 +41,8 @@ STEP 4: A Bayesian approach
 Make final plots: 
  - fecundity exploratory
  - lifespan exploratory
+Review CoxPH models for the ms
+
 
 ## 2020-11-27 (EN)
 Rename `Fec_perFem.Rmd` to `process_fecund.Rmd`. This script is reserved for general processing for the fecundity data. Start a new script for visualization `eefecund_viz.Rmd`.
@@ -231,7 +233,7 @@ Also,
 vignette("timedep", package = "survival")
 
 ### 2020-08-12 (EN)
-Cox models
+Cox models `ee_coxph_models.Rmd`
 Models fail the assumption of proportional hazards: that residuals should be time-independent.
 
 Explore approaches to remedy the problem:
@@ -251,7 +253,7 @@ Made new plot to show per female fecundity vs age. Also cleaned up some of the o
 
 ### 2020-07-13 (EN)
 Fit Cox Proportional Hazard models to lifespan data
-Visualize HRs with Forest plots
+Visualize hazard ratios with Forest plots
 Next, do reaction norms for Fig. 2 in Monaghan et al, (2008)
 
 ### 2020-07-04 (EN)
