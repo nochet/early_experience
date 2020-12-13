@@ -352,5 +352,3 @@ collectedEggs	startDate	sampleDate	age	id	larvalTreat	adultTreat	deadFemale	dead
 2/9/18	2/20/18	6/25/18	125	EE_C_C2	C	C	0	0	0			
 2/9/18	2/20/18	6/27/18	127	EE_C_C2	C	C	0	0	0			
 2/9/18	2/20/18	7/2/18	132	EE_C_C2	C	C	0	0	0			male
-				EE_DR_DR2	DR	DR				9884	12	
-				EE_DR_C2	DR	C				9885	23	

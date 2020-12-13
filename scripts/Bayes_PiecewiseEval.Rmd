@@ -32,8 +32,6 @@ loo_mod1_pw10 <- readRDS("../processed/loo_mod1_pw10.rds")
 
 loo_wt_pw <- readRDS("../processed/loo_wt_pw.rds")
 
-ps_check(mod0)
-ps_check(mod1) #takes time
 ```
 
 # Examine posteriors

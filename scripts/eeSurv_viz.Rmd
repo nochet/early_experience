@@ -239,9 +239,9 @@ survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
 ### Females only
 
 ```{r}
-earlyRichF <- subset(eelifeF, eelifeF$larvalTreat=="C")
+earlyRichF <- subset(eelife, c(eelife$larvalTreat=="C" & eelife$sex=="F"))
 
-erf <- survfit(Surv(age, status == 2) ~ adultTreat,
+erf <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
@@ -271,7 +271,7 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
 erf.plot
 
 # Test significance
-survdiff(Surv(age, status==2) ~ adultTreat,
+survdiff(Surv(age, status) ~ adultTreat,
                      data = earlyRichF, rho = 0) 
 
 #quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
@@ -283,9 +283,9 @@ survdiff(Surv(age, status==2) ~ adultTreat,
 ### Males only
 
 ```{r}
-earlyRichM <- subset(eelifeM, eelifeM$larvalTreat=="C")
+earlyRichM <- subset(eelife, c(eelife$larvalTreat=="C" & eelife$sex=="M"))
 
-erm <- survfit(Surv(age, status == 2) ~ adultTreat,
+erm <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
@@ -324,9 +324,9 @@ survdiff(Surv(age) ~ adultTreat,
 ### Females only
 
 ```{r}
-earlyPoorF <- subset(eelifeF, eelifeF$larvalTreat=="DR")
+earlyPoorF <- subset(eelife, c(eelife$larvalTreat=="DR" & eelife$sex=="F"))
 
-epf <- survfit(Surv(age, status==2) ~ adultTreat,
+epf <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
@@ -356,7 +356,7 @@ epf.plot <- ggsurvplot(epf, data = earlyPoorF,
 epf.plot
 
 # Test significance
-survdiff(Surv(age, status==2) ~ adultTreat,
+survdiff(Surv(age, status) ~ adultTreat,
                      data = earlyPoorF, rho = 0) 
 
 #quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
@@ -366,9 +366,9 @@ survdiff(Surv(age, status==2) ~ adultTreat,
 ### Males only
 
 ```{r}
-earlyPoorM <- subset(eelifeM, eelifeM$larvalTreat=="DR")
+earlyPoorM <- subset(eelife, c(eelife$larvalTreat=="DR" & eelife$sex=="M"))
 
-epm <- survfit(Surv(age, status == 2) ~ adultTreat,
+epm <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
@@ -398,7 +398,7 @@ epm.plot <- ggsurvplot(epm, data = earlyPoorM,
   ylab("")
 epm.plot
 
-survdiff(Surv(age, status ==2) ~ adultTreat,
+survdiff(Surv(age, status) ~ adultTreat,
                      data = earlyPoorM, rho = 0) 
 ```
 
@@ -423,15 +423,6 @@ ggsave(
   file = "~/MyGithub/early_experience/plots/SurvPlots_for_larvalDiet.pdf",
   width = 6,
   height = 5)
-
-# if (FALSE) {
-# # Arrange and save into pdf file
-# res <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2,
-#                             print = FALSE)
-# }
-
-ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_larvalDiet.pdf", height=5, width=8,res)
-
 ```
 
 
