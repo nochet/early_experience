@@ -61,6 +61,102 @@ eelife$status <- ifelse(eelife[,"status"] == 2, 1, 0)
 #write.csv(eelife, file="../processed/eeAlldat.csv, row.names = FALSE")
 ```
 
+# Descriptives
+
+```{r, dens}
+cohort <- c('F&M','FF','MM')
+
+dens.list <- vector(mode='list', length=3)
+names(dens.list) <- cohort
+
+for (ii in cohort) {
+  
+if(ii=='F&M')
+{
+# Male and female together
+
+pp <- ggplot(eelife, aes(age, color = larv_adult)) + 
+    geom_density(alpha = 0.5) +
+    coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+    #adjust frame of x-axis
+  
+    scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+    expand_limits(x=125) +
+    #limit plot area on x-axis
+  
+    scale_y_continuous(expand = c(0, 0)) +
+    tx_color_map() +
+    theme(axis.title = element_text(size = 12)) +
+    xlab("Age (days)") +
+    ylab("Density") +
+    theme_half_open() +
+    theme(legend.position = "none") 
+
+    #element.text = 12
+    #tx_fill_map() +
+    #my_theme
+#fm
+}
+  
+if(ii=='FF')
+  
+{
+
+# Female alone
+
+pp <- ggplot(eelifeF, aes(age, color = larv_adult)) + 
+    geom_density(alpha = 0.5) +
+    coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+    #adjust frame of x-axis
+    scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+    expand_limits(x=125) +
+    #limit plot area on x-axis
+    scale_y_continuous(expand = c(0, 0)) +
+    tx_color_map() +
+    theme(axis.title = element_text(size = 12)) +
+    xlab("Age (days)") +
+    ylab("Density") +
+    theme_half_open() +
+    theme(legend.position = "none") 
+#ff
+
+}
+  
+if(ii=='MM')
+
+{
+# Male alone
+
+pp <- ggplot(eelifeM, aes(age, color = larv_adult)) + 
+    geom_density(alpha = 0.5) +
+    coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+    #adjust frame of x-axis
+    scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+    expand_limits(x=125) +
+    #limit plot area on x-axis
+    scale_y_continuous(expand = c(0, 0)) +
+    tx_color_map() +
+    theme(axis.title = element_text(size = 12)) +
+    xlab("Age (days)") +
+    ylab("Density") +
+    theme_half_open() +
+    theme(legend.position = c(0.7, 0.8)) 
+#mm
+}
+dens.list[[ii]] <- pp
+}
+
+densPlot <- plot_grid(dens.list[[1]],dens.list[[2]],dens.list[[3]],
+                      nrow =3, ncol=1, 
+                      labels = c('a.', 'b.', 'c.'), 
+                      align = 'h', 
+                      rel_widths = c(1.5,1.5, 1.5), 
+                      label_size = 10)
+densPlot
+# ggsave(last_plot(), file = "../plots/density_male_female.pdf",
+#        width = 6, height = 4)
+```
+
 # Testing developmental theories
 
 ## a) Survival
@@ -117,8 +213,7 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                      legend = "none",
                      risk.table = TRUE,
                      risk.table.col = "strata",
-                     tables.height = 0.5,
-                     tables.theme = theme_cleantable(),
+                     risk.table.height = 0.5,
                     # title = "Females & Males",
                      legend.labs = c("C-C-F","C-C-M",
                                      "C-DR-F","C-DR-M",
