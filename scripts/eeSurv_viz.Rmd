@@ -22,6 +22,7 @@ library(splines)
 library(tidyverse) 
 library(forcats)
 library(cowplot)
+library(colorblindr)
 #library(Greg)
 
 
@@ -101,22 +102,26 @@ write.csv(sum_survfit,
 write.csv(quantile(mf, probs = c(0.25, 0.5, 0.75)), 
           file = "../processed/quantiles.csv")
 
+# OkabeIto palette in Hex: "#000000","#E69F00","#56B4E9",
+# "#009E73", #F0E442","#0072B2","#D55E00","#CC79A7"
 
 mf.plot <- ggsurvplot(mf, data = eelife, 
                      conf.int = FALSE,
                      break.time.by = 20,
-                     palette = pal,
+                     palette = "palette_OkabeIto",
+                     #palette = c("#999999", "#E69F00"),
                      fun = "pct", 
                      surv.median.line = "hv",
-                    # font.y = c(14),
-                     font.x = c(font_size),
-                     font.y = c(font_size),
-                     font.tickslab = c(font_size),
-                     #font.main = 11,
+                     fontsize = 4.5,
+                     font.x = 14,
+                     font.y = 14,
+                     # font.tickslab = 11,
+                     # font.main = 11,
                      #risk.table = FALSE,
-                     legend = "none",
+                     legend = "right",
                      risk.table = TRUE,
                      risk.table.col = "strata",
+                     #risk.table.fontsize = 4,
                      tables.height = 0.5,
                      tables.theme = theme_cleantable(),
                     # title = "Females & Males",
@@ -126,7 +131,6 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                                      "DR-DR-F","DR-DR-M"),
                      legend.title = "Diet-Sex \n combination") +
                      guides(colour = guide_legend(nrow = 8)) +
-                     theme_survminer(font.main = 11)  +
   xlab("Age (days)")
 mf.plot
 
