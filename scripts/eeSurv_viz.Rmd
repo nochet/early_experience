@@ -118,12 +118,12 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                      # font.tickslab = 11,
                      # font.main = 11,
                      #risk.table = FALSE,
-                     legend = "right",
+                     legend = c(0.9, 0.6),
                      risk.table = TRUE,
                      risk.table.col = "strata",
                      #risk.table.fontsize = 4,
-                     tables.height = 0.5,
-                     tables.theme = theme_cleantable(),
+                     tables.height = 0.4,
+                     #tables.theme = theme_cleantable(),
                     # title = "Females & Males",
                      legend.labs = c("C-C-F","C-C-M",
                                      "C-DR-F","C-DR-M",
@@ -134,7 +134,7 @@ mf.plot <- ggsurvplot(mf, data = eelife,
   xlab("Age (days)")
 mf.plot
 
-ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable.pdf", height=6, width=8, print(mf.plot))
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable.pdf", height=6, width=6, print(mf.plot))
 
 # Test significance
 survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
