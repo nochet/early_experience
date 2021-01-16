@@ -8,212 +8,150 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(survival)
 library(survminer)
-library(splines) #needed by survival package
+library(coxme)
+library(splines) 
 library(tidyverse) 
 library(forcats)
 library(cowplot)
-library(Greg)
-
+library(broom)
+library(Greg); packageVersion("Greg")
+library(rms); packageVersion("rms")
 ```
 
 # CoxPH models 
 
-Assupmtion: Proportional hazards (effects of all covariates do not change over time)
+## Summary results
+
+Assupmtion: Proportional hazards (i.e. effects of all covariates do not change over time)
 Non-PH therefore under- or overestimated risk
 
-PH assumption (i.e. residuals independent of time) violated
-Early: Adult diet interaction sig, albeit skewed residuals
-Interaction of non-PH variables with age non-convergent (diet interacts heavily with age - nothing else is significant)
-Models on age-classes not significant for either diet, but a large effect of sex.
+Looks like the simplest model (larv + adult + sex) is preferred whether the data is split by sex or not
 
-Larval treatment effect depends on adult age 
+Use this to correct the PH assumption
+
+Use this to fit a Bayesiam model
 
 
 # Data
 
 ```{r}
 eelife <- read.csv("../processed/eeAlldat.csv") %>%
-  select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex)
+  select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex) 
+
+# cols <- c("cageID", "larv_adult", "larvalTreat", "adultTreat","sex")
+# eelife[cols] <- lapply(eelife[cols], factor)  
+eelife$age <- as.numeric(eelife$age)
+# sapply(eelife, class)
+
+
 ```
 
 # With a 3-way interaction
 
-cageID is sig - fit as random effect
-Sex and cageID very sig
-Non-PH in larval diet, cage and sex
+cageID always sig - fit as random effect
+Sex always sig - always include as fixed effect
+All, except adult diet non-PH
 see Fox and Weisberg (2018)
 
+cxph1.2 is better (`~ larvalTreat + adultTreat + sex`)
+
+Addressing non-proportional hazards: https://cran.r-project.org/web/packages/Greg/vignettes/timeSplitter.html
+vignette("timedep", package = "survival")
 ```{r}
-# 3-way interaction (drop cageID in the interaction term)
-cph1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+# Null model (log likelihood= -20644.52)
+null <- coxph(Surv(age, status) ~ 1, data=eelife)
+
+cxph1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat, 
+                data = eelife)
+summary(cxph1.1)
+cox.zph(cxph1.1)
+ggforest(cxph1.1, data = eelife)
+
+
+cxph1.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                strata(sex), data = eelife)
+summary(cxph1.2)
+cox.zph(cxph1.2)
+#ggforest(cxph1.2, data = eelife) #undefined columns (strata??)
+# Robust effect of adult diet, larval diet nsig
+extractAIC(cxph1.2)
+tidy(cxph1.2,exponentiate = TRUE)
+glance(cxph1.2)
+plot(survfit(cxph1.2, transform="km", global=TRUE))
+plot(cox.zph(cxph1.2,transform="km", global=TRUE))
+#termplot(cxph1.2, term=2, se=TRUE, col.term=1, col.se=1,ylab="log hazard")
+
+
+cxph1.3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                   strata(sex,cageID), data = eelife)
+summary(cxph1.3)
+cox.zph(cxph1.3)
+
+
+cxph1.4 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                 sex + cageID + larvalTreat:adultTreat:sex, 
               data = eelife)
-summary(cph1)
-#ggforest(cph1, data = eelife)
-cox.zph(cph1)
-#ggcoxzph(test.cph1)
-
-```
-
-## Fit the interaction term only
-
-All 3-way interaction combis sig (due to sex??)
-cpd_var is non-PH
-
-```{r}
-eelife <- eelife %>% unite(cpd_var, larv_adult, sex, 
-                           sep = "_", remove = FALSE)
-
-cph2 <- coxph(Surv(age, status) ~ cpd_var, data = eelife)
-summary(cph2)
-cox.zph(cph2)
+summary(cxph1.4)
+cox.zph(cxph1.4)
+ggforest(cxph1.4, data = eelife)
 
 
-# Compare models
-anova(cph1,cph2)
-## Seems to favor cph2 
+anova(null,cxph1.1,cxph1.2,cxph1.3,cxph1.4)
+
+#################
+# This frailty method in coxph is superceeded by coxme (vignette)
+f1 <- coxph( Surv(age, status) ~ larvalTreat + adultTreat + sex + 
+               frailty(cageID) , data = eelife )
+f1
+
+cox.zph(f1)
 ```
 
 ## cageID as random effect
 
-Two of seven 3-way interactions not sig.
-Two combis involving cageID sig.
-Very non-PH
-
 ```{r}
-cph3 <- coxph(Surv(age, status) ~ cpd_var + (1 + cageID), data = eelife)
-summary(cph3)
-cox.zph(cph3)
+eelife$status <- as.numeric(eelife$status)
+stem(table(eelife$cageID))
 
-anova(cph2,cph3)
+cph2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex, 
+              data = eelife)
+summary(cph2)
+
+cph3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                (1 | cageID), 
+              data = eelife)
+summary(cph3)
+anova(cph3)
+# (1 | cageID) read as: intercept (effect) per center (group)
+
+# random effects coefficients can be retrieved using the ranef function
+stem(exp(ranef(cph3)[[1]]))
+
+# To look at random treatment effects within center we can add a nested effect
+cph3.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                  (1 | cageID/larvalTreat), eelife)  
+cph3.1
+
+cph3.2 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                  (1 | cageID/adultTreat), eelife)  
+cph3.2
+
+cph3.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                  (1 | cageID/sex), eelife)  
+cph3.3
+
+# A random effect seems unfavored
+# 3-way interaction alone seems similar to additive model with cageID
+# Additive model with sex but no cageID most robust of all
+# Select cph1.2 (larval diet has no effect)
+
 ```
 
 
 ## Take from linear models
 1. LOOKS LIKE SEX HAS A MAJOR IMPACT - CONSIDER SEXES SEPARATELY LATER
 2. DEAL WITH NON-PH COVARIATES
-3. cageID HAS EFFECT, SO SHOULD BE CONTROLLED FOR AS RANDOM EFFECT
 4. ONLY EFFECTS APPEAR AS INTERACTION (ABSENT WHEN FITTED AS ADDITIVE)
-
-
-
-
-# Deal with the non-PH problem
-
-## Stratify the time variable for model cph3
-
-Does not correct non-PH
-
-```{r}
-hist(eelife$age)
-
-eelife$age.intv <- car::recode(eelife$age, 
-                              "lo:10=1; 
-                              11:20=2; 
-                              21:30=3; 
-                              31:40=4;
-                              41:50=5;
-                              51:60=6;
-                              61:hi=7") 
-xtabs(~ age.intv, data=eelife)
-
-cph4 <- coxph(Surv(age, status) ~ cpd_var + strata(age.intv), data=eelife)
-summary(cph4)
-
-cox.zph(cph4)
-
-```
-
-# Cox model with split-time variable
-
-Unsplit-time variable: Adult treatment has a large effect. Sex has a large effect. Larval treat and sex have very non-PH
-
-Split-time variable: Adult treatment and sex have large effects. Larval treat and sex have non-PH
-
-Splitting at interval of 0.5: sex and cageID non-PH.
-
-```{r}
-
-eelife <- eelife %<>% 
-  mutate(status = factor(status),
-        larvalTreat = factor(larvalTreat),
-        adultTreat = factor(adultTreat),
-        sex = factor(sex))
-
-
-
-# A regular cox regression
-## Requires a defined status level
-
-regular_model <- cph1
-
-
-# Now, split dataset and repeat model
-
-spl_eelife <-
-  eelife %>% 
-  timeSplitter(by = 0.5,
-               event_var = "status",
-               event_start_status = 0,
-               time_var = "age")
-
-interval_model <-
-  update(regular_model, 
-         Surv(Start_time, Stop_time, status == 1) ~ .,
-         data = spl_eelife)
-
-summary(interval_model)
-
-# The difference between the models should be negligible:
-
-cbind(Regular = coef(regular_model),
-      Interval = coef(interval_model),
-      Difference = coef(regular_model) - coef(interval_model)) %>% 
-  txtRound(digits = 5) %>% 
-  knitr::kable(align = "r")
-
-
-# Now, look for time varying coefficients with survival::cox.zph() 
-
-cox.zph(regular_model) %>% 
-  extract2("table") %>% 
-  txtRound(digits = 2) %>% 
-  knitr::kable(align = "r")
-
-# larvalTreat and sex are time-variable
-
-
-# Update split-time model with interaction
-
-time_int_model <- 
-  update(interval_model,
-         .~.+larvalTreat:Start_time,
-         .~.+sex:Start_time)
-summary(time_int_model)
-
-cox.zph(time_int_model)
-
-ggcoxzph(sx)
-
-#ggforest(time_int_model, data = spl_eelife)
-
-ggforest(
-  time_int_model,
-  data = spl_eelife,
-  main = NULL,
-  cpositions = c(0.02, 0.22, 0.4),
-  fontsize = 0.7,
-  refLabel = "reference",
-  noDigits = 2
-)
-
-
-
-# Adjusted survival curve for cox model
-# ggadjustedcurves(regular_model, data = eelife,
-#                     variable  = eelife[, "larvalTreat"],
-#                    legend.title = "Larval Treatment", )
-```
 
 
 
@@ -226,58 +164,148 @@ Models on age-classes not significant for either diet
 
 ### Females
 
-Unsplit model: Adult treat highly sig; but adult treat has non-PH
-
-Split model: At 0.5, adult treat remains highly sig; Adult treatment depends on age very significantly; All hazards are proportional!
-
-This looks like a valid solution.
+`~ larvalTreat + adultTreat` appears adequate
 
 ```{r}
 female <- subset(eelife, eelife$sex=="F")
 
-female <- female %>% 
-  mutate(status = factor(status),
-        larvalTreat = factor(larvalTreat),
-        adultTreat = factor(adultTreat),
-        sex = factor(sex))
+fph1.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                cageID + larvalTreat:adultTreat:cageID, 
+              data = female)
+summary(fph1.0)
+# Only cage has effect in 2 combis
 
 
+fph1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                cageID, data = female)
+summary(fph1.1)
+# Only cage has effect in 2 combis
+
+
+fph1.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat, 
+                data = female)
+summary(fph1.2)
+cox.zph(fph1.2)
+# Adult diet robustly sig
+
+
+fph1.3 <- coxph(Surv(age, status) ~ larv_adult, 
+                data = female)
+summary(fph1.3)
+cox.zph(fph1.3)
+# All combis sig; C_DR is robust negative effect
+
+
+fph2 <- coxme(Surv(age, status) ~ larv_adult + (1 | cageID), 
+              data = female)
+summary(fph2)
+
+
+fph2.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
+                (1 | cageID), 
+                data = female)
+summary(fph2.1)
+# Adult treat sig
+
+anova(fph1.3,fph1.2,fph1.1,fph1.0,fph2,fph2.1)
+
+# It seemms the simplest (fph1.2) is equally plausible to a model with additive cageID term(fph1.1), and one with RE on 2-way interaction (fph2)
+```
+
+### Males
+
+Again, the simplest model (`~ larvalTreat + adultTreat`) appears adequate
+
+```{r}
+male <- subset(eelife, eelife$sex=="M")
+
+mph1.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                cageID + larvalTreat:adultTreat:cageID, 
+              data = male)
+summary(mph1.0)
+# No effects are detectable
+
+
+mph1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                cageID, data = male)
+summary(mph1.1)
+# No detectable effects
+
+
+mph1.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat, 
+                data = male)
+summary(mph1.2)
+cox.zph(mph1.2)
+# Adult diet robustly sig
+
+
+mph1.3 <- coxph(Surv(age, status) ~ larv_adult, 
+                data = male)
+summary(mph1.3)
+cox.zph(mph1.3)
+# Two interactions robustly sig (larv_adultC_DR and larv_adultDR_DR)
+
+
+mph2 <- coxme(Surv(age, status) ~ larv_adult + (1 | cageID), 
+              data = male)
+summary(mph2)
+# Two interactions robustly sig (larv_adultC_DR and larv_adultDR_DR)
+
+
+mph2.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
+                (1 | cageID), 
+                data = male)
+summary(mph2.1)
+# Adult treat robustly sig
+
+anova(mph1.2,mph1.1,mph1.3,mph1.0,mph2,mph2.1)
+
+# None is sig better than the simplest (mph1.2)
+# non-PH though
+
+```
+
+# Correct the preferred model for PH
+# No random effects needed
+
+
+```{r}
 # Fit a regular cox model
-regular_model <- coxph(Surv(age, status == 1) ~ larvalTreat + 
+regular_modelF <- coxph(Surv(age, status) ~ larvalTreat + 
                          adultTreat, data = female)
-summary(regular_model)
-cox.zph(regular_model)
+summary(regular_modelF)
+cox.zph(regular_modelF)
 
 
-# Now, split dataset and repeat model
+# Now, split dataset and repeat model (Greg package)
 
 spl_female <-
   female %>% 
-  timeSplitter(by = 0.5,
+  timeSplitter(by = 5,
                event_var = "status",
                event_start_status = 0,
                time_var = "age")
 
-interval_model <-
-  update(regular_model, 
+interval_modelF <-
+  update(regular_modelF, 
          Surv(Start_time, Stop_time, status == 1) ~ .,
          data = spl_female)
 
-summary(interval_model)
+summary(interval_modelF)
 
 
 # The difference between the models should be negligible:
 
-cbind(Regular = coef(regular_model),
-      Interval = coef(interval_model),
-      Difference = coef(regular_model) - coef(interval_model)) %>% 
+cbind(Regular = coef(regular_modelF),
+      Interval = coef(interval_modelF),
+      Difference = coef(regular_modelF) - coef(interval_modelF)) %>% 
   txtRound(digits = 5) %>% 
   knitr::kable(align = "r")
 
 
 # Now, look for time varying coefficients with survival::cox.zph() 
 
-cox.zph(regular_model) %>% 
+cox.zph(regular_modelF) %>% 
   extract2("table") %>% 
   txtRound(digits = 2) %>% 
   knitr::kable(align = "r")
@@ -287,20 +315,17 @@ cox.zph(regular_model) %>%
 
 # Update split-time model with interaction
 
-time_int_model <- 
-  update(interval_model,
+time_int_modelF <- 
+  update(interval_modelF,
          .~.+adultTreat:Start_time)
-summary(time_int_model)
+summary(time_int_modelF)
 
-sx <- cox.zph(time_int_model)
-sx
-
+cox.zph(time_int_modelF)
 #ggcoxzph(sx)
-
 #ggforest(time_int_model, data = spl_eelife)
 
 FF <- ggforest(
-  time_int_model,
+  time_int_modelF,
   data = spl_female,
   main = NULL,
   cpositions = c(0.02, 0.22, 0.4),
@@ -311,13 +336,13 @@ FF <- ggforest(
 
 FF
 
-# ggsave(FF,filename = "~/MyGithub/early_experience/Plots/Female_Greg_Forest_HR.pdf", height=3, width=6)
+ggsave(FF,filename = "~/MyGithub/early_experience/Plots/Female_Greg_Forest_HR.pdf", height=3, width=6)
 
 ```
 
 ### Males
 
-Unsplit model: Adult DR is higly sig in males also; Both larval and adult treat are non-PH.
+Unsplit model: Adult DR is highly sig in males also; Both larval and adult treat are non-PH.
 
 Split model: Has larval treat sig also (P=0.0195), with PHs for both larval treat and larval treat*time; However, non-PH for adult treat.
 
@@ -327,49 +352,49 @@ This seems a satisfactory solution since we are interested in larval diet.
 
 male <- subset(eelife, eelife$sex=="M")
 
-male <- male %>% 
-  mutate(status = factor(status),
-        larvalTreat = factor(larvalTreat),
-        adultTreat = factor(adultTreat),
-        sex = factor(sex))
+# male <- male %>% 
+#   mutate(status = factor(status),
+#         larvalTreat = factor(larvalTreat),
+#         adultTreat = factor(adultTreat),
+#         sex = factor(sex))
 
 
 # Fit a regular cox model
-regular_model <- coxph(Surv(age, status==1) ~ larvalTreat + 
+regular_modelM <- coxph(Surv(age, status) ~ larvalTreat + 
                          adultTreat, data = male)
-summary(regular_model)
-cox.zph(regular_model)
+summary(regular_modelM)
+cox.zph(regular_modelM)
 
 
 # Now, split dataset and repeat model
 
 spl_male <-
   male %>% 
-  timeSplitter(by = 0.5,
+  timeSplitter(by = 5,
                event_var = "status",
                event_start_status = 0,
                time_var = "age")
 
-interval_model <-
-  update(regular_model, 
+interval_modelM <-
+  update(regular_modelM, 
          Surv(Start_time, Stop_time, status == 1) ~ .,
          data = spl_male)
 
-summary(interval_model)
+summary(interval_modelM)
 
 
 # The difference between the models should be negligible:
 
-cbind(Regular = coef(regular_model),
-      Interval = coef(interval_model),
-      Difference = coef(regular_model) - coef(interval_model)) %>% 
+cbind(Regular = coef(regular_modelM),
+      Interval = coef(interval_modelM),
+      Difference = coef(regular_modelM) - coef(interval_modelM)) %>% 
   txtRound(digits = 5) %>% 
   knitr::kable(align = "r")
 
 
 # Now, look for time varying coefficients with survival::cox.zph() 
 
-cox.zph(regular_model) %>% 
+cox.zph(regular_modelM) %>% 
   extract2("table") %>% 
   txtRound(digits = 2) %>% 
   knitr::kable(align = "r")
@@ -379,14 +404,14 @@ cox.zph(regular_model) %>%
 
 # Update split-time model with interaction
 
-time_int_model <- 
-  update(interval_model,
+time_int_modelM <- 
+  update(interval_modelM,
          .~.+larvalTreat:Start_time,
          .~.+adultTreat:Start_time)
-summary(time_int_model)
+summary(time_int_modelM)
 
-sx <- cox.zph(time_int_model)
-sx
+cox.zph(time_int_modelM)
+
 #adultTreat still non-PH
 
 #ggcoxzph(sx)
@@ -394,7 +419,7 @@ sx
 #ggforest(time_int_model, data = spl_eelife)
 
 MM <- ggforest(
-  time_int_model,
+  time_int_modelM,
   data = spl_male,
   main = NULL,
   cpositions = c(0.02, 0.22, 0.4),
@@ -404,35 +429,8 @@ MM <- ggforest(
 )
 MM
 
-ggsave(FF,filename = "~/MyGithub/early_experience/Plots/male_Greg_Forest_HR.pdf", height=3, width=6)
+ggsave(MM,filename = "~/MyGithub/early_experience/Plots/male_Greg_Forest_HR.pdf", height=3, width=6)
 ```
 
-# Diagnostics
 
-```{r}
-## Influential cases
-
-# typeof residuals on Y axis: c(“martingale”, “deviance”, “score”, “schoenfeld”, “dfbeta”, “dfbetas”, “scaledsch”, “partial”).
-# lin_mm <- ggcoxdiagnostics(time_int_model, type = "dfbeta",
-#                  linear.predictions = FALSE, ggtheme = theme_bw())
-# 
-# ggsave(lin_mm,filename = "~/MyGithub/early_experience/Plots/male_nonlinearity_test.pdf", height=5, width=9)
-
-
-### Visualize deviance residuals to check for outliers
-
-# dev_mm <- ggcoxdiagnostics(time_int_model, type = "deviance",
-#                  linear.predictions = FALSE, ggtheme = theme_bw())
-# 
-# dev_reg <- ggcoxdiagnostics(interval_model, type = "deviance",
-#                  linear.predictions = FALSE, ggtheme = theme_bw())
-# 
-# ggsave(dev_mm,filename = "~/MyGithub/early_experience/Plots/male_deviance_test.pdf", height=5, width=9)
-
-
-## Testing non-linearity
-### i.e. checking if functional form of model is correcctly specified
-
-# ggcoxfunctional(Surv(age, status==2) ~ age + log(age) + sqrt(age), data = male)
-```
 
