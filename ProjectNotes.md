@@ -36,6 +36,10 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+## 2021-01-15 (EN)
+Cox model using coxme (with random effect, cageID - see vignette)
+https://cran.r-project.org/web/packages/coxme/vignettes/coxme.pdf
+
 
 ## 2020-12-11 (EN)
 Make final plots: 
