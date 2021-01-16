@@ -13,8 +13,9 @@ library(splines)
 library(tidyverse) 
 library(forcats)
 library(cowplot)
-library(Greg)
-
+library(broom)
+library(Greg); packageVersion("Greg")
+library(rms); packageVersion("rms")
 ```
 
 # CoxPH models 
@@ -37,6 +38,12 @@ Use this to fit a Bayesiam model
 eelife <- read.csv("../processed/eeAlldat.csv") %>%
   select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex) 
 
+# cols <- c("cageID", "larv_adult", "larvalTreat", "adultTreat","sex")
+# eelife[cols] <- lapply(eelife[cols], factor)  
+eelife$age <- as.numeric(eelife$age)
+# sapply(eelife, class)
+
+
 ```
 
 # With a 3-way interaction
@@ -46,74 +53,92 @@ Sex always sig - always include as fixed effect
 All, except adult diet non-PH
 see Fox and Weisberg (2018)
 
-cph1.2 is better (`~ larvalTreat + adultTreat + sex`)
+cxph1.2 is better (`~ larvalTreat + adultTreat + sex`)
 
+Addressing non-proportional hazards: https://cran.r-project.org/web/packages/Greg/vignettes/timeSplitter.html
+vignette("timedep", package = "survival")
 ```{r}
-# 3-way interaction (drop cageID in the interaction term)
-cph1.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+# Null model (log likelihood= -20644.52)
+null <- coxph(Surv(age, status) ~ 1, data=eelife)
+
+cxph1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat, 
+                data = eelife)
+summary(cxph1.1)
+cox.zph(cxph1.1)
+ggforest(cxph1.1, data = eelife)
+
+
+cxph1.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                strata(sex), data = eelife)
+summary(cxph1.2)
+cox.zph(cxph1.2)
+#ggforest(cxph1.2, data = eelife) #undefined columns (strata??)
+# Robust effect of adult diet, larval diet nsig
+extractAIC(cxph1.2)
+tidy(cxph1.2,exponentiate = TRUE)
+glance(cxph1.2)
+plot(survfit(cxph1.2, transform="km", global=TRUE))
+plot(cox.zph(cxph1.2,transform="km", global=TRUE))
+#termplot(cxph1.2, term=2, se=TRUE, col.term=1, col.se=1,ylab="log hazard")
+
+
+cxph1.3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                   strata(sex,cageID), data = eelife)
+summary(cxph1.3)
+cox.zph(cxph1.3)
+
+
+cxph1.4 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                 sex + cageID + larvalTreat:adultTreat:sex, 
               data = eelife)
-summary(cph1.0)
-cox.zph(cph1.0)
-ggforest(cph1.0, data = eelife)
-
-cph1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
-                sex + cageID, data = eelife)
-summary(cph1.1)
-ggforest(cph1.1, data = eelife)
-# There's robust effect of sex and cage, larval diet at 10% sig, 
-# adult diet nsig
+summary(cxph1.4)
+cox.zph(cxph1.4)
+ggforest(cxph1.4, data = eelife)
 
 
-cph1.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
-                sex, data = eelife)
-summary(cph1.2)
-cox.zph(cph1.2)
-ggforest(cph1.2, data = eelife)
-# Robust effect of adult diet and sex, larval diet nsig
+anova(null,cxph1.1,cxph1.2,cxph1.3,cxph1.4)
 
+#################
+# This frailty method in coxph is superceeded by coxme (vignette)
+f1 <- coxph( Surv(age, status) ~ larvalTreat + adultTreat + sex + 
+               frailty(cageID) , data = eelife )
+f1
 
-cph1.3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat,
-                data = eelife)
-summary(cph1.3)
-cox.zph(cph1.3)
-# Robust effect of adult diet, larval diet nsig
-# Meets PH assumption in all terms
-
-anova(cph1.3,cph1.2,cph1.1,cph1.0)
-# Sex and cage have valid potential effects
-# cph1.2 is more robust
-
-# Fit the interaction term only
-eelife <- eelife %>% unite(cpd_var, larv_adult, sex, 
-                           sep = "_", remove = FALSE)
-
-cph2 <- coxph(Surv(age, status) ~ cpd_var, data = eelife)
-summary(cph2)
-cox.zph(cph2)
-
-# All 3-way interaction combis sig (due to sex & adult diet??)
-
-# Compare again
-anova(cph1.3,cph1.2,cph1.1,cph2)
-
-# Compared to simplest model, model with sex but no cage more robust
-# Model with 3-way interaction only similar to model with sex and cage
+cox.zph(f1)
 ```
 
 ## cageID as random effect
 
-Two of seven 3-way interactions not sig.
-Two combis involving cageID sig.
-Very non-PH
-
 ```{r}
 eelife$status <- as.numeric(eelife$status)
+stem(table(eelife$cageID))
 
-cph3 <- coxme(Surv(age, status) ~ cpd_var + (1 | cageID), data = eelife)
+cph2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex, 
+              data = eelife)
+summary(cph2)
+
+cph3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                (1 | cageID), 
+              data = eelife)
 summary(cph3)
+anova(cph3)
+# (1 | cageID) read as: intercept (effect) per center (group)
 
-anova(cph1.3,cph1.2,cph1.1,cph2,cph3,cph1.0)
+# random effects coefficients can be retrieved using the ranef function
+stem(exp(ranef(cph3)[[1]]))
+
+# To look at random treatment effects within center we can add a nested effect
+cph3.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                  (1 | cageID/larvalTreat), eelife)  
+cph3.1
+
+cph3.2 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                  (1 | cageID/adultTreat), eelife)  
+cph3.2
+
+cph3.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+                  (1 | cageID/sex), eelife)  
+cph3.3
 
 # A random effect seems unfavored
 # 3-way interaction alone seems similar to additive model with cageID
