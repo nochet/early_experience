@@ -36,6 +36,16 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+## 2021-02-8 (EN)
+Consider these two models:
+`~ larvalTreat + adultTreat + strata(sex)` : cxph1.2.1
+`~ larvalTreat + adultTreat + cageID + strata(sex)` : cxph1.2.2
+`~ larvalTreat + adultTreat + strata(sex) + (1 | cageID)` # better, but cox.zph impossible cph3
+Last two seem pretty good. See how Bayes analysis compare.
+Note: All model summaries indicate larval diet not significant. However, and anova on cph3 has larval diet very significant. Is this the right thing to do?
+
+Next step: Write results in manuscript.
+
 ## 2021-01-15 (EN)
 `ee_coxme_model.Rmd`
 Cox model using coxme (with random effect, cageID - see vignette)
