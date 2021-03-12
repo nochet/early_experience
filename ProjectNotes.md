@@ -36,6 +36,13 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+Reporting Cox model
+HR, CI and P-value
+
+http://www.danieldsjoberg.com/gtsummary/
+https://rdrr.io/rforge/tab/man/tabcox.html
+
+
 ## 2021-02-8 (EN)
 Consider these two models:
 `~ larvalTreat + adultTreat + strata(sex)` : cxph1.2.1

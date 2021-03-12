@@ -56,7 +56,12 @@ ggforest(cxph1.1, data = eelife)
 cxph1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex, 
                    data = eelife)
 summary(cxph1.2.0)
+
 cox.zph(cxph1.2.0)
+
+par(mfrow=c(2,2))
+plot(cox.zph(cxph1.2.0))
+
 
 cxph1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                 strata(sex), data = eelife)
