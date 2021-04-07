@@ -177,7 +177,7 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
                      risk.table = FALSE,
                      #legend="none",
                      legend = c(0.9, 0.8),                     
-                     title = "Early-C Females",
+                     title = "Larval-C; Females",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
   xlab("Age (days)") 
@@ -223,7 +223,7 @@ erm.plot <- ggsurvplot(erm, data = earlyRichM,
                      # legend = c(0.9, 0.8),                     
                      # legend.labs = c("C", "DR"),
                      legend.title="",
-                     title = "Early-C Males") +
+                     title = "Larval-C; Males") +
   xlab("Age (days)") 
 erm.plot
 
@@ -263,7 +263,7 @@ epf.plot <- ggsurvplot(epf, data = earlyPoorF,
                      # legend = c(0.9, 0.8),                     
                      # legend.labs = c("C", "DR"),
                      # legend.title = "Adult Diet",
-                     title = "Early-DR Females") +
+                     title = "Larval-DR; Females") +
   xlab("Age (days)") +
   ylab("")
 epf.plot
@@ -306,7 +306,7 @@ epm.plot <- ggsurvplot(epm, data = earlyPoorM,
                      # legend = c(0.9, 0.8),                     
                      # legend.labs = c("C", "DR"),
                      # legend.title = "Adult Diet",
-                     title = "Early-DR Males") +
+                     title = "Larval-DR; Males") +
   xlab("Age (days)") +
   ylab("")
 epm.plot
