@@ -7,10 +7,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(survival)
+library(survminer)
 library(coxme)
 library(splines) 
 library(tidyverse) 
 library(forcats)
+library(car)
 
 ```
 
@@ -47,66 +49,45 @@ vignette("timedep", package = "survival")
 # Null model (log likelihood= -20644.52)
 null <- coxph(Surv(age, status) ~ 1, data=eelife)
 
-cxph1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat, 
-                data = eelife)
-summary(cxph1.1)
+cxph1.1 <- coxph(Surv(age, status) ~  larvalTreat*adultTreat + sex, 
+                 data = eelife)
+summary(cxph1.1) # some interaction effect
 cox.zph(cxph1.1)
 ggforest(cxph1.1, data = eelife)
 
-cxph1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex, 
+
+cxph1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex + 
+                     larvalTreat*adultTreat, 
                    data = eelife)
 summary(cxph1.2.0)
-
 cox.zph(cxph1.2.0)
-
 par(mfrow=c(2,2))
 plot(cox.zph(cxph1.2.0))
 
 
 cxph1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
-                strata(sex), data = eelife)
+                     larvalTreat*adultTreat + 
+                     strata(sex), data = eelife)
 summary(cxph1.2.1)
 cox.zph(cxph1.2.1)
 #ggforest(cxph1.2, data = eelife) #undefined columns (strata??)
 # Robust effect of adult diet, larval diet nsig
-extractAIC(cxph1.2)
-tidy(cxph1.2,exponentiate = TRUE)
-glance(cxph1.2)
-plot(survfit(cxph1.2, transform="km", global=TRUE))
-plot(cox.zph(cxph1.2,transform="km", global=TRUE))
+extractAIC(cxph1.2.1)
+tidy(cxph1.2.1,exponentiate = TRUE)
+glance(cxph1.2.1)
+plot(survfit(cxph1.2.1, transform="km", global=TRUE))
+plot(cox.zph(cxph1.2.1,transform="km", global=TRUE))
 #termplot(cxph1.2, term=2, se=TRUE, col.term=1, col.se=1,ylab="log hazard")
 
 cxph1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + cageID +
-                strata(sex), data = eelife)
-summary(cxph1.2.2)
+                     larvalTreat*adultTreat + 
+                     strata(sex), data = eelife)
+summary(cxph1.2.2) # 2 cages have sig cage effects
 anova(cxph1.2.2)
 cox.zph(cxph1.2.2) # cageID NPH
 
-###################
-# 1.2.3 fails. Known issue, see vignette
-cxph1.2.3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + cageID +
-                strata(sex,cageID), data = eelife)
-summary(cxph1.2.3)
-##################
+anova(cxph1.1,cxph1.2.1,cxph1.2.2)
 
-cxph1.3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
-                sex + cageID + larvalTreat:adultTreat:sex, 
-              data = eelife)
-summary(cxph1.3)
-cox.zph(cxph1.3)
-ggforest(cxph1.3, data = eelife)
-
-# ?anova.coxph
-anova(null,cxph1.1,cxph1.2.0,cxph1.2.1,cxph1.2.2,cxph1.3)
-
-#################
-# This frailty method in coxph is superceeded by coxme (vignette)
-f1 <- coxph( Surv(age, status) ~ larvalTreat + adultTreat + sex + 
-               frailty(cageID) , data = eelife )
-f1
-
-cox.zph(f1)
-#################
 ```
 
 ## cageID as random effect
@@ -115,17 +96,21 @@ cox.zph(f1)
 eelife$status <- as.numeric(eelife$status)
 stem(table(eelife$cageID))
 
-cph2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + strata(sex), 
-              data = eelife)
-summary(cph2)
-cox.zph(cph2)
+cph2.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
+                  larvalTreat*adultTreat + strata(sex) +
+                  (1 | cageID), 
+                  data = eelife)
+summary(cph2.1)
+car::Anova(cph2.1, type="II")
 
-cph3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + strata(sex) +
-                (1 | cageID), 
-              data = eelife)
-summary(cph3)
-cox.zph(cph3)
-anova(cph3)
+
+cph2.2 <- coxme(Surv(age, status) ~ larv_adult + strata(sex) +
+                larvalTreat*adultTreat + (1 | cageID), 
+                data = eelife)
+summary(cph3.2)
+
+car::Anova(cph3.2, type="III")
+
 # (1 | cageID) read as: intercept (effect) per cageID (group)
 
 # ?anova.coxme

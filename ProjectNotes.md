@@ -42,6 +42,21 @@ HR, CI and P-value
 http://www.danieldsjoberg.com/gtsummary/
 https://rdrr.io/rforge/tab/man/tabcox.html
 
+## 2021-06-8 (EN)
+Anova test on coxme model for a factorial design in survival analysis (useful links):
+https://stats.stackexchange.com/questions/509905/understanding-coxme-model-results-with-1-or-2-factors
+
+https://towardsdatascience.com/anovas-three-types-of-estimating-sums-of-squares-don-t-make-the-wrong-choice-91107c77a27a
+
+https://mcfromnz.wordpress.com/2011/03/02/anova-type-iiiiii-ss-explained/
+
+Use Type I only when there is a serious theoretical reason for it, use Type II when there is no interaction, use Type III when there is interaction.
+
+But, see:
+https://www.r-bloggers.com/2014/10/type-iii-tests-and-r/
+
+Our data is balanced, so type of SS may not be relevant.
+
 
 ## 2021-02-8 (EN)
 Consider these two models:
