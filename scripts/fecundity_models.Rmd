@@ -1,0 +1,93 @@
+---
+title: "Fecundity models"
+author: "Enoch Ng'oma"
+date: "7/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lme4)
+library(cowplot)
+library(colorblindr)
+library(forcats)
+library(ggrepel)
+
+source("color_map.R")
+source("ggplot_theme.R")
+```
+
+# Data
+
+```{r}
+eggs <- read.table("~/MyGithub/early_experience/processed/tricount.txt",
+            sep = '\t', header = TRUE)
+
+zdn <-eggs %>%  
+  select(id,age,cam_id,larvalTreat,adultTreat,
+                NstartF,alive,aj1_count,aj2_count,dd1_count,numEggs,
+                eggpDay,eggpFemDay) %>%
+  unite(treat,larvalTreat,adultTreat,sep = "_", remove = FALSE,na.rm = FALSE) 
+head(zdn)
+```
+
+# Eggs per female per day vs larval-adult diet treatment
+
+```{r echo=FALSE}
+set.seed(19)
+ggplot(zdn, aes(eggpFemDay, treat, label = id)) +
+  geom_point(size = 2) +
+  geom_text_repel(size = 4, force = 15,
+                  fontface = "italic",
+                  box.padding = unit(0.5, "lines"),
+                  point.padding = unit(0.5, "lines"),
+                  arrow = arrow(length = unit(0.01, 'npc'))) +
+  labs(x = "Eggs per female per day", 
+       y = "Larval-adult treatment combination") +
+  theme_half_open() +
+  my_theme
+```
+
+
+
+```{r}
+# age, larval, adult, eggpFemDay, id
+
+zn1 <- lm(eggpFemDay ~ treat, data=zdn)
+summary(zn1)
+coef(zn1)
+summary(zn1)$r.squared
+```
+
+```{r echo=FALSE}
+ggplot(zdn, aes(treat, eggpFemDay, label = id)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", color = "grey", lwd = 1.5) +
+  labs(x = "Larvae-adult reatment combination", 
+       y = "Eggs per female per day") +
+  theme_half_open() +
+  my_theme
+```
+
+
+```{r}
+zn2 <- lm(eggpFemDay ~ larvalTreat + adultTreat + age, data=zdn)
+summary(zn2)
+
+zn3 <- lm(eggpFemDay ~ larvalTreat + adultTreat + age + id, data=zdn)
+summary(zn3)
+# No cage effects
+
+zn4 <- lmer(eggpFemDay ~ larvalTreat + adultTreat + 
+              (larvalTreat | adultTreat) + age, 
+             data=zdn,singular.ok = TRUE)
+summary(zn4)
+
+```
+
+
+
+
+
