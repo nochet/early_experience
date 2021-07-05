@@ -13,6 +13,7 @@ library(splines)
 library(tidyverse) 
 library(forcats)
 library(car)
+library(broom)
 
 ```
 
@@ -30,32 +31,21 @@ eelife$age <- as.numeric(eelife$age)
 
 ```
 
-# With a 3-way interaction
-
-cageID always sig - fit as random effect
-Sex always sig - always include as fixed effect
-All, except adult diet non-PH
-see Fox and Weisberg (2018)
-
-Consider these two models:
-~ larvalTreat + adultTreat + strata(sex) : cxph1.2.1
-~ larvalTreat + adultTreat + cageID + strata(sex) : cxph1.2.2
-~ larvalTreat + adultTreat + strata(sex) + (1 | cageID) # better, but cox.zph impossible
-              
-Addressing non-proportional hazards: https://cran.r-project.org/web/packages/Greg/vignettes/timeSplitter.html
-vignette("timedep", package = "survival")
+# Assuming interaction effects only:
 
 ```{r}
-# Null model (log likelihood= -20644.52)
-null <- coxph(Surv(age, status) ~ 1, data=eelife)
-
 cxph1.1 <- coxph(Surv(age, status) ~  larvalTreat*adultTreat + sex, 
                  data = eelife)
 summary(cxph1.1) # some interaction effect
 cox.zph(cxph1.1)
 ggforest(cxph1.1, data = eelife)
+# All terms come out sig, including larval effects, and interaction effects
+# Only adult diet passes PH test
+```
 
+# Assuming additive and interaction effects:
 
+```{r}
 cxph1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex + 
                      larvalTreat*adultTreat, 
                    data = eelife)
@@ -63,8 +53,16 @@ summary(cxph1.2.0)
 cox.zph(cxph1.2.0)
 par(mfrow=c(2,2))
 plot(cox.zph(cxph1.2.0))
+# Identical results as cxph1.1 above
+# So, running just an interaction is equivalent to adding additives
+```
 
+# Stratified regression to address non-PH condition:
 
+Addressing non-proportional hazards: https://cran.r-project.org/web/packages/Greg/vignettes/timeSplitter.html
+vignette("timedep", package = "survival")
+
+```{r}
 cxph1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                      larvalTreat*adultTreat + 
                      strata(sex), data = eelife)
@@ -77,14 +75,25 @@ tidy(cxph1.2.1,exponentiate = TRUE)
 glance(cxph1.2.1)
 plot(survfit(cxph1.2.1, transform="km", global=TRUE))
 plot(cox.zph(cxph1.2.1,transform="km", global=TRUE))
-#termplot(cxph1.2, term=2, se=TRUE, col.term=1, col.se=1,ylab="log hazard")
+# All terms are sig if sex is stratified
+# PHs look good, although somewhat marginal for larval and interaction effects
+```
 
+# Effect of cage
+
+```{r}
 cxph1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + cageID +
                      larvalTreat*adultTreat + 
                      strata(sex), data = eelife)
 summary(cxph1.2.2) # 2 cages have sig cage effects
 anova(cxph1.2.2)
 cox.zph(cxph1.2.2) # cageID NPH
+extractAIC(cxph1.2.2)
+tidy(cxph1.2.2,exponentiate = TRUE)
+glance(cxph1.2.2)
+# Diet effects disappear when cage is accounted for; larval diet sig at p = 0.1
+# Cage effects are sig for C_DR2 and DR_DR1 (both p = 0.001)
+# CageID fails PH test
 
 anova(cxph1.1,cxph1.2.1,cxph1.2.2)
 
@@ -102,48 +111,52 @@ cph2.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat +
                   data = eelife)
 summary(cph2.1)
 car::Anova(cph2.1, type="II")
+# Only adult diet is sig in the fixed effects
+
 
 
 cph2.2 <- coxme(Surv(age, status) ~ larv_adult + strata(sex) +
-                larvalTreat*adultTreat + (1 | cageID), 
+                (1 | cageID), 
                 data = eelife)
-summary(cph3.2)
+summary(cph2.2)
+car::Anova(cph2.2, type="III")
 
-car::Anova(cph3.2, type="III")
 
-# (1 | cageID) read as: intercept (effect) per cageID (group)
+cph2.3 <- coxme(Surv(age, status) ~ larvalTreat*adultTreat + strata(sex) +
+                (1 | cageID), 
+                data = eelife)
+summary(cph2.3)
+#car::Anova(cph2.3, type="III")
+# cph2.2 and cph2.3 achieve same thing for additive terms only
 
-# ?anova.coxme
+
+
 anova(cxph1.2.1,cxph1.2.2,cph3)
 nrow(cph3)
 
-# Get random effects coefficients using ranef()
-stem(exp(ranef(cph3)[[1]]))
 
 # To look at random treatment effects within center we can add a nested effect
 cph3.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
                   (1 | cageID/larvalTreat), eelife)  
-cph3.1
+summary(cph3.1)
 
 cph3.2 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
                   (1 | cageID/adultTreat), eelife)  
-cph3.2
+summary(cph3.2)
 
 cph3.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
                   (1 | cageID/sex), eelife)  
-cph3.3
+summary(cph3.3)
 
-# A random effect seems unfavored
-# 3-way interaction alone seems similar to additive model with cageID
-# Additive model with sex but no cageID most robust of all
-# Select cph1.2 (larval diet has no effect)
+cph3.4 <- coxme(Surv(age, status) ~ larv_adult + strata(sex) +
+                  (1 | cageID/sex), eelife)  
+summary(cph3.4)
+
+# cph3.4 as it suggests that larval_adult diet combination affects trait
+# In contrast, many models above consider effects of larval and adult diets in isolation.
 
 ```
 
-
-## Take from linear models
-1. sex has a big effect - `/script_sink/ee_coxph_models.Rmd addresses this`
-4. cageID has a small effect (7%). Random effect can be ignored in Bayes model
 
 
 
