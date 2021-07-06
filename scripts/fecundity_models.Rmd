@@ -31,6 +31,9 @@ zdn <-eggs %>%
                 eggpDay,eggpFemDay) %>%
   unite(treat,larvalTreat,adultTreat,sep = "_", remove = FALSE,na.rm = FALSE) 
 head(zdn)
+
+# Check for missing data
+sum(!complete.cases(zdn))
 ```
 
 # Eggs per female per day vs larval-adult diet treatment
@@ -50,42 +53,124 @@ ggplot(zdn, aes(eggpFemDay, treat, label = id)) +
   my_theme
 ```
 
-
+# Diet combi effects on per female fecundity
 
 ```{r}
-# age, larval, adult, eggpFemDay, id
+zn1.0 <- lm(eggpFemDay ~ treat, data=zdn)
+summary(zn1.0)
+coef(zn1.0)
+summary(zn1.0)$r.squared
 
-zn1 <- lm(eggpFemDay ~ treat, data=zdn)
-summary(zn1)
-coef(zn1)
-summary(zn1)$r.squared
-```
+# Use vial values instead of per female values
+zn1.1 <- lm(numEggs ~ treat, data=zdn)
+summary(zn1.1)
+coef(zn1.1)
+summary(zn1.1)$r.squared
 
-```{r echo=FALSE}
+# Plot diet combi data
 ggplot(zdn, aes(treat, eggpFemDay, label = id)) +
   geom_point(size = 2) +
   geom_smooth(method = "lm", color = "grey", lwd = 1.5) +
-  labs(x = "Larvae-adult reatment combination", 
-       y = "Eggs per female per day") +
+  labs(x = "Larval-adult diet combination", 
+       y = "No. of eggs per female per day") +
+  theme_half_open() +
+  my_theme
+
+# Plot vial values instead of per female values
+ggplot(zdn, aes(treat, numEggs, label = id)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", color = "grey", lwd = 1.5) +
+  labs(x = "Larval-adult diet combination", 
+       y = "No. of eggs over lifetime") +
   theme_half_open() +
   my_theme
 ```
 
+# Add covariates
 
 ```{r}
-zn2 <- lm(eggpFemDay ~ larvalTreat + adultTreat + age, data=zdn)
-summary(zn2)
+## cage has no effect (i.e. substitute for id on the right)
+## id dropped for further models
 
-zn3 <- lm(eggpFemDay ~ larvalTreat + adultTreat + age + id, data=zdn)
-summary(zn3)
-# No cage effects
+# Add age
+zn2.0 <- lm(eggpFemDay ~ treat + age, data=zdn)
+summary(zn2.0)
+coef(zn2.0)
+summary(zn2.0)$r.squared
 
-zn4 <- lmer(eggpFemDay ~ larvalTreat + adultTreat + 
-              (larvalTreat | adultTreat) + age, 
-             data=zdn,singular.ok = TRUE)
-summary(zn4)
+# Add the interaction
+zn2.1 <- lm(eggpFemDay ~ treat + age + treat:age, data=zdn)
+summary(zn2.1)
+coef(zn2.1)
+summary(zn2.1)$r.squared
+## DR_C diet combi interacts with age
 
+# Extract and plot residuals of the interaction model
+zdn$Res2.1 <- residuals(zn2.1)
+zdn$Fitted <- fitted.values(zn2.1)
+
+ggplot(zdn, aes(Fitted, Res2.1)) +
+  geom_point() +
+  geom_smooth() +
+  geom_hline(yintercept=0,
+             linetype="dashed",color = "red", size=1) +
+  #facet_wrap("id", nrow = 4) +
+  labs(x = "Fitted Values", y = "Residuals") +
+  theme_half_open() +
+  my_theme
+
+# Check normality and homoscedasticity patterns
+ggplot(zdn, aes(treat, Res2.1)) +
+  geom_boxplot() +
+  labs(x = "Diet combination", y = "Residuals")
+
+ggplot(zdn, aes(sample=eggpFemDay))+
+  geom_qq() + geom_qq_line()
+
+ggplot(zdn, aes(sample = eggpFemDay)) +
+  stat_qq(aes(color = id)) +
+  #scale_color_manual(values = c("#00AFBB", "#E7B800"))+
+  labs(y = "Eggs per female per day")
 ```
+
+# Normalize with a weighted regression
+
+```{r}
+library(nlme)
+variance_struct <- varPower(form = ~ treat | age)
+
+zn2.2 <- gls(eggpFemDay ~ treat * age, data = zdn,
+           weights = variance_struct)
+
+plot(zn2.2)
+
+library(car)
+Anova(zn2.2, type = "III") # since model has interaction term
+
+zdn$Res2.2 <- residuals(zn2.2, type = "normalized")
+
+## Visualize of normalized model - scatter
+ggplot(zdn, aes(treat, Res2.2)) +
+  geom_jitter() +
+  #facet_wrap("treat") +
+  labs(x = "Diet combination",
+       y = "Normalized Residual Eggs per female")
+
+## Visualize of normalized model - boxplot
+ggplot(zdn, aes(treat, Res2.2)) +
+  geom_boxplot() +
+  geom_jitter() +
+  ylim(c(-2, 8)) +
+  labs(x = "Diet combination",
+       y = "Normalized Residual Eggs per Female") +
+  theme_half_open() +
+  my_theme
+
+as.data.frame(coef(zn2.2))
+coef(zn2.2)
+```
+
+
 
 
 
