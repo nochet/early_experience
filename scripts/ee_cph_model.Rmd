@@ -14,7 +14,11 @@ library(tidyverse)
 library(forcats)
 library(car)
 library(broom)
+library(AICcmodavg)
 
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled) 
 ```
 
 # Data
@@ -34,6 +38,13 @@ eelife$age <- as.numeric(eelife$age)
 # Assuming interaction effects only:
 
 ```{r}
+cxph1.0 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat + sex, 
+                 data = eelife)
+summary(cxph1.0) # some interaction effect
+cox.zph(cxph1.0)
+tab_model(cxph1.0,file="additiveMod.doc")
+
+
 cxph1.1 <- coxph(Surv(age, status) ~  larvalTreat*adultTreat + sex, 
                  data = eelife)
 summary(cxph1.1) # some interaction effect
@@ -147,9 +158,10 @@ summary(cph3.2)
 cph3.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
                   (1 | cageID/sex), eelife)  
 summary(cph3.3)
+# 3.1, 3.2 and 3.3 give identical results
 
 cph3.4 <- coxme(Surv(age, status) ~ larv_adult + strata(sex) +
-                  (1 | cageID/sex), eelife)  
+                  (1 | cageID/strata( sex)), eelife)  
 summary(cph3.4)
 
 # cph3.4 as it suggests that larval_adult diet combination affects trait
@@ -157,8 +169,27 @@ summary(cph3.4)
 
 ```
 
+```{r}
+tab_model(cxph1.2.1,cxph1.2.2,cph2.1,cph2.2, file="selectedMods.doc")
+tab_model(cph3.4, file = "coxmeNested") # spits error
+```
 
+# Model test
 
+```{r}
+cxph1.2.3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                     larvalTreat*adultTreat , data = eelife)
+
+cxph1.2.4 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                     strata(sex), data = eelife)
+
+cxph1.2.5 <- coxph(Surv(age, status) ~  
+                     strata(sex), data = eelife)
+
+aictab(list(cxph1.2.1,cxph1.2.2, cxph1.2.3, cxph1.2.4,cxph1.2.5))
+
+anova(cxph1.2.1,cxph1.2.2)
+```
 
 
 

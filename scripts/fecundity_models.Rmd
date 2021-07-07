@@ -10,10 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(lme4)
+library(nlme)
 library(cowplot)
 library(colorblindr)
 library(forcats)
 library(ggrepel)
+library(car)
 
 source("color_map.R")
 source("ggplot_theme.R")
@@ -136,7 +138,6 @@ ggplot(zdn, aes(sample = eggpFemDay)) +
 # Normalize with a weighted regression
 
 ```{r}
-library(nlme)
 variance_struct <- varPower(form = ~ treat | age)
 
 zn2.2 <- gls(eggpFemDay ~ treat * age, data = zdn,
@@ -144,7 +145,6 @@ zn2.2 <- gls(eggpFemDay ~ treat * age, data = zdn,
 
 plot(zn2.2)
 
-library(car)
 Anova(zn2.2, type = "III") # since model has interaction term
 
 zdn$Res2.2 <- residuals(zn2.2, type = "normalized")
@@ -154,15 +154,15 @@ ggplot(zdn, aes(treat, Res2.2)) +
   geom_jitter() +
   #facet_wrap("treat") +
   labs(x = "Diet combination",
-       y = "Normalized Residual Eggs per female")
+       y = "Normalized residual (Eggs per female)")
 
 ## Visualize of normalized model - boxplot
 ggplot(zdn, aes(treat, Res2.2)) +
-  geom_boxplot() +
+  geom_violin() +
   geom_jitter() +
   ylim(c(-2, 8)) +
   labs(x = "Diet combination",
-       y = "Normalized Residual Eggs per Female") +
+       y = "Normalized residual (Eggs per female)") +
   theme_half_open() +
   my_theme
 
