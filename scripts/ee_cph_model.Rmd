@@ -38,18 +38,18 @@ eelife$age <- as.numeric(eelife$age)
 # Assuming interaction effects only:
 
 ```{r}
-cxph1.0 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat + sex, 
+imod1.0 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat + sex, 
                  data = eelife)
-summary(cxph1.0) # some interaction effect
-cox.zph(cxph1.0)
-tab_model(cxph1.0,file="additiveMod.doc")
+summary(imod1.0) # some interaction effect
+cox.zph(imod1.0)
+tab_model(imod1.0,file="additiveMod.doc")
 
 
-cxph1.1 <- coxph(Surv(age, status) ~  larvalTreat*adultTreat + sex, 
+imod1.1 <- coxph(Surv(age, status) ~  larvalTreat*adultTreat + sex, 
                  data = eelife)
-summary(cxph1.1) # some interaction effect
-cox.zph(cxph1.1)
-ggforest(cxph1.1, data = eelife)
+summary(imod1.1) # some interaction effect
+cox.zph(imod1.1)
+ggforest(imod1.1, data = eelife)
 # All terms come out sig, including larval effects, and interaction effects
 # Only adult diet passes PH test
 ```
@@ -57,57 +57,60 @@ ggforest(cxph1.1, data = eelife)
 # Assuming additive and interaction effects:
 
 ```{r}
-cxph1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex + 
+imod1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + sex + 
                      larvalTreat*adultTreat, 
                    data = eelife)
-summary(cxph1.2.0)
-cox.zph(cxph1.2.0)
+summary(imod1.2.0)
+cox.zph(imod1.2.0)
 par(mfrow=c(2,2))
-plot(cox.zph(cxph1.2.0))
-# Identical results as cxph1.1 above
+plot(cox.zph(imod1.2.0))
+# Identical results as imod1.1 above
 # So, running just an interaction is equivalent to adding additives
 ```
 
 # Stratified regression to address non-PH condition:
 
+# Full model
+
 Addressing non-proportional hazards: https://cran.r-project.org/web/packages/Greg/vignettes/timeSplitter.html
 vignette("timedep", package = "survival")
 
 ```{r}
-cxph1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+imod1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + cageID + 
                      larvalTreat*adultTreat + 
                      strata(sex), data = eelife)
-summary(cxph1.2.1)
-cox.zph(cxph1.2.1)
-#ggforest(cxph1.2, data = eelife) #undefined columns (strata??)
+summary(imod1.2.1)
+cox.zph(imod1.2.1)
+#ggforest(imod1.2, data = eelife) #undefined columns (strata??)
 # Robust effect of adult diet, larval diet nsig
-extractAIC(cxph1.2.1)
-tidy(cxph1.2.1,exponentiate = TRUE)
-glance(cxph1.2.1)
-plot(survfit(cxph1.2.1, transform="km", global=TRUE))
-plot(cox.zph(cxph1.2.1,transform="km", global=TRUE))
+extractAIC(imod1.2.1)
+tidy(imod1.2.1,exponentiate = TRUE)
+glance(imod1.2.1)
+plot(survfit(imod1.2.1, transform="km", global=TRUE))
+plot(cox.zph(imod1.2.1,transform="km", global=TRUE))
 # All terms are sig if sex is stratified
 # PHs look good, although somewhat marginal for larval and interaction effects
 ```
 
-# Effect of cage
+# Without cage id
 
 ```{r}
-cxph1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + cageID +
+imod1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                      larvalTreat*adultTreat + 
                      strata(sex), data = eelife)
-summary(cxph1.2.2) # 2 cages have sig cage effects
-anova(cxph1.2.2)
-cox.zph(cxph1.2.2) # cageID NPH
-extractAIC(cxph1.2.2)
-tidy(cxph1.2.2,exponentiate = TRUE)
-glance(cxph1.2.2)
+summary(imod1.2.2) # 2 cages have sig cage effects
+anova(imod1.2.2)
+cox.zph(imod1.2.2) # cageID NPH
+extractAIC(imod1.2.2)
+tidy(imod1.2.2,exponentiate = TRUE)
+glance(imod1.2.2)
 # Diet effects disappear when cage is accounted for; larval diet sig at p = 0.1
 # Cage effects are sig for C_DR2 and DR_DR1 (both p = 0.001)
 # CageID fails PH test
 
-anova(cxph1.1,cxph1.2.1,cxph1.2.2)
+anova(imod1.1,imod1.2.1,imod1.2.2)
 
+rm(imod1.0,imod1.2.0,imod1.1,imod1.2.1,imod1.2.2)
 ```
 
 ## cageID as random effect
@@ -116,82 +119,235 @@ anova(cxph1.1,cxph1.2.1,cxph1.2.2)
 eelife$status <- as.numeric(eelife$status)
 stem(table(eelife$cageID))
 
-cph2.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
+cph2.1.0 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
                   larvalTreat*adultTreat + strata(sex) +
-                  (1 | cageID), 
-                  data = eelife)
-summary(cph2.1)
-car::Anova(cph2.1, type="II")
+                  (1 | cageID), data = eelife)
+summary(cph2.1.0)
+car::Anova(cph2.0, type="II")
 # Only adult diet is sig in the fixed effects
 
 
 
-cph2.2 <- coxme(Surv(age, status) ~ larv_adult + strata(sex) +
-                (1 | cageID), 
-                data = eelife)
-summary(cph2.2)
-car::Anova(cph2.2, type="III")
+cph2.1.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
+                    strata(sex) + (1 | cageID), data = eelife)
+summary(cph2.1.1)
+car::Anova(cph2.1.1, type="III")
 
 
-cph2.3 <- coxme(Surv(age, status) ~ larvalTreat*adultTreat + strata(sex) +
-                (1 | cageID), 
-                data = eelife)
-summary(cph2.3)
+cph2.1.2 <- coxme(Surv(age, status) ~ larvalTreat*adultTreat + 
+                    strata(sex) + (1 | cageID), data = eelife)
+summary(cph2.1.2)
 #car::Anova(cph2.3, type="III")
 # cph2.2 and cph2.3 achieve same thing for additive terms only
 
 
-
-anova(cxph1.2.1,cxph1.2.2,cph3)
-nrow(cph3)
-
-
 # To look at random treatment effects within center we can add a nested effect
-cph3.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+cph3.1.0 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
                   (1 | cageID/larvalTreat), eelife)  
-summary(cph3.1)
+summary(cph3.1.0)
 
-cph3.2 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+cph3.1.1 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
                   (1 | cageID/adultTreat), eelife)  
-summary(cph3.2)
+summary(cph3.1.1)
 
-cph3.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
+cph3.1.2 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + sex +
                   (1 | cageID/sex), eelife)  
-summary(cph3.3)
+summary(cph3.1.2)
 # 3.1, 3.2 and 3.3 give identical results
 
-cph3.4 <- coxme(Surv(age, status) ~ larv_adult + strata(sex) +
+cph3.1.3 <- coxme(Surv(age, status) ~ larv_adult + strata(sex) +
                   (1 | cageID/strata( sex)), eelife)  
-summary(cph3.4)
-
-# cph3.4 as it suggests that larval_adult diet combination affects trait
-# In contrast, many models above consider effects of larval and adult diets in isolation.
+summary(cph3.1.3)
 
 ```
 
 ```{r}
-tab_model(cxph1.2.1,cxph1.2.2,cph2.1,cph2.2, file="selectedMods.doc")
+tab_model(imod1.2.1,imod1.2.2,cph2.1,cph2.2, file="selectedMods.doc")
 tab_model(cph3.4, file = "coxmeNested") # spits error
+
+rm(cph2.1.0,cph2.1.1,cph2.1.2,cph3.1.0,cph3.1.1,cph3.1.2,cph3.1.3)
 ```
 
-# Model test
+# Model test (individual life stage diet effects)
 
 ```{r}
-cxph1.2.3 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+imod1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + cageID +
+                     larvalTreat*adultTreat + 
+                     strata(sex), data = eelife)
+
+imod1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                     larvalTreat*adultTreat + 
+                     strata(sex), data = eelife)
+
+imod4.1.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                     larvalTreat*adultTreat + cageID, data = eelife)
+
+imod4.1.1 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                      larvalTreat*adultTreat , data = eelife)
 
-cxph1.2.4 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+imod4.1.2 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
                      strata(sex), data = eelife)
 
-cxph1.2.5 <- coxph(Surv(age, status) ~  
+imod4.1.3 <- coxph(Surv(age, status) ~  
                      strata(sex), data = eelife)
+#coef(imod4.1.3)
 
-aictab(list(cxph1.2.1,cxph1.2.2, cxph1.2.3, cxph1.2.4,cxph1.2.5))
+aictab(list(imod1.2.1, imod1.2.2, imod4.1.0, imod4.1.1,
+            imod4.1.2, imod4.1.3))
+# imod1.2.1 is best; imod1.2.2 almost tying
 
-anova(cxph1.2.1,cxph1.2.2)
+anova(imod1.2.1, imod1.2.2)
+# Looks like cageID can/can't be ignored
+
+rm(imod1.2.1, imod1.2.2, imod4.1.0, imod4.1.1,
+   imod4.1.2, imod4.1.3)
 ```
 
+# Test for sex-by-diet interaction (individual life stage diet effects)
+
+```{r}
+
+# Females
+
+eelifeF <- eelife %>%
+  filter(sex=="F")
+
+imod1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + adultTreat + 
+                     larvalTreat*adultTreat + cageID, 
+                   data = eelifeF)
+summary(imod1.2.0) # cage effects in 2 cages
+cox.zph(imod1.2.0) # NPH; NPH when adult is strata; NA when cage is strata
+# Since cage has a small effect, can be ignored
+coef(imod1.2.0)
+
+imod1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                  larvalTreat*adultTreat, data = eelifeF)
+coef(imod1.2.1)
+summary(imod1.2.1) # identical to imod1.2.0
+cox.zph(imod1.2.1) # PH
+# Looks good
+
+imod1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat), 
+                   data = eelifeF)
+coef(imod1.2.2)
+summary(imod1.2.2)
+cox.zph(imod1.2.2) # PH
+
+anova(imod1.2.0,imod1.2.1, imod1.2.2)
+# Clearly model without cage performs best (larger likelihood)
+
+aictab(list(imod1.2.0,imod1.2.1, imod1.2.2))
+# Model without cage is better (lower AICc)
 
 
+
+# Males
+
+eelifeM <- eelife %>%
+  filter(sex=="M")
+
+imod1.2.3 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                     larvalTreat*adultTreat + cageID, data = eelifeM)
+summary(imod1.2.3) # cage effects in 2 cages
+cox.zph(imod1.2.3) # NPH; NPH when adult is strata; NA when cage is strata
+# Since cage has a small effect, can be ignored
+coef(imod1.2.3)
+
+imod1.2.4 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                  larvalTreat*adultTreat, data = eelifeM)
+coef(imod1.2.4)
+summary(imod1.2.4) # identical to imod1.2.0
+cox.zph(imod1.2.4) # PH
+# Looks good
+
+imod1.2.5 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat), 
+                   data = eelifeM)
+coef(imod1.2.5)
+summary(imod1.2.5)
+cox.zph(imod1.2.5) # PH
+
+anova(imod1.2.3,imod1.2.4, imod1.2.5)
+# Models not significantly different
+
+aictab(list(imod1.2.3,imod1.2.4, imod1.2.5))
+# Simplest model (imod1.2.5) is better
+
+rm(imod1.2.0,imod1.2.1, imod1.2.2,imod1.2.3,imod1.2.4, imod1.2.5)
+```
+
+# Combined effect of larval-adult diets
+
+```{r}
+cmod1.0 <- coxph(Surv(age, status) ~ larv_adult + 
+                     larvalTreat*adultTreat + 
+                   strata(sex) + cageID, data = eelife)
+cox.zph(cmod1.0) # NPH
+summary(cmod1.0)
+
+cmod1.1 <- coxph(Surv(age, status) ~ larv_adult + 
+#                     larvalTreat*adultTreat + 
+                   strata(sex), data = eelife)
+cox.zph(cmod1.1) # PH
+summary(cmod1.1)
+
+cmod1.2 <- coxph(Surv(age, status) ~  larv_adult + 
+                   larvalTreat*adultTreat, data = eelife)
+cox.zph(cmod1.2) # PH
+summary(cmod1.2)
+
+aictab(list(cmod1.1, cmod1.2))
+# cmod1.1 is better
+
+
+```
+
+# Combined effect of sex-by-larval_adult diet effects
+
+```{r}
+# Females
+smod1.2.0 <- coxph(Surv(age, status) ~ larv_adult + 
+                     larvalTreat*adultTreat + cageID, 
+                   data = eelifeF)
+summary(smod1.2.0) # cage effects in 1 cage
+cox.zph(smod1.2.0) # NPH
+
+smod1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                     larv_adult, data = eelifeF)
+summary(smod1.2.1) 
+cox.zph(smod1.2.1) # NPH
+
+smod1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + 
+                     strata(adultTreat) + larv_adult, 
+                   data = eelifeF)
+summary(smod1.2.2)
+cox.zph(smod1.2.2) # NPH
+
+anova(smod1.2.1, smod1.2.2)
+
+aictab(list(smod1.2.1, smod1.2.2))
+# smod1.2.1 is better
+
+
+# Males
+smod1.3.0 <- coxph(Surv(age, status) ~ larv_adult + 
+                     larvalTreat*adultTreat + cageID, 
+                   data = eelifeM)
+summary(smod1.3.0) # No cage effects 
+cox.zph(smod1.3.0) # NPH
+
+smod1.3.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                  larvalTreat*adultTreat, data = eelifeM)
+summary(smod1.3.1) 
+cox.zph(smod1.3.1) # NPH
+
+smod1.3.2 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat), 
+                   data = eelifeM)
+summary(smod1.3.2)
+cox.zph(smod1.3.2) # PH
+
+anova(smod1.3.1, smod1.3.2)
+
+aictab(list(smod1.3.1, smod1.3.2))
+```
 
 
