@@ -302,52 +302,71 @@ aictab(list(cmod1.1, cmod1.2))
 ```
 
 # Combined effect of sex-by-larval_adult diet effects
+# There are sig S-by-L diet effects - diet affects female lifespan
 
 ```{r}
-# Females
-smod1.2.0 <- coxph(Surv(age, status) ~ larv_adult + 
-                     larvalTreat*adultTreat + cageID, 
-                   data = eelifeF)
+# Females (effects)
+
+smod1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                     larv_adult + cageID, data = eelifeF)
 summary(smod1.2.0) # cage effects in 1 cage
 cox.zph(smod1.2.0) # NPH
 
 smod1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
                      larv_adult, data = eelifeF)
 summary(smod1.2.1) 
-cox.zph(smod1.2.1) # NPH
+cox.zph(smod1.2.1) # PH
 
-smod1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + 
-                     strata(adultTreat) + larv_adult, 
+smod1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat), 
                    data = eelifeF)
-summary(smod1.2.2)
-cox.zph(smod1.2.2) # NPH
+summary(smod1.2.2) 
+cox.zph(smod1.2.2) # PH
 
+smod1.2.3 <- coxph(Surv(age, status) ~ larvalTreat, 
+                   data = eelifeF)
+summary(smod1.2.3) 
+cox.zph(smod1.2.3) # PH
+
+smod1.2.4 <- coxph(Surv(age, status) ~ adultTreat, 
+                   data = eelifeF)
+summary(smod1.2.4) 
+cox.zph(smod1.2.4) # NPH
+
+aictab(list(smod1.2.1, smod1.2.2, smod1.2.3))
 anova(smod1.2.1, smod1.2.2)
-
-aictab(list(smod1.2.1, smod1.2.2))
-# smod1.2.1 is better
+# smod1.2.1 is best
 
 
-# Males
-smod1.3.0 <- coxph(Surv(age, status) ~ larv_adult + 
-                     larvalTreat*adultTreat + cageID, 
-                   data = eelifeM)
-summary(smod1.3.0) # No cage effects 
-cox.zph(smod1.3.0) # NPH
+# Males # No effects
+smod1.3.0 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                     larv_adult + cageID, data = eelifeM)
+summary(smod1.3.0) # cage effects in 1 cage
+cox.zph(smod1.3.0) # PH
 
 smod1.3.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
-                  larvalTreat*adultTreat, data = eelifeM)
+                     larv_adult, data = eelifeM)
 summary(smod1.3.1) 
-cox.zph(smod1.3.1) # NPH
+cox.zph(smod1.3.1) # PH
 
 smod1.3.2 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat), 
                    data = eelifeM)
-summary(smod1.3.2)
+summary(smod1.3.2) 
 cox.zph(smod1.3.2) # PH
 
-anova(smod1.3.1, smod1.3.2)
+smod1.3.3 <- coxph(Surv(age, status) ~ larvalTreat, 
+                   data = eelifeM)
+summary(smod1.3.3) 
+cox.zph(smod1.3.3) # NPH
+
+smod1.3.4 <- coxph(Surv(age, status) ~ adultTreat, 
+                   data = eelifeM)
+summary(smod1.3.4) 
+cox.zph(smod1.3.4) # NPH
 
 aictab(list(smod1.3.1, smod1.3.2))
+# smod1.3.2 is best
+anova(smod1.3.1, smod1.3.2)
+# smod1.2.1 is best
 ```
 
 
