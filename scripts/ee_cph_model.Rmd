@@ -57,8 +57,8 @@ cox.zph(imod1.0) # very NPH
 
 # Stratify on sex (cageID cannot be stratified)
 imod1.1 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat + 
-                   larvalTreat*adultTreat + strata(sex) + cluster(cageID), 
-                 data = eelife)
+                   larvalTreat*adultTreat + larv_adult*sex + 
+                   cluster(cageID), data = eelife)
 summary(imod1.1)
 survfit(imod1.1) # estimates K different baseline hazardfunctions, one for each stratum
 cox.zph(imod1.1) # still NPH, due to cageID
@@ -85,7 +85,7 @@ summary(ialt1.0)
 
 ```{r}
 imod1.2 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
-                  larvalTreat*adultTreat + strata(sex) +
+                  larvalTreat*adultTreat + strata(sex) +5
                   (1 | cageID), data = eelife)
 summary(imod1.2) 
 # Interaction not sig.
