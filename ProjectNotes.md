@@ -57,6 +57,27 @@ https://www.r-bloggers.com/2014/10/type-iii-tests-and-r/
 
 Our data is balanced, so type of SS may not be relevant.
 
+From:
+https://stat.ethz.ch/pipermail/r-help//2013-July/357466.html
+GEE = Generalized Estimating Equations
+Two choices.
+- If this were a linear model, do you like the GEE approach or a mixed effects approach?  Assume that "subject" is a variable containing a per-subject identifier.
+
+1. GEE approach: add "+ cluster(subject)" to the model statement in coxph
+2. Mixed models approach: Add " + (1|subject)" to the model statment in coxme.
+
+From:
+https://stats.stackexchange.com/questions/178944/precisely-how-does-rs-coxph-handle-repeated-measures
+Including cluster(ID) does not change the point estimates of the parameters. It does change the way that the standard errors are computed however.
+
+More details can be found in Therneau & Grambsch's book Extending the Cox Model, chapter 8.2. Note that in their example, they use method = "breslow" as correction for ties, but also with the default (method = "efron") a similar calculation for the se's will be used, and appears in the summary as "robust se".
+
+If cluster(ID) is used, a "robust" estimate of standard errors is imposed and possible dependence between subjects is measured (e.g. by standard errors and variance scores). Not using cluster(ID), on the other hand, imposes independence on each observation and more "information" is assumed in the data. In more technical terms, the score function for the parameters does not change, but the variance of this score does. A more intuitive argument is that 100 observations on 100 individuals provide more information than 100 observations on 10 individuals (or clusters).
+
+Vague indeed. In short, +frailty(ID) in coxph() fits standard frailty models with gamma or log-normal random effects and with non-parametric baseline hazard / intensity. frailtypack uses parametric baseline (also flexible versions with splines or piecewise constant functions) and also fits more complicated models, such as correlated frailty, nested frailty, etc.
+
+Finally, +cluster() is somewhat in the spirit of GEE, in that you take the score equations from a likelihood with independent observations, and use a different "robust" estimator for the standard errors.
+
 
 ## 2021-02-8 (EN)
 Consider these two models:
