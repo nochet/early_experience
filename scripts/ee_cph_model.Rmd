@@ -77,17 +77,6 @@ cox.zph(mod1.2) # NPH, due to interaction
 aictab(list(mod1.0,mod1.1,mod1.2)) 
 # mod1.1 is better (i.e. stratified)
 
-
-# An alternate approach: Weighted estimation
-ialt1.0 <- coxphw(Surv(age,status) ~ larvalTreat + adultTreat + 
-                   larvalTreat*adultTreat + strata(sex) + cageID, 
-                  data=eelife, template = "AHR" )
-# template = PH for unweighted coxph; 
-# template = ARE for estimation of average hazard ratios
-# template = AHR for estimation of average hazard ratios
-
-summary(ialt1.0)
-
 ```
 
 # Cage as random effect
@@ -139,14 +128,12 @@ mod2.3 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat),
 summary(mod2.3)
 cox.zph(mod2.3) # PH
 
-anova(mod1.2.0,mod1.2.1, mod1.2.2)
-# Clearly model without cage performs best (larger likelihood)
-
-aictab(list(mod2.0,mod2.1, mod2.2, mod2.3))
+aictab(list(mod2.1, mod2.2, mod2.3))
 # Model mod2.1 ties with mod2.2: Support to ignore cage
 
-anova(mod2.2)
-# Highlights sig effect of interaction
+anova(mod2.1, mod2.2)
+tab_model(mod2.1, mod2.2, file="FemaleMods.doc")
+
 ```
 
 # Males
@@ -180,6 +167,8 @@ cox.zph(mod3.3) # PH
 
 aictab(list(mod3.0,mod3.1, mod3.2,mod3.3))
 # Model mod2.1 ties with mod2.2: Support to ignore cage
+
+tab_model(mod3.1, mod3.2,mod3.3, file="MaleMods.doc")
 
 ```
 
