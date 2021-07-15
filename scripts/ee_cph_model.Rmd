@@ -132,7 +132,22 @@ aictab(list(mod2.1, mod2.2, mod2.3))
 # Model mod2.1 ties with mod2.2: Support to ignore cage
 
 anova(mod2.1, mod2.2)
-tab_model(mod2.1, mod2.2, file="FemaleMods.doc")
+tab_model(mod2.1, mod2.2,mod2.3, file="FemaleMods.doc")
+
+#############
+
+# Model averaging - not used ##
+library(MuMIn)
+# femAvg <- model.avg(list(mod2.2, mod2.3), 
+#                     beta = c("none", "sd", "partial.sd"),
+#                     data=eelifeF, options(na.action = "na.fail"))
+# summary(femAvg)
+# femSel <- model.sel(list(mod2.2, mod2.3), 
+#                     beta = c("none", "sd", "partial.sd"),
+#                     data=eelifeF, options(na.action = "na.fail"))
+# summary(femSel)
+
+get.models(femSel, subset = TRUE)
 
 ```
 
