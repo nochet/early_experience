@@ -51,9 +51,8 @@ cox.zph(mod1.0) # very NPH
 # extractAIC(mod1.0)
 # tidy(mod1.0,exponentiate = TRUE)
 # glance(mod1.0)
-# plot(survfit(mod1.0, transform="km", global=TRUE))
-# plot(cox.zph(mod1.0,transform="km", global=TRUE))
-# tab_model(mod1.0,file="additiveMod.doc")
+plot(survfit(mod1.0, transform="km", global=TRUE))
+
 
 # Stratify on sex (cageID cannot be stratified)
 mod1.1 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat + 
@@ -68,35 +67,43 @@ car::Anova(mod1.1, type="II")
 # Stratifying improves model, but still NPH
 
 mod1.2 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat + 
-                   larv_adult*strata(sex) + 
+                   larvalTreat*adultTreat + larv_adult*strata(sex) +
                    cluster(cageID), data = eelife)
 summary(mod1.2)
-survfit(mod1.2) # estimates K different baseline hazard functions, one for each stratum
 cox.zph(mod1.2) # NPH, due to interaction
 
 aictab(list(mod1.0,mod1.1,mod1.2)) 
-# mod1.1 is better (i.e. stratified)
+# mod1.1 is best (AICcWt=0.99)
+# Although larv_adultDR_DR:strata(sex)M is (***), mod1.2 is bad (AICcWt=0.01)
+# Even when larvalTreat*adultTreat is removed, mod1.2 is AICcWt=0.03
+# We can conclude absence of sex-by-diet interaction, generally.
 
 ```
 
-# Cage as random effect
+# Cage as random effect (mod1.2: larv_adultDR_DR:strata(sex)M is (***), but AICcWt=0.01)
 # cluster(ID) argument for coxph = random effects argument for coxme
 # i.e. model mod1.1 generally similar to mod1.2
 
 ```{r}
-mod1.2 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
+mod1.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
                   larvalTreat*adultTreat + strata(sex) +
                   (1 | cageID), data = eelife)
-summary(mod1.2) 
+summary(mod1.3) 
 # Interaction not sig.
-car::Anova(mod1.2, type="II")
+car::Anova(mod1.3, type="II")
 # car::Anova(mod1.2, type="III"); use only if no interactions are involved
 
-anova(mod1.1, mod1.2)
-# cageID cannot be ignored
+anova(mod1.1, mod1.3)
+# cageID can be ignored
+# Note: mod1.1 and mod1.3 are the same (i.e. cluster(cageID for coxph
+# is same as (1 | cageID for coxme)))
+# So, interpret mod1.1
+
+tab_model(mod1.0, mod1.1,mod1.2, mod1.3, file="AllDataMods.doc")
 
 ```
 
+# For supplementary data
 # Test for sex-by-diet interaction (individual life stage diet effects)
 # Females
 
@@ -128,11 +135,12 @@ mod2.3 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat),
 summary(mod2.3)
 cox.zph(mod2.3) # PH
 
-aictab(list(mod2.1, mod2.2, mod2.3))
-# Model mod2.1 ties with mod2.2: Support to ignore cage
+aictab(list(mod2.0, mod2.1, mod2.2, mod2.3))
+# Model mod2.1 ties with mod2.2, and are both not so diff from mod2.3 
+# Support to ignore cage
+# Suggest the larv*adult interaction not so important
 
-anova(mod2.1, mod2.2)
-tab_model(mod2.1, mod2.2,mod2.3, file="FemaleMods.doc")
+tab_model(mod2.0, mod2.1, mod2.2,mod2.3, file="FemaleMods.doc")
 
 #############
 
@@ -183,7 +191,12 @@ cox.zph(mod3.3) # PH
 aictab(list(mod3.0,mod3.1, mod3.2,mod3.3))
 # Model mod2.1 ties with mod2.2: Support to ignore cage
 
-tab_model(mod3.1, mod3.2,mod3.3, file="MaleMods.doc")
+tab_model(mod3.0, mod3.1, mod3.2,mod3.3, file="MaleMods.doc")
+
+# The simplest model mod3.3 seems best (Wt 0.77)
+# Mods 3.1 and 3.2 tie with Wt 0.11 - again suggesting cage can be ignored
+# Larval-adult diet interaction not important for males
+# Interpret the simplest mod
 
 ```
 
