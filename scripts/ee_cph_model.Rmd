@@ -51,8 +51,6 @@ cox.zph(mod1.0) # very NPH
 # extractAIC(mod1.0)
 # tidy(mod1.0,exponentiate = TRUE)
 # glance(mod1.0)
-plot(survfit(mod1.0, transform="km", global=TRUE))
-
 
 # Stratify on sex (cageID cannot be stratified)
 mod1.1 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat + 
@@ -62,6 +60,7 @@ summary(mod1.1)
 survfit(mod1.1) # estimates K different baseline hazard functions, one for each stratum
 cox.zph(mod1.1) # PH
 car::Anova(mod1.1, type="II")
+plot(survfit(mod1.0, transform="km", global=TRUE))
 
 # anova(mod1.0,mod1.1)
 # Stratifying improves model, but still NPH
@@ -87,7 +86,7 @@ aictab(list(mod1.0,mod1.1,mod1.2))
 ```{r}
 mod1.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
                   larvalTreat*adultTreat + strata(sex) +
-                  (1 | cageID), data = eelife)
+                  (1 | cluster(cageID)), data = eelife)
 summary(mod1.3) 
 # Interaction not sig.
 car::Anova(mod1.3, type="II")
