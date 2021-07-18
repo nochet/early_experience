@@ -71,18 +71,30 @@ mod1.2 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat +
 summary(mod1.2)
 cox.zph(mod1.2) # NPH, due to interaction
 
+mod1.2b <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
+                   larvalTreat*adultTreat + larv_adult*strata(sex) + 
+                   cluster(cageID), 
+                data = eelife)
+summary(mod1.2b)
+cox.zph(mod1.2b)
+anova(mod1.2b)
+
+
 mod1.3 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
                    larvalTreat*adultTreat + larv_adult*strata(sex), 
                 data = eelife)
 summary(mod1.3)
 cox.zph(mod1.3)
+anova(mod1.3)
 
 mod1.4 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
                    larvalTreat*adultTreat, data = eelife)
 summary(mod1.4)
 cox.zph(mod1.4)
+anova(mod1.4)
+anova(mod1.3,mod1.4)
 
-mod1.5 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat), data = eelife)
+mod1.5 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat, data = eelife)
 summary(mod1.5)
 cox.zph(mod1.5)
 
@@ -90,13 +102,14 @@ mod1.6 <- coxph(Surv(age, status) ~  larvalTreat, data = eelife)
 summary(mod1.6)
 cox.zph(mod1.6)
 
-mod1.7 <- coxph(Surv(age, status) ~  larvalTreat, data = eelife)
+mod1.7 <- coxph(Surv(age, status) ~  adultTreat, data = eelife)
 summary(mod1.7)
 cox.zph(mod1.7)
 
-aictab(list(mod1.0,mod1.1,mod1.2,mod1.3,mod1.4,mod1.5,mod1.6,mod1.7)) 
+aictab(list(mod1.0,mod1.1,mod1.2,mod1.2b,mod1.3, mod1.4,mod1.5,
+            mod1.6,mod1.7)) 
 
-# mod1.1 is best (AICcWt=0.99)
+# mod1.3 is best (AICcWt=1.0)
 # Although larv_adultDR_DR:strata(sex)M is (***), mod1.2 is bad (AICcWt=0.01)
 # Even when larvalTreat*adultTreat is removed, mod1.2 is AICcWt=0.03
 # We can conclude absence of sex-by-diet interaction, generally.
@@ -108,15 +121,15 @@ aictab(list(mod1.0,mod1.1,mod1.2,mod1.3,mod1.4,mod1.5,mod1.6,mod1.7))
 # i.e. model mod1.1 generally similar to mod1.2
 
 ```{r}
-mod1.3 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
+mod1.8 <- coxme(Surv(age, status) ~ larvalTreat + adultTreat + 
                   larvalTreat*adultTreat + strata(sex) +
                   (1 | cluster(cageID)), data = eelife)
-summary(mod1.3) 
+summary(mod1.8) 
 # Interaction not sig.
-car::Anova(mod1.3, type="II")
+car::Anova(mod1.8, type="II")
 # car::Anova(mod1.2, type="III"); use only if no interactions are involved
 
-anova(mod1.1, mod1.3)
+anova(mod1.2b, mod1.3)
 # cageID can be ignored
 # Note: mod1.1 and mod1.3 are the same (i.e. cluster(cageID for coxph
 # is same as (1 | cageID for coxme)))
