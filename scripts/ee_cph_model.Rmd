@@ -71,7 +71,31 @@ mod1.2 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat +
 summary(mod1.2)
 cox.zph(mod1.2) # NPH, due to interaction
 
-aictab(list(mod1.0,mod1.1,mod1.2)) 
+mod1.3 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
+                   larvalTreat*adultTreat + larv_adult*strata(sex), 
+                data = eelife)
+summary(mod1.3)
+cox.zph(mod1.3)
+
+mod1.4 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
+                   larvalTreat*adultTreat, data = eelife)
+summary(mod1.4)
+cox.zph(mod1.4)
+
+mod1.5 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat), data = eelife)
+summary(mod1.5)
+cox.zph(mod1.5)
+
+mod1.6 <- coxph(Surv(age, status) ~  larvalTreat, data = eelife)
+summary(mod1.6)
+cox.zph(mod1.6)
+
+mod1.7 <- coxph(Surv(age, status) ~  larvalTreat, data = eelife)
+summary(mod1.7)
+cox.zph(mod1.7)
+
+aictab(list(mod1.0,mod1.1,mod1.2,mod1.3,mod1.4,mod1.5,mod1.6,mod1.7)) 
+
 # mod1.1 is best (AICcWt=0.99)
 # Although larv_adultDR_DR:strata(sex)M is (***), mod1.2 is bad (AICcWt=0.01)
 # Even when larvalTreat*adultTreat is removed, mod1.2 is AICcWt=0.03
@@ -222,7 +246,7 @@ cox.zph(mod4.2) # PH
 aictab(list(mod4.0, mod4.1, mod4.2))
 # mod4.0 and mod4.1 are better, but tie. Seems cage can be ignored
 
-tab_model(mod1.1,mod1.2,mod4.0,mod4.1,mod4.2, file="AllDataMods.doc")
+# tab_model(mod1.1,mod1.2,mod4.0,mod4.1,mod4.2, file="AllDataMods.doc")
 
 ```
 
@@ -232,74 +256,54 @@ tab_model(mod1.1,mod1.2,mod4.0,mod4.1,mod4.2, file="AllDataMods.doc")
 ```{r}
 # Females (effects)
 
-smod1.2.0 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
-                     larv_adult + cageID, data = eelifeF)
-summary(smod1.2.0) # cage effects in 1 cage
-cox.zph(smod1.2.0) # NPH
+mod5.0 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                     larv_adult + cluster(cageID), data = eelifeF)
+summary(mod5.0) # cage effects in 1 cage
+cox.zph(mod5.0) # PH
 
-smod1.2.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+mod5.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
                      larv_adult, data = eelifeF)
-summary(smod1.2.1) 
-cox.zph(smod1.2.1) # PH
+summary(mod5.1) 
+cox.zph(mod5.1) # PH
 
-smod1.2.2 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat), 
+mod5.2 <- coxph(Surv(age, status) ~ adultTreat + larv_adult, 
                    data = eelifeF)
-summary(smod1.2.2) 
-cox.zph(smod1.2.2) # PH
+summary(mod5.2) 
+cox.zph(mod5.2) # NPH
 
-smod1.2.3 <- coxph(Surv(age, status) ~ larvalTreat, 
+mod5.3 <- coxph(Surv(age, status) ~ larv_adult, 
                    data = eelifeF)
-summary(smod1.2.3) 
-cox.zph(smod1.2.3) # PH
+summary(mod5.3) 
+cox.zph(mod5.3) # PH
 
-smod1.2.4 <- coxph(Surv(age, status) ~ adultTreat, 
-                   data = eelifeF)
-summary(smod1.2.4) 
-cox.zph(smod1.2.4) # NPH
-
-aictab(list(smod1.2.1, smod1.2.2, smod1.2.3))
-anova(smod1.2.1, smod1.2.2)
-# smod1.2.1 is best
+aictab(list(mod5.0,mod5.1, mod5.2, mod5.3))
+anova(mod5.1, mod5.2)
+# mod1.2.1 is best
 
 
 # Males # No effects
-smod1.3.0 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
-                     larv_adult + cageID, data = eelifeM)
-summary(smod1.3.0) # cage effects in 1 cage
-cox.zph(smod1.3.0) # PH
+mod6.0 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+                     larv_adult + cluster(cageID), data = eelifeM)
+summary(mod6.0) # cage effects in 1 cage
+cox.zph(mod6.0) # PH
 
-smod1.3.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
+mod6.1 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat) + 
                      larv_adult, data = eelifeM)
-summary(smod1.3.1) 
-cox.zph(smod1.3.1) # PH
+summary(mod6.1) 
+cox.zph(mod6.1) # NPH
 
-smod1.3.2 <- coxph(Surv(age, status) ~ larvalTreat + strata(adultTreat), 
+mod6.2 <- coxph(Surv(age, status) ~ adultTreat + larv_adult, 
                    data = eelifeM)
-summary(smod1.3.2) 
-cox.zph(smod1.3.2) # PH
+summary(mod6.2) 
+cox.zph(mod6.2) # PH
 
-smod1.3.3 <- coxph(Surv(age, status) ~ larvalTreat, 
+mod6.3 <- coxph(Surv(age, status) ~ larv_adult, 
                    data = eelifeM)
-summary(smod1.3.3) 
-cox.zph(smod1.3.3) # NPH
+summary(mod6.3) 
+cox.zph(mod6.3) # NPH
 
-smod1.3.4 <- coxph(Surv(age, status) ~ adultTreat, 
-                   data = eelifeM)
-summary(smod1.3.4) 
-cox.zph(smod1.3.4) # NPH
+aictab(list(mod6.0, mod6.1, mod6.2, mod6.3))
 
-aictab(list(smod1.3.1, smod1.3.2))
-# smod1.3.2 is best
-anova(smod1.3.1, smod1.3.2)
-# smod1.2.1 is best
+anova(mod6.1, mod6.2, mod6.3)
+
 ```
-
-# Tables
-
-```{r}
-tab_model(mod1.2.1,mod1.2.2,cph2.1,cph2.2, file="selectedMods.doc")
-tab_model(cph3.4, file = "coxmeNested") # spits error
-
-rm(cph2.1.0,cph2.1.1,cph2.1.2,cph3.1.0,cph3.1.1,cph3.1.2,cph3.1.3)
-```
-
