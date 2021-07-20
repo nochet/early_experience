@@ -77,7 +77,6 @@ mod1.2b <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) +
                 data = eelife)
 summary(mod1.2b)
 cox.zph(mod1.2b)
-anova(mod1.2b)
 
 
 mod1.3 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
