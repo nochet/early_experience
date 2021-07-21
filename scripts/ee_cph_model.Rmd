@@ -74,17 +74,19 @@ cox.zph(mod1.2) # NPH, due to interaction
 mod1.2b <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
                    larvalTreat*adultTreat + larv_adult*strata(sex) + 
                    cluster(cageID), 
-                data = eelife)
+                data = eelife, model = TRUE)
 summary(mod1.2b)
 cox.zph(mod1.2b)
+#ggsurvplot(survfit(mod1.2b),eelife, conf.int = TRUE)
 
 
 mod1.3 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
                    larvalTreat*adultTreat + larv_adult*strata(sex), 
                 data = eelife)
 summary(mod1.3)
-cox.zph(mod1.3)
+autoplot(mod1.3)
 anova(mod1.3)
+#ggsurvplot(survfit(mod1.3),eelife, conf.int = TRUE)
 
 mod1.4 <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
                    larvalTreat*adultTreat, data = eelife)
@@ -92,6 +94,7 @@ summary(mod1.4)
 cox.zph(mod1.4)
 anova(mod1.4)
 anova(mod1.3,mod1.4)
+ggsurvplot(survfit(mod1.4),eelife, conf.int = TRUE)
 
 mod1.5 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat, data = eelife)
 summary(mod1.5)
