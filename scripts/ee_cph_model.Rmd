@@ -71,10 +71,10 @@ mod1.2 <- coxph(Surv(age, status) ~  larvalTreat + adultTreat +
 summary(mod1.2)
 cox.zph(mod1.2) # NPH, due to interaction
 
-mod1.2b <- coxph(Surv(age, status) ~  larvalTreat + strata(adultTreat) + 
-                   larvalTreat*adultTreat + larv_adult*strata(sex) + 
-                   cluster(cageID), 
-                data = eelife, model = TRUE)
+mod1.2b <- coxph(Surv(age, status) ~ 
+                   larv_adult*strata(sex), 
+                   cluster=cageID, 
+                data = eelife)
 summary(mod1.2b)
 cox.zph(mod1.2b)
 #ggsurvplot(survfit(mod1.2b),eelife, conf.int = TRUE)
@@ -323,3 +323,33 @@ aictab(list(mod6.0, mod6.1, mod6.2, mod6.3))
 anova(mod6.1, mod6.2, mod6.3)
 
 ```
+
+
+```{r}
+mf1 <- coxph(Surv(age, status) ~ larv_adult * strata(sex) + cageID, eelife)
+summary(mf1)
+cox.zph(mf1)
+
+mf2 <- coxph(Surv(age, status) ~ larv_adult * strata(sex), eelife)
+summary(mf2)
+cox.zph(mf2)
+
+mf3 <- coxph(Surv(age, status) ~ larv_adult + cageID, eelife)
+summary(mf3)
+cox.zph(mf3)
+
+mf4 <- coxph(Surv(age, status) ~ larv_adult + strata(sex), eelife)
+summary(mf4)
+cox.zph(mf4)
+
+mf5 <- coxph(Surv(age, status) ~ larv_adult + strata(sex) + cageID, eelife)
+summary(mf5)
+cox.zph(mf5)
+
+mf6 <- coxph(Surv(age, status) ~ larv_adult, eelife)
+summary(mf6)
+cox.zph(mf6)
+
+aictab(list(mf1,mf2,mf3,mf4,mf5,mf6))
+```
+
