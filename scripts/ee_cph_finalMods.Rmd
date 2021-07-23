@@ -67,6 +67,7 @@ summary(mf6)
 cox.zph(mf6)
 
 aictab(list(mf1,mf2,mf3,mf4,mf5,mf6))
+anova(mf1,mf2,mf3,mf4,mf5,mf6)
 anova(mf5,mf4)
 ```
 
