@@ -87,14 +87,53 @@ eelife <- eelife %>%
   mutate(stats = ifelse(status == 2, 1, 0)) %>%
   select(cageID,larvalTreat,adultTreat,age,status,sex)
 
-
-mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
+mp <- survfit(Surv(age, status) ~ larvalTreat + adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
                    type = "kaplan-meier",
                    error = "greenwood",
                    data = eelife)
 
+mp.plot <- ggsurvplot(mf, data = eelife, 
+                     conf.int = FALSE,
+                     break.time.by = 30,
+                     #palette = "palette_OkabeIto",
+                     palette = c("#999999", "#E69F00", 
+                                 "#56B4E9", "#009E73"),
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                     fontsize = 4.5,
+                     font.x = 14,
+                     font.y = 14,
+                     # font.tickslab = 11,
+                     # font.main = 11,
+                     #risk.table = FALSE,
+                     legend = c(0.9, 0.6),
+                     risk.table = TRUE,
+                     risk.table.col = "strata",
+                     #risk.table.fontsize = 4,
+                     tables.height = 0.4,
+                     #tables.theme = theme_cleantable(),
+                    # title = "Females & Males",
+                     legend.labs = c("C-C","C-DR","DR-C","DR-DR"),
+                     legend.title = "Diet \n combination") +
+                     guides(colour = guide_legend(nrow = 4)) +
+  xlab("Age (days)")
+mp.plot
+
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", height=6, width=6, print(mp.plot))
+
+```
+
+
+```{r}
+mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = eelife)
+#summary(mf)
 summary(mf)$table[, "median"]
 sum_survfit <- surv_summary(mf, data = eelife)
 
@@ -111,22 +150,22 @@ write.csv(quantile(mf, probs = c(0.25, 0.5, 0.75)),
 
 mf.plot <- ggsurvplot(mf, data = eelife, 
                      conf.int = FALSE,
-                     break.time.by = 20,
-                     palette = "palette_OkabeIto",
-                     #palette = c("#999999", "#E69F00"),
+                     break.time.by = 30,
+                     #palette = "palette_OkabeIto",
+                     palette = c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7"),
                      fun = "pct", 
                      surv.median.line = "hv",
-                     fontsize = 4.5,
-                     font.x = 14,
-                     font.y = 14,
+                     fontsize = 3.5,
+                     #font.x = 12,
+                     #font.y = 12,
                      # font.tickslab = 11,
-                     # font.main = 11,
-                     #risk.table = FALSE,
+                     font.main = 12,
                      legend = c(0.9, 0.6),
                      risk.table = TRUE,
                      risk.table.col = "strata",
-                     #risk.table.fontsize = 4,
-                     tables.height = 0.4,
+                     risk.table.fontsize = 3.5,
+                     tables.height = 0.35,
                      #tables.theme = theme_cleantable(),
                     # title = "Females & Males",
                      legend.labs = c("C-C-F","C-C-M",
@@ -135,16 +174,17 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                                      "DR-DR-F","DR-DR-M"),
                      legend.title = "Diet-Sex \n combination") +
                      guides(colour = guide_legend(nrow = 8)) +
-  xlab("Age (days)")
+                     xlab("Age (days)")
 mf.plot
 
-ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable.pdf", height=6, width=6, print(mf.plot))
+
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_Sex.png", last_plot(),device = "png")
 
 # Test significance
 survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
                      data = eelife, rho = 0) 
 
-#quantile(mf,  probs = c(0.1, 0.5, 0.9))
+quantile(mf,  probs = c(0.1, 0.5, 0.9))
 ```
 
 # EarlyRich (C diet) 
