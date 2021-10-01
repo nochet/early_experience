@@ -27,8 +27,8 @@ library(visR)
 #library(Greg)
 
 
-source("color_map.R")
-#source("ggplot_theme.R")
+#source("color_map.R")
+source("ggplot_theme.R")
 ```
 # An R Package for ANOVA
 ```{r}
@@ -88,6 +88,8 @@ eelife <- eelife %>%
   mutate(stats = ifelse(status == 2, 1, 0)) %>%
   select(cageID,larvalTreat,adultTreat,age,status,sex)
 
+eelife <- unite(eelife, larv_adult,larvalTreat,adultTreat,sep = "_",remove = FALSE)
+
 mp <- survfit(Surv(age, status) ~ larvalTreat + adultTreat,
                    conf.type = "log", 
                    conf.int = 0.95,
@@ -126,8 +128,44 @@ ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_wit
 
 quantile(mp,  probs = c(0.1, 0.5, 0.9))
 mp.quant <- visR::get_quantile(mp)
-#summary(mp,probs=c(0.9,0.5,0.1))
-summary(mp,times=c(1,2,3))
+
+# Extract summary table at interesting probabilities
+mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
+#summary(mp,times=c(1,2,3))
+
+cols <- lapply(c(2:7, 10,15:16) , function(x) mpsum[x])
+mptab <- do.call(data.frame, cols)
+mptab$surv <- round(mptab$surv,digits = 1)
+head(mptab)
+
+mpfilt <- subset(mptab, surv %in% c(0.9,0.5,0.1))
+mpfilt$strata <- gsub(",[^=]+=", "_",mpfilt$strata) # remove everything between ',' and '=', add '_'
+mpfilt$Diet <- gsub(".*=","",mpfilt$strata) # remove everything before '='
+
+# Aggregate by treatment
+#mpfilt$strata <- as.factor(mpfilt$strata)
+mpeval <- mpfilt %>%
+  group_by(Diet,surv) %>%
+  summarise_at(c("time", "std.err", "lower", "upper"), mean, na.rm = TRUE)
+
+jx <- ggplot(mpeval, aes(x=surv, y=time, group=Diet, color=Diet)) + 
+  #geom_line() +
+  geom_point(alpha=0.6)+
+  geom_errorbar(aes(ymin=surv-std.err, ymax=surv+std.err),alpha=0.6) +
+  #scale_colour_discrete("Diet \n combination") +
+  facet_grid(cols=vars(Diet), rows=vars(surv), scales= "free_y") +
+  scale_x_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 25)) +
+  scale_color_manual(values=c("#999999", "#E69F00","#56B4E9", "#009E73")) +
+  labs(x = "Age (days)", y = "Quantile survival") +
+  theme(legend.position = "none") +
+  my_theme +
+  theme_half_open()
+jx
+
+ggsave(jx,file = "~/MyGithub/early_experience/plots/Quantplots_thumbnail.pdf",
+  width = 4,
+  height = 2)
+
 ```
 
 
