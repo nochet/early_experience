@@ -97,6 +97,9 @@ mp <- survfit(Surv(age, status) ~ larvalTreat + adultTreat,
                    error = "greenwood",
                    data = eelife)
 
+mp
+summary(mp)$table[, "median"]
+
 mp.plot <- ggsurvplot(mp, data = eelife, 
                      conf.int = FALSE,
                      break.time.by = 30,
@@ -130,7 +133,7 @@ survdiff(Surv(age) ~larvalTreat + adultTreat,
                      data = eelife, rho = 0) 
 
 quantile(mp,  probs = c(0.1, 0.5, 0.9))
-mp.quant <- visR::get_quantile(mp)
+visR::get_quantile(mp, probs = c(0.1, 0.5, 0.9))
 
 mps <- surv_fit(Surv(age, status) ~ larvalTreat + adultTreat,
                    data = eelife,group.by="sex")
@@ -139,7 +142,10 @@ surv_pvalue(mps)
 # Extract summary table at interesting probabilities
 mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
 #summary(mp,times=c(1,2,3))
+```
 
+##################
+```{r}
 cols <- lapply(c(2:7, 10,15:16) , function(x) mpsum[x])
 mptab <- do.call(data.frame, cols)
 mptab$surv <- round(mptab$surv,digits = 1)
@@ -174,7 +180,7 @@ ggsave(jx,file = "~/MyGithub/early_experience/plots/Quantplots_thumbnail.pdf",
   height = 2)
 
 ```
-
+###################
 
 ```{r}
 mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
