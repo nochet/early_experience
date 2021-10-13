@@ -30,6 +30,24 @@ zdn <-eggs %>%
 head(zdn)
 ```
 
+# Overall pattern
+
+```{r}
+pp <- zdn %>% 
+  ggplot(aes(x = age, y = eggpFemDay, color = tgroup, group = tgroup)) +
+  geom_line() +
+  geom_smooth(aes(group = larvalTreat), se = FALSE, color = "black",size=0.8) +
+  scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
+  # scale_colour_OkabeIto() +
+  # tx_color_map() +
+  facet_grid(. ~ larvalTreat) +
+  labs(x = "Age (days)", y = "Eggs/female/3hrs") +
+  #theme(legend.position = "none") +
+  theme_half_open() +
+  my_theme
+pp
+```
+
 # Subset by 1) larval diet; 2) adult diet
 
 ```{r}
