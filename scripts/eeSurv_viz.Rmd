@@ -13,6 +13,20 @@ output:
 
 # Analysis of diet-dependent developmental plasticity in D. melanogaster lifespan
 
+# Function for changing legend size
+
+```{r}
+legSize <- function(myPlot, pointSize = 1.5, textSize = 10, spaceLegend = 1.0) {
+    myPlot +
+        guides(shape = guide_legend(override.aes = list(size = pointSize)),
+               color = guide_legend(override.aes = list(size = pointSize))) +
+        theme(legend.title = element_text(size = textSize), 
+              legend.text  = element_text(size = textSize),
+              legend.key.size = unit(spaceLegend, "lines"))
+}
+
+```
+
 # Load packages
 
 ```{r}
@@ -64,7 +78,7 @@ eelife <- na.omit(eelife)
 
 eelife$status <- ifelse(eelife[,"status"] == 2, 1, 0)
 
-#write.csv(eelife, file="../processed/eeAlldat.csv, row.names = FALSE")
+write.csv(eelife, file="../processed/eeAlldat.csv, row.names = FALSE")
 ```
 
 # Testing developmental theories
@@ -97,23 +111,29 @@ mp <- survfit(Surv(age, status) ~ larvalTreat + adultTreat,
                    error = "greenwood",
                    data = eelife)
 
+mp
+summary(mp)$table[, "median"]
+
 mp.plot <- ggsurvplot(mp, data = eelife, 
                      conf.int = FALSE,
-                     break.time.by = 30,
+                     break.time.by = 20,
                      #palette = "palette_OkabeIto",
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
+                     #pval = TRUE,
                      surv.median.line = "hv",
-                     fontsize = 4.5,
-                     font.x = 14,
-                     font.y = 14,
+                     #fontsize = 4.5,
+                     font.x = 12,
+                     font.y = 12,
                      # font.tickslab = 11,
                      # font.main = 11,
                      #risk.table = FALSE,
                      legend = c(0.9, 0.6),
                      risk.table = TRUE,
-                     risk.table.col = "strata",
+                     #risk.table.col = "strata",
+                     risk.table.y.text.col = T,
+                     risk.table.y.text = FALSE,
                      #risk.table.fontsize = 4,
                      tables.height = 0.4,
                      #tables.theme = theme_cleantable(),
@@ -124,15 +144,39 @@ mp.plot <- ggsurvplot(mp, data = eelife,
   xlab("Age (days)")
 mp.plot
 
-ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", height=6, width=6, print(mp.plot))
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", height=6, width=6, plot=mp.plot)
+
+survdiff(Surv(age) ~larvalTreat + adultTreat, 
+                     data = eelife, rho = 0) 
 
 quantile(mp,  probs = c(0.1, 0.5, 0.9))
-mp.quant <- visR::get_quantile(mp)
+visR::get_quantile(mp, probs = c(0.1, 0.5, 0.9))
+
+
+mps <- surv_fit(Surv(age, status) ~ larvalTreat + adultTreat,
+                   data = eelife,group.by="sex")
+surv_pvalue(mps)
+
+mpc <- surv_fit(Surv(age, status) ~ sex,
+                   data = eelife,group.by="larv_adult")
+surv_pvalue(mpc)
 
 # Extract summary table at interesting probabilities
 mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
 #summary(mp,times=c(1,2,3))
 
+ggsave(jx,file = "~/MyGithub/early_experience/plots/Quantplots_thumbnail.pdf",
+  width = 4,
+  height = 2)
+```
+
+##################
+```{r}
+mp <- survfit(Surv(age, status) ~ larvalTreat + adultTreat,
+                  group_by = "sex",
+                   data = eelife)
+
+mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
 cols <- lapply(c(2:7, 10,15:16) , function(x) mpsum[x])
 mptab <- do.call(data.frame, cols)
 mptab$surv <- round(mptab$surv,digits = 1)
@@ -142,32 +186,8 @@ mpfilt <- subset(mptab, surv %in% c(0.9,0.5,0.1))
 mpfilt$strata <- gsub(",[^=]+=", "_",mpfilt$strata) # remove everything between ',' and '=', add '_'
 mpfilt$Diet <- gsub(".*=","",mpfilt$strata) # remove everything before '='
 
-# Aggregate by treatment
-#mpfilt$strata <- as.factor(mpfilt$strata)
-mpeval <- mpfilt %>%
-  group_by(Diet,surv) %>%
-  summarise_at(c("time", "std.err", "lower", "upper"), mean, na.rm = TRUE)
-
-jx <- ggplot(mpeval, aes(x=surv, y=time, group=Diet, color=Diet)) + 
-  #geom_line() +
-  geom_point(alpha=0.6)+
-  geom_errorbar(aes(ymin=surv-std.err, ymax=surv+std.err),alpha=0.6) +
-  #scale_colour_discrete("Diet \n combination") +
-  facet_grid(cols=vars(Diet), rows=vars(surv), scales= "free_y") +
-  scale_x_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 25)) +
-  scale_color_manual(values=c("#999999", "#E69F00","#56B4E9", "#009E73")) +
-  labs(x = "Age (days)", y = "Quantile survival") +
-  theme(legend.position = "none") +
-  my_theme +
-  theme_half_open()
-jx
-
-ggsave(jx,file = "~/MyGithub/early_experience/plots/Quantplots_thumbnail.pdf",
-  width = 4,
-  height = 2)
-
 ```
-
+###################
 
 ```{r}
 mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
@@ -178,7 +198,7 @@ mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
                    data = eelife)
 #summary(mf)
 summary(mf)$table[, "median"]
-sum_survfit <- surv_summary(mf, data = eelife)
+#surv_summary(mf, data = eelife)
 
 write.csv(sum_survfit, 
           file = "../processed/SummarySurvModel_larvAdulSex.csv",
@@ -193,20 +213,24 @@ write.csv(quantile(mf, probs = c(0.25, 0.5, 0.75)),
 
 mf.plot <- ggsurvplot(mf, data = eelife, 
                      conf.int = FALSE,
-                     break.time.by = 30,
+                     break.time.by = 20,
                      #palette = "palette_OkabeIto",
-                     palette = c("#000000", "#E69F00", "#56B4E9", "#009E73", 
+                     palette = c("#999999", "#E69F00", "#56B4E9", "#009E73", 
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7"),
                      fun = "pct", 
                      surv.median.line = "hv",
-                     fontsize = 3.5,
-                     #font.x = 12,
-                     #font.y = 12,
+                     #fontsize = 5.5,
+                     #font.main = 3.5,
+                     font.x = 12,
+                     font.y = 12,
                      # font.tickslab = 11,
-                     font.main = 12,
+                     #pval = TRUE,
+                     #font.main = 12,
                      legend = c(0.9, 0.6),
                      risk.table = TRUE,
-                     risk.table.col = "strata",
+                     #risk.table.col = "strata",
+                     risk.table.y.text.col = T,
+                     risk.table.y.text = FALSE,
                      risk.table.fontsize = 3.5,
                      tables.height = 0.35,
                      #tables.theme = theme_cleantable(),
@@ -230,6 +254,45 @@ survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
 quantile(mf,  probs = c(0.1, 0.5, 0.9))
 ```
 
+##################
+```{r}
+mfsum <- summary(mf,probs=c(0.1,0.5,0.9))
+cols <- lapply(c(2:7, 10,15:16) , function(x) mfsum[x])
+mftab <- do.call(data.frame, cols)
+mftab$surv <- round(mftab$surv,digits = 1)
+head(mftab)
+
+mfilt <- subset(mftab, surv %in% c(0.9,0.5,0.1))
+mfilt$strata <- gsub(",[^=]+=", "_",mfilt$strata) # remove everything between ',' and '=', add '_'
+mfilt$Diet <- gsub(".*=","",mfilt$strata) # remove everything before '='
+
+# Aggregate by treatment
+#mpfilt$strata <- as.factor(mpfilt$strata)
+mfeval <- mfilt %>%
+  group_by(Diet,surv) %>%
+  summarise_at(c("time", "std.err", "lower", "upper"), mean, na.rm = TRUE)
+
+jx <- ggplot(mpeval, aes(x=surv, y=time, group=Diet, color=Diet)) + 
+  #geom_line() +
+  geom_point(alpha=0.6)+
+  geom_errorbar(aes(ymin=surv-std.err, ymax=surv+std.err),alpha=0.6) +
+  #scale_colour_discrete("Diet \n combination") +
+  facet_grid(cols=vars(Diet), rows=vars(surv), scales= "free_y") +
+  scale_x_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 25)) +
+  scale_color_manual(values=c("#999999", "#E69F00","#56B4E9", "#009E73")) +
+  labs(x = "Age (days)", y = "Quantile survival") +
+  theme(legend.position = "none") +
+  my_theme +
+  theme_half_open()
+jx
+
+ggsave(jx,file = "~/MyGithub/early_experience/plots/Quantplots_thumbnail.pdf",
+  width = 4,
+  height = 2)
+
+```
+###################
+
 # EarlyRich (C diet) 
 
 ### Females only
@@ -252,15 +315,19 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
+                     #pval = TRUE,
                      surv.median.line = "hv",
-                     font.x = 10,
-                     font.y = 10,
+                     font.x = 12,
+                     font.y = 12,
                      font.tickslab = 10,
                      font.main = 10,
                      risk.table = FALSE,
                      #legend="none",
-                     legend = c(0.9, 0.8),                     
-                     title = "Larval-C; Females",
+                     legend = c(0.9, 0.8), 
+                     #risk.table.pos = "in",      
+                     # ggtheme = theme_classic2(base_family = "Arial"),
+                     # font.family = "Arial",
+                     title = "Larval diet: C \n (a) Females",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
   xlab("Age (days)") 
@@ -269,8 +336,6 @@ erf.plot
 # Test significance
 survdiff(Surv(age, status) ~ adultTreat,
                      data = earlyRichF, rho = 0) 
-
-#quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
 
 ```
 
@@ -296,9 +361,10 @@ erm.plot <- ggsurvplot(erm, data = earlyRichM,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
+                     #pval = TRUE,
                      surv.median.line = "hv",
-                     font.x = 10,
-                     font.y = 10,
+                     font.x = 12,
+                     font.y = 12,
                      font.tickslab = 10,
                      font.main = 10,
                      risk.table = FALSE,
@@ -306,13 +372,12 @@ erm.plot <- ggsurvplot(erm, data = earlyRichM,
                      # legend = c(0.9, 0.8),                     
                      # legend.labs = c("C", "DR"),
                      legend.title="",
-                     title = "Larval-C; Males") +
+                     title = "Larval diet: C \n (b) Males") +
   xlab("Age (days)") 
 erm.plot
 
 survdiff(Surv(age) ~ adultTreat,
                      data = earlyRichM, rho = 0) 
-
 ```
 
 # EarlyPoor (DR diet) 
@@ -336,9 +401,10 @@ epf.plot <- ggsurvplot(epf, data = earlyPoorF,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
+                     #pval = TRUE,
                      surv.median.line = "hv",
-                     font.x = 10,
-                     font.y = 10,
+                     font.x = 12,
+                     font.y = 12,
                      font.tickslab = 10,
                      font.main = 10,
                      risk.table = FALSE,
@@ -346,7 +412,7 @@ epf.plot <- ggsurvplot(epf, data = earlyPoorF,
                      # legend = c(0.9, 0.8),                     
                      # legend.labs = c("C", "DR"),
                      # legend.title = "Adult Diet",
-                     title = "Larval-DR; Females") +
+                     title = "Larval diet: DR \n (c) Females") +
   xlab("Age (days)") +
   ylab("")
 epf.plot
@@ -354,8 +420,6 @@ epf.plot
 # Test significance
 survdiff(Surv(age, status) ~ adultTreat,
                      data = earlyPoorF, rho = 0) 
-
-#quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
 
 ```
 
@@ -379,17 +443,21 @@ epm.plot <- ggsurvplot(epm, data = earlyPoorM,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
+                     #pval = TRUE,
                      surv.median.line = "hv",
-                     font.x = 10,
-                     font.y = 10,
+                     font.x = 12,
+                     font.y = 12,
                      font.tickslab = 10,
                      font.main = 10,
                      risk.table = FALSE,
                      legend="none",
+                     #risk.table.pos = "in",      
+                     # ggtheme = theme_classic2(base_family = "Courier New"),
+                     # font.family = "Courier New",
                      # legend = c(0.9, 0.8),                     
                      # legend.labs = c("C", "DR"),
                      # legend.title = "Adult Diet",
-                     title = "Larval-DR; Males") +
+                     title = "Larval diet: DR \n (d) Males") +
   xlab("Age (days)") +
   ylab("")
 epm.plot
@@ -421,6 +489,110 @@ ggsave(
   height = 5)
 ```
 
+# Survival at 90%, 50% and 10% survival
+
+```{r}
+q.erf <- visR::get_quantile(erf, probs = c(0.1, 0.5, 0.9))
+q.erf$sex <- "F"
+q.erm <- visR::get_quantile(erm, probs = c(0.1, 0.5, 0.9))
+q.erm$sex <- "M"
+q.epf <- visR::get_quantile(epf, probs = c(0.1, 0.5, 0.9))
+q.epf$sex <- "F"
+q.epm <- visR::get_quantile(epm, probs = c(0.1, 0.5, 0.9))
+q.epm$sex <- "M"
+quants <- rbind(q.erf,q.erm,q.epf,q.epm)
+
+q.mf <- visR::get_quantile(mf, probs = c(0.1, 0.5, 0.9))
+
+
+q.mf <- q.mf %>%
+  rename(Diet = strata,CI = quantity)
+
+q.mf$Diet <- gsub(",[^=]+=", "_",q.mf$Diet) 
+q.mf$Diet <- gsub(".*=","",q.mf$Diet)
+q.mf$CI <- gsub("^(\\w).*$","\\1",q.mf$CI)
+
+# q.mf$Diet <- gsub(".*=","",q.mf$Diet)
+# q.mf$CI <- gsub("^(\\w).*$","\\1",q.mf$CI)
+
+gathercols <- c("10", "50", "90")
+
+q_long <- q.mf %>%
+  gather(quantile, surv_prob, gathercols) %>%
+  filter(CI=="q") 
+q_long$sex <- str_split(q_long$Diet, "_", simplify = TRUE)[,3]
+#q_long$quantile <- as.numeric(q_long$quantile)
+
+qx <- ggplot(q_long, aes(x=surv_prob, y=quantile, group_by=Diet, shape=sex,color=Diet)) + 
+  geom_jitter(alpha=0.6,size=4) +
+  #facet_grid(rows=vars(quantile), cols=vars(sex), scales= "free_y") +
+  #scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 10)) +
+  #scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 25)) +
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
+  labs(x = "No. of days", y = "Percent survival point") +
+  theme(legend.position = "none",
+        panel.border = element_rect(color="black,size=1")) +
+  #theme(panel.border = element_rect(color="black,size=1")) +
+  my_theme +
+  theme_half_open()
+al <- legSize(qx)
+al 
+
+ggsave(
+  al,
+  file = "~/MyGithub/early_experience/plots/SurvPlots_at_3quants.pdf",
+  width = 5,
+  height = 4)
+
+# Females only
+qxf <- subset(q_long, q_long$sex=="F")
+qf <- ggplot(qxf, aes(x=surv_prob, y=quantile, group_by=Diet, color=Diet)) + 
+  geom_jitter(alpha=0.6,size=4) +
+  #facet_grid(rows=vars(quantile), cols=vars(sex), scales= "free_y") +
+  #scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 10)) +
+  #scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 25)) +
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
+  labs(x = "No. of days", y = "Percent survival point") +
+  theme(legend.position = "none",
+        panel.border = element_rect(color="black,size=1")) +
+  #theme(panel.border = element_rect(color="black,size=1")) +
+  my_theme +
+  theme_half_open()
+af <- legSize(qf)
+af 
+
+ggsave(
+  af,
+  file = "~/MyGithub/early_experience/plots/SurvPlots_at_3quants_female.pdf",
+  width = 4,
+  height = 3)
+
+# Males only
+qxm <- subset(q_long, q_long$sex=="M")
+qm <- ggplot(qxm, aes(x=surv_prob, y=quantile, group_by=Diet, color=Diet)) + 
+  geom_jitter(alpha=0.6,size=4) +
+  #facet_grid(rows=vars(quantile), cols=vars(sex), scales= "free_y") +
+  #scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 10)) +
+  #scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 25)) +
+  scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9", "#009E73", 
+                       "#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
+  labs(x = "No. of days", y = "Percent survival point") +
+  theme(legend.position = "none",
+        panel.border = element_rect(color="black,size=1")) +
+  #theme(panel.border = element_rect(color="black,size=1")) +
+  my_theme +
+  theme_half_open()
+am <- legSize(qm)
+am 
+
+ggsave(
+  am,
+  file = "~/MyGithub/early_experience/plots/SurvPlots_at_3quants_male.pdf",
+  width = 4,
+  height = 3)
+```
 
 
 
