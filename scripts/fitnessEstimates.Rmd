@@ -1,0 +1,46 @@
+---
+title: "Fitness estimates using invasibility models"
+author: "Enoch Ng'oma"
+date: "10/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(cowplot)
+library(colorblindr)
+library(forcats)
+
+source("color_map.R")
+source("ggplot_theme.R")
+#source("color_map_blindr.R")
+```
+
+# Data
+
+```{r}
+
+# Fecundity
+eggs <- read.table("~/MyGithub/early_experience/processed/tricount.txt",
+            sep = '\t', header = TRUE)
+
+zdn <-eggs %>%  
+  select(id,age,cam_id,larvalTreat,adultTreat,
+                NstartF,alive,aj1_count,aj2_count,dd1_count,numEggs,
+                eggpDay,eggpFemDay) %>%
+
+  rename(cageID="id")
+tail(zdn)
+
+# Lifespan
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-X) %>%
+  filter(sex=="F")
+tail(eelife)
+
+egglife <- zdn %>% 
+  full_join(eelife)
+  
+```
