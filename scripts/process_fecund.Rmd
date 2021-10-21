@@ -51,7 +51,7 @@ aj1$startDate <- as.Date(aj1$startDate , "%m/%d/%y")
 aj1$sampleDate <- as.Date(aj1$sampleDate , "%m/%d/%y")
 aj1$age <- (aj1$sampleDate - aj1$startDate)
 aj1$age <- as.numeric(aj1$age)
-aj1 <- aj1 %>% 
+aj1 <- aj1 %>%
   dplyr::select(-c(startDate,sampleDate))
 aj1$id <- gsub("EE_","",aj1$id)
 
