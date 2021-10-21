@@ -33,6 +33,9 @@ head(zdn)
 # Overall pattern
 
 ```{r}
+# Subset by larval-adult diet combinations
+zdn$tgroup <- gsub("\\d", "", zdn$id)
+
 pp <- zdn %>% 
   ggplot(aes(x = age, y = eggpFemDay, color = tgroup, group = tgroup)) +
   geom_line() +
@@ -85,11 +88,6 @@ bb <- bb + theme(
 
 bb <- bb + theme(strip.background = element_blank(),
            strip.text.x = element_blank())
-
-
-
-# Subset by larval-adult diet combinations
-zdn$tgroup <- gsub("\\d", "", zdn$id)
 
 cc <- zdn %>% 
   ggplot(aes(x = age, y = eggpFemDay, color = larvalTreat, group = tgroup)) +

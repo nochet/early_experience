@@ -71,3 +71,16 @@ anova(mf1,mf2,mf3,mf4,mf5,mf6)
 anova(mf5,mf4)
 ```
 
+# Obtain survival data for best model
+
+```{r}
+mf4_data <- survfit(Surv(age, status) ~ larv_adult + strata(sex), eelife)
+summary(mf4_data)
+
+surv4 <- surv_summary(mf4_data, data = eelife)
+
+write.csv(surv4, 
+          file = "../processed/survDat_bestModel.csv",
+          row.names = FALSE) 
+```
+
