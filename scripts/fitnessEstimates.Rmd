@@ -27,20 +27,57 @@ eggs <- read.table("~/MyGithub/early_experience/processed/tricount.txt",
             sep = '\t', header = TRUE)
 
 zdn <-eggs %>%  
-  select(id,age,cam_id,larvalTreat,adultTreat,
-                NstartF,alive,aj1_count,aj2_count,dd1_count,numEggs,
-                eggpDay,eggpFemDay) %>%
+  select(id,sampleDate,age,cam_id,larvalTreat,adultTreat,
+                NstartF,alive,numEggs,eggpDay,eggpFemDay) %>%
+  rename(cageID=id,larval=larvalTreat,adult=adultTreat)
 
-  rename(cageID="id")
+zdn$regime <- gsub("\\d", "", zdn$cageID)
 tail(zdn)
+
+# Collapse replicates
+zdn$age <- as.numeric(zdn$age) 
+
+lh <- zdn %>%
+  arrange(cageID, age) %>%
+  group_by(regime,cageID) %>%
+  mutate(snum = row_number()) %>% # specify flip#
+  as.data.frame()
+
+lh$ad <- str_split(zdn$cageID, "_", simplify = TRUE)[,2]
+
+lh <- lh %>%
+  group_by(regime,age) %>%
+  summarize(Diet=mean(eggpFemDay),n=n()) %>%
+  as.data.frame()
+  
+
 
 # Lifespan
 eelife <- read.csv("../processed/eeAlldat.csv") %>%
-  select(-X) %>%
-  filter(sex=="F")
-tail(eelife)
+  select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex) 
 
-egglife <- zdn %>% 
-  full_join(eelife)
-  
+eelife$age <- as.numeric(eelife$age)
+eelife$status <- as.numeric(eelife$status)
+
+eelifeF <- eelife %>%
+  filter(sex=="F")
+# Survival data for best lifespan model
+
+mf4_data <- survfit(Surv(age, status) ~ larv_adult + strata(sex), eelifeF)
+
+surv4 <- mf4_data %>%
+  surv_summary(data = eelifeF) %>%
+  rename(age = time, Diet = larv_adult) %>%
+  select(Diet, 1:8)
+
+# write.csv(surv4, 
+#           file = "../processed/survDat_bestModelF.csv",
+#           row.names = FALSE) 
+
+# Combine fecundity and lifespan
+
+ck <- which(!surv4%in%lh)
+ck <- lh[ck,]
+surv_eggs <- full_join(surv4,zdn)
 ```
+
