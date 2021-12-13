@@ -31,25 +31,29 @@ zdn <-eggs %>%
                 NstartF,alive,numEggs,eggpDay,eggpFemDay) %>%
   rename(cageID=id,larval=larvalTreat,adult=adultTreat)
 
-zdn$regime <- gsub("\\d", "", zdn$cageID)
+zdn$Diet <- gsub("\\d", "", zdn$cageID)
 tail(zdn)
+zdn$age <- zdn$age +2 # we added 2 days to each row of lifespan (see InitialProcess.R)
 
 # Collapse replicates
 zdn$age <- as.numeric(zdn$age) 
 
 lh <- zdn %>%
   arrange(cageID, age) %>%
-  group_by(regime,cageID) %>%
+  group_by(Diet,cageID) %>%
   mutate(snum = row_number()) %>% # specify flip#
   as.data.frame()
 
 lh$ad <- str_split(zdn$cageID, "_", simplify = TRUE)[,2]
 
 lh <- lh %>%
-  group_by(regime,age) %>%
-  summarize(Diet=mean(eggpFemDay),n=n()) %>%
+  group_by(Diet,age) %>%
+  summarize(n.eggs=mean(eggpFemDay),n=n()) %>%
   as.data.frame()
-  
+
+write.csv(lh,
+          file = "../processed/eggDat.csv",
+          row.names = FALSE)
 
 
 # Lifespan
@@ -61,23 +65,63 @@ eelife$status <- as.numeric(eelife$status)
 
 eelifeF <- eelife %>%
   filter(sex=="F")
-# Survival data for best lifespan model
 
+# Survival data for best lifespan model
 mf4_data <- survfit(Surv(age, status) ~ larv_adult + strata(sex), eelifeF)
 
 surv4 <- mf4_data %>%
   surv_summary(data = eelifeF) %>%
   rename(age = time, Diet = larv_adult) %>%
-  select(Diet, 1:8)
+  select(Diet, 1:3,5,)
 
-# write.csv(surv4, 
-#           file = "../processed/survDat_bestModelF.csv",
-#           row.names = FALSE) 
+write.csv(surv4,
+          file = "../processed/survDat_bestModelF.csv",
+          row.names = FALSE)
+
 
 # Combine fecundity and lifespan
 
-ck <- which(!surv4%in%lh)
-ck <- lh[ck,]
-surv_eggs <- full_join(surv4,zdn)
+# X=age class, 
+# Sx=survivors, 
+# Dx= death events, 
+# lx=survival to age x, 
+# Tx=eggs per female per day
+# mx=number of eggs per female in age class X
+
+surv_eggs <- inner_join(surv4,lh) %>%
+  rename(X="age",Sx="n.risk",Dx="n.event",lx="surv",Tx="n.eggs") %>%
+  select(-n)
+
+  
+# write.csv(surv_eggs,
+#           file = "../processed/surv_eggs.csv",
+#           row.names = FALSE)
+# surv_eggs <- read.csv("../processed/surv_eggs.csv") 
+
+utreats <- unique(surv_eggs$Diet)
+
+surv_eggs$Sx <- rep(NA,nrow(surv_eggs))
+surv_eggs$Fx <- rep(NA,nrow(surv_eggs))
+
+surv_eggs.t <- surv_eggs[0,]
+
+for (k in utreats) {
+  surv_eggs.s <- subset(surv_eggs, Diet==k)
+  for(i in 1:nrow(surv_eggs.s)) {
+    surv_eggs$ageclass <- 1:k
+    if(i==1) {
+      surv_eggs.s[i,'x'] <- surv_eggs.s$
+    surv_eggs.s[i,'x'] <- surv_eg.s[(i-1),'x']
+    }
+  }
+  
+}
+fitnCols <- 
+surv_eggs <- surv_eggs %>%
+  as_tibble() %>%
+  group_by(Diet) %>%
+  group_modify(~ add_row(.x, .before = 0))
+
+fE <- (n.eggs/(age*3))*(24*(age))
 ```
 
