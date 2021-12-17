@@ -12,6 +12,8 @@ library(tidyverse)
 library(cowplot)
 library(colorblindr)
 library(forcats)
+library(survival)
+library(survminer)
 
 source("color_map.R")
 source("ggplot_theme.R")
@@ -88,16 +90,67 @@ write.csv(surv4,
 # Tx=eggs per female per day
 # mx=number of eggs per female in age class X
 
-surv_eggs <- inner_join(surv4,lh) %>%
-  rename(X="age",Sx="n.risk",Dx="n.event",lx="surv",Tx="n.eggs") %>%
-  select(-n)
+surv_eggs <- inner_join(surv4,lh) 
+  # rename(X="age",Sx="n.risk",Dx="n.event",lx="surv",Tx="n.eggs") %>%
+  # select(-n)
 
   
 # write.csv(surv_eggs,
 #           file = "../processed/surv_eggs.csv",
 #           row.names = FALSE)
 # surv_eggs <- read.csv("../processed/surv_eggs.csv") 
+```
 
+# Life tables
+
+```{r}
+rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(n.risk,n.event) %>%
+  rename(count="n.risk",death="n.event") %>% mutate(age=0:31) %>% select(age,count,death)
+rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(n.risk,n.event) %>%
+  rename(count="n.risk",death="n.event")
+pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(n.risk,n.event) %>%
+  rename(count="n.risk",death="n.event")
+pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(n.risk,n.event) %>%
+  rename(count="n.risk",death="n.event")
+
+rr.lt <- with(rr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+rr.lt
+
+# View function
+# Life expectancy unbelievable
+
+getAnywhere(life.table) # iwidth and width12!!!
+
+# iwidth to days (not years)
+
+rr.lt <- with(rr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=(5), width12=c(1,4)))
+rr.lt
+
+```
+
+# Create matices
+
+```{r}
+# Diets C_C C_DR DR_C DR_DR
+rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(age,surv,n.eggs)
+rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age,surv,n.eggs)
+pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age,surv,n.eggs)
+pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age,surv,n.eggs)
+
+# C_C
+ages.rr <- rr$age
+fec.rr <- rr$n.eggs
+surv.rr <- rr$surv
+
+rr.mat <- matrix(rr$surv,nrow=32, byrow = T, dimnames = list(fec.rr,surv.rr))
+
+
+```
+
+
+
+
+```{r}
 utreats <- unique(surv_eggs$Diet)
 
 surv_eggs$Sx <- rep(NA,nrow(surv_eggs))
