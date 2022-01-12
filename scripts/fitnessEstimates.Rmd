@@ -14,6 +14,7 @@ library(colorblindr)
 library(forcats)
 library(survival)
 library(survminer)
+library(demogR)
 
 source("color_map.R")
 source("ggplot_theme.R")
@@ -104,49 +105,93 @@ surv_eggs <- inner_join(surv4,lh)
 # Life tables
 
 ```{r}
-rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(n.risk,n.event) %>%
-  rename(count="n.risk",death="n.event") %>% mutate(age=0:31) %>% select(age,count,death)
-rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(n.risk,n.event) %>%
-  rename(count="n.risk",death="n.event")
-pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(n.risk,n.event) %>%
-  rename(count="n.risk",death="n.event")
-pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(n.risk,n.event) %>%
-  rename(count="n.risk",death="n.event")
+# rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(n.risk,n.event) %>%
+#   rename(count="n.risk",death="n.event") %>% mutate(age=0:31) %>% select(age,count,death)
 
-rr.lt <- with(rr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-rr.lt
+cc <- surv_eggs %>% filter(Diet=="C_C") %>% 
+  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  select(-n) 
+cc <- rbind(data.frame(Diet="C_C",age=0, count=426, death=0,surv=1,fec=0), cc)
+
+cdr <- surv_eggs %>% filter(Diet=="C_DR") %>% 
+  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  select(-n) 
+cdr <- rbind(data.frame(Diet="C_DR",age=0, count=393, death=0,surv=1,fec=0), cdr)
+
+drc <- surv_eggs %>% filter(Diet=="DR_C") %>% 
+  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  select(-n) 
+drc <- rbind(data.frame(Diet="DR_C",age=0, count=625, death=0,surv=1,fec=0), drc)
+
+drdr <- surv_eggs %>% filter(Diet=="DR_DR") %>% 
+  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  select(-n) 
+drdr <- rbind(data.frame(Diet="DR_DR",age=0, count=510, death=0,surv=1,fec=0), drdr)
+
+cc <- with(cc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+cdr <- with(cdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+drc <- with(drc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+drdr <- with(drdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+
+cc
 
 # View function
-# Life expectancy unbelievable
-
-getAnywhere(life.table) # iwidth and width12!!!
-
-# iwidth to days (not years)
-
-rr.lt <- with(rr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=(5), width12=c(1,4)))
-rr.lt
+#getAnywhere(life.table) # iwidth and width12!!!
 
 ```
 
 # Create matices
 
 ```{r}
+# nKx = mid-interval ppn str
+# nLx = age-specific survival
+# mx = age-specific fertility
+
+vv <- select(cc.lt, x,nLx) %>% rena
+cc <- left_join(cc,vv, by=x)
+cc.mx <- with(cc, fec/nLx)
+
+
 # Diets C_C C_DR DR_C DR_DR
-rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(age,surv,n.eggs)
-rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age,surv,n.eggs)
-pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age,surv,n.eggs)
-pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age,surv,n.eggs)
+rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
+rr <- rbind(data.frame(age = 0, surv.rr = 1, fec.rr=0), rr)
 
-# C_C
-ages.rr <- rr$age
-fec.rr <- rr$n.eggs
-surv.rr <- rr$surv
-
-rr.mat <- matrix(rr$surv,nrow=32, byrow = T, dimnames = list(fec.rr,surv.rr))
-
+rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
+pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
+pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
 
 ```
 
+
+```{r}
+
+  
+dat.wide <- surv_eggs %>%
+  pivot_wider(id_cols = 1:6,
+              names_from = Diet,
+              values_from = c(n.risk,n.event,surv,n.eggs),
+              values_fill = FALSE
+                        ) %>%
+  as.data.frame()
+
+
+# Diets C_C C_DR DR_C DR_DR
+rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
+rr <- rbind(data.frame(age = 0, surv.rr = 1, fec.rr=0), rr)
+
+rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
+pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
+pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age,surv,n.eggs) %>%
+  rename(surv.rr="surv",fec.rr="n.eggs") 
+
+```
 
 
 
