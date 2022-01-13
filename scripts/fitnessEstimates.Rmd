@@ -55,7 +55,7 @@ lh <- lh %>%
   as.data.frame()
 
 write.csv(lh,
-          file = "../processed/eggDat.csv",
+          file = "../processed/eggDat_Leslie.csv",
           row.names = FALSE)
 
 
@@ -109,31 +109,30 @@ surv_eggs <- inner_join(surv4,lh)
 #   rename(count="n.risk",death="n.event") %>% mutate(age=0:31) %>% select(age,count,death)
 
 cc <- surv_eggs %>% filter(Diet=="C_C") %>% 
-  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
   select(-n) 
-cc <- rbind(data.frame(Diet="C_C",age=0, count=426, death=0,surv=1,fec=0), cc)
+cc <- rbind(data.frame(Diet="C_C",age=0, count=426, death=0,surv=1,mx=0), cc)
 
 cdr <- surv_eggs %>% filter(Diet=="C_DR") %>% 
-  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
   select(-n) 
-cdr <- rbind(data.frame(Diet="C_DR",age=0, count=393, death=0,surv=1,fec=0), cdr)
+cdr <- rbind(data.frame(Diet="C_DR",age=0, count=393, death=0,surv=1,mx=0), cdr)
 
 drc <- surv_eggs %>% filter(Diet=="DR_C") %>% 
-  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
   select(-n) 
-drc <- rbind(data.frame(Diet="DR_C",age=0, count=625, death=0,surv=1,fec=0), drc)
+drc <- rbind(data.frame(Diet="DR_C",age=0, count=625, death=0,surv=1,mx=0), drc)
 
 drdr <- surv_eggs %>% filter(Diet=="DR_DR") %>% 
-  rename(count="n.risk",death="n.event",fec="n.eggs") %>% 
+  rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
   select(-n) 
-drdr <- rbind(data.frame(Diet="DR_DR",age=0, count=510, death=0,surv=1,fec=0), drdr)
+drdr <- rbind(data.frame(Diet="DR_DR",age=0, count=510, death=0,surv=1,mx=0), drdr)
 
-cc <- with(cc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-cdr <- with(cdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-drc <- with(drc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-drdr <- with(drdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-
-cc
+# Life tables
+cc.lt <- with(cc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+cdr.lt <- with(cdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+drc.lt <- with(drc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+drdr.lt <- with(drdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
 
 # View function
 #getAnywhere(life.table) # iwidth and width12!!!
@@ -147,9 +146,19 @@ cc
 # nLx = age-specific survival
 # mx = age-specific fertility
 
-vv <- select(cc.lt, x,nLx) %>% rena
-cc <- left_join(cc,vv, by=x)
-cc.mx <- with(cc, fec/nLx)
+cc.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
+cc.lmat <- leslie.matrix(lx=cc.mx$nLx, mx=cc.mx$mx)
+cc.eig <- eigen.analysis(cc.lmat)
+
+cdr.mx <- cdr.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cdr) %>% select(1,3:7,2) 
+cdr.lmat <- leslie.matrix(lx=cdr.mx$nLx, mx=cc.mx$mx)
+
+drc.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
+drc.lmat <- leslie.matrix(lx=drc.mx$nLx, mx=cc.mx$mx)
+
+drdr.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
+drdr.lmat <- leslie.matrix(lx=drdr.mx$nLx, mx=cc.mx$mx)
+
 
 
 # Diets C_C C_DR DR_C DR_DR
