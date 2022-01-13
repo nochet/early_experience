@@ -105,28 +105,29 @@ surv_eggs <- inner_join(surv4,lh)
 # Life tables
 
 ```{r}
-# rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(n.risk,n.event) %>%
-#   rename(count="n.risk",death="n.event") %>% mutate(age=0:31) %>% select(age,count,death)
+# Add row for zero mortality and fecundity before first age class
+# Add row for zero survival and fecundity at the end of experiment
 
 cc <- surv_eggs %>% filter(Diet=="C_C") %>% 
-  rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
-  select(-n) 
+  rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
 cc <- rbind(data.frame(Diet="C_C",age=0, count=426, death=0,surv=1,mx=0), cc)
+cc <- rbind(cc, data.frame(Diet="C_C",age=80, count=0, death=0,surv=0,mx=0))
 
 cdr <- surv_eggs %>% filter(Diet=="C_DR") %>% 
-  rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
-  select(-n) 
+  rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
 cdr <- rbind(data.frame(Diet="C_DR",age=0, count=393, death=0,surv=1,mx=0), cdr)
+cdr <- rbind(cdr, data.frame(Diet="C_DR",age=78, count=0, death=0,surv=0,mx=0))
 
 drc <- surv_eggs %>% filter(Diet=="DR_C") %>% 
-  rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
-  select(-n) 
+  rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
 drc <- rbind(data.frame(Diet="DR_C",age=0, count=625, death=0,surv=1,mx=0), drc)
+drc <- rbind(drc, data.frame(Diet="DR_C",age=78, count=0, death=0,surv=0,mx=0))
 
 drdr <- surv_eggs %>% filter(Diet=="DR_DR") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
   select(-n) 
 drdr <- rbind(data.frame(Diet="DR_DR",age=0, count=510, death=0,surv=1,mx=0), drdr)
+drdr <- rbind(drdr, data.frame(Diet="dr_DR",age=80, count=0, death=0,surv=0,mx=0))
 
 # Life tables
 cc.lt <- with(cc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
@@ -151,28 +152,36 @@ cc.lmat <- leslie.matrix(lx=cc.mx$nLx, mx=cc.mx$mx)
 cc.eig <- eigen.analysis(cc.lmat)
 
 cdr.mx <- cdr.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cdr) %>% select(1,3:7,2) 
-cdr.lmat <- leslie.matrix(lx=cdr.mx$nLx, mx=cc.mx$mx)
+cdr.lmat <- leslie.matrix(lx=cdr.mx$nLx, mx=cdr.mx$mx)
+cdr.eig <- eigen.analysis(cdr.lmat)
 
 drc.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
-drc.lmat <- leslie.matrix(lx=drc.mx$nLx, mx=cc.mx$mx)
+drc.lmat <- leslie.matrix(lx=drc.mx$nLx, mx=drc.mx$mx)
+drc.eig <- eigen.analysis(drc.lmat)
 
 drdr.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
-drdr.lmat <- leslie.matrix(lx=drdr.mx$nLx, mx=cc.mx$mx)
+drdr.lmat <- leslie.matrix(lx=drdr.mx$nLx, mx=drdr.mx$mx)
+drdr.eig <- eigen.analysis(drdr.lmat)
 
 
+par(mfrow=c(2,4))
+plot(cc.eig$sensitivities)
+title("a")
+plot(cdr.eig$sensitivities)
+title("b")
+plot(drc.eig$sensitivities)
+title("c")
+plot(drdr.eig$sensitivities)
+title("d")
 
-# Diets C_C C_DR DR_C DR_DR
-rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-rr <- rbind(data.frame(age = 0, surv.rr = 1, fec.rr=0), rr)
-
-rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-
+plot(cc.eig$elasticities)
+title("e")
+plot(cdr.eig$elasticities)
+title("f")
+plot(drc.eig$elasticities)
+title("g")
+plot(drdr.eig$elasticities)
+title("h")
 ```
 
 
