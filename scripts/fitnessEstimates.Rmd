@@ -19,6 +19,11 @@ library(demogR)
 source("color_map.R")
 source("ggplot_theme.R")
 #source("color_map_blindr.R")
+
+# Function to drop +0i from complex numbers
+f <- function(x) {
+   if (all(Im(z <- zapsmall(x))==0)) as.numeric(z) else x
+}
 ```
 
 # Data
@@ -155,16 +160,16 @@ cdr.mx <- cdr.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cdr) %>% 
 cdr.lmat <- leslie.matrix(lx=cdr.mx$nLx, mx=cdr.mx$mx)
 cdr.eig <- eigen.analysis(cdr.lmat)
 
-drc.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
+drc.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(drc) %>% select(1,3:7,2) 
 drc.lmat <- leslie.matrix(lx=drc.mx$nLx, mx=drc.mx$mx)
 drc.eig <- eigen.analysis(drc.lmat)
 
-drdr.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
+drdr.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(drdr) %>% select(1,3:7,2) 
 drdr.lmat <- leslie.matrix(lx=drdr.mx$nLx, mx=drdr.mx$mx)
 drdr.eig <- eigen.analysis(drdr.lmat)
 
-
-par(mfrow=c(2,4))
+# Plot sensitivities and elasticities
+par(mfrow=c(3,4))
 plot(cc.eig$sensitivities)
 title("a")
 plot(cdr.eig$sensitivities)
@@ -182,62 +187,80 @@ plot(drc.eig$elasticities)
 title("g")
 plot(drdr.eig$elasticities)
 title("h")
+
+plot(cc.eig$repro.value)
+title("i")
+plot(cdr.eig$repro.value)
+title("j")
+plot(drc.eig$repro.value)
+title("k")
+plot(drdr.eig$repro.value)
+title("l")
+
+# Reproductive values
+cc.age <- surv_eggs %>% filter(Diet=="C_C") %>% select(age) 
+cc.rv <- as.data.frame(cbind(cc.eig$stable.age,cc.eig$repro.value)) %>%
+  rename(stable_age="V1", Rvalue="V2") %>%
+  cbind(cc.age)
+
+ccpl <- ggplot(cc.rv, aes(age,Rvalue)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Age (days)", y = "Reproductive value") +
+  theme_half_open() +
+  my_theme
+ccpl <- ccpl + ggtitle("C_C")
+
+cdr.age <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age) 
+cdr.rv <- as.data.frame(cbind(cdr.eig$stable.age,cdr.eig$repro.value)) %>%
+  rename(stable_age="V1", Rvalue="V2") %>%
+  cbind(cdr.age)
+
+cdrpl <- ggplot(cdr.rv, aes(age,Rvalue)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Age (days)", y = "Reproductive value") +
+  theme_half_open() +
+  my_theme
+cdrpl <- cdrpl + ggtitle("C_DR")
+          
+drc.age <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age) 
+drc.rv <- as.data.frame(cbind(drc.eig$stable.age,drc.eig$repro.value)) %>%
+  rename(stable_age="V1", Rvalue="V2") %>%
+  cbind(drc.age)
+
+drcpl <- ggplot(drc.rv, aes(age,Rvalue)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Age (days)", y = "Reproductive value") +
+  theme_half_open() +
+  my_theme
+drcpl <- drcpl + ggtitle("DR_C")
+
+drdr.age <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age) 
+drdr.rv <- as.data.frame(cbind(drdr.eig$stable.age,drdr.eig$repro.value)) %>%
+  rename(stable_age="V1", Rvalue="V2") %>%
+  cbind(drdr.age)
+
+drdrpl <- ggplot(drdr.rv, aes(age,Rvalue)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Age (days)", y = "Reproductive value") +
+  theme_half_open() +
+  my_theme
+drdrpl <- drdrpl + ggtitle("DR_DR")
+
+library(ggpubr)
+fitn <- ggarrange(ccpl,cdrpl,drcpl,drdrpl, ncol = 2, nrow = 2, 
+                 labels = c("a", "b","c"))
+
+ggsave(fitn,file = "../plots/leslie_fitness.pdf",
+                width = 4,height=4)
+
+c(cc.eig$lambda1,cc.eig$rho)
+c(cdr.eig$lambda1,cdr.eig$rho)
+c(drc.eig$lambda1,drc.eig$rho)
+c(drdr.eig$lambda1,drdr.eig$rho)
 ```
 
-
-```{r}
-
-  
-dat.wide <- surv_eggs %>%
-  pivot_wider(id_cols = 1:6,
-              names_from = Diet,
-              values_from = c(n.risk,n.event,surv,n.eggs),
-              values_fill = FALSE
-                        ) %>%
-  as.data.frame()
-
-
-# Diets C_C C_DR DR_C DR_DR
-rr <- surv_eggs %>% filter(Diet=="C_C") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-rr <- rbind(data.frame(age = 0, surv.rr = 1, fec.rr=0), rr)
-
-rp <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-pr <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-pp <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age,surv,n.eggs) %>%
-  rename(surv.rr="surv",fec.rr="n.eggs") 
-
-```
-
-
-
-```{r}
-utreats <- unique(surv_eggs$Diet)
-
-surv_eggs$Sx <- rep(NA,nrow(surv_eggs))
-surv_eggs$Fx <- rep(NA,nrow(surv_eggs))
-
-surv_eggs.t <- surv_eggs[0,]
-
-for (k in utreats) {
-  surv_eggs.s <- subset(surv_eggs, Diet==k)
-  for(i in 1:nrow(surv_eggs.s)) {
-    surv_eggs$ageclass <- 1:k
-    if(i==1) {
-      surv_eggs.s[i,'x'] <- surv_eggs.s$
-    surv_eggs.s[i,'x'] <- surv_eg.s[(i-1),'x']
-    }
-  }
-  
-}
-fitnCols <- 
-surv_eggs <- surv_eggs %>%
-  as_tibble() %>%
-  group_by(Diet) %>%
-  group_modify(~ add_row(.x, .before = 0))
-
-fE <- (n.eggs/(age*3))*(24*(age))
-```
 
