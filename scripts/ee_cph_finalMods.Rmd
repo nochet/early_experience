@@ -57,6 +57,8 @@ cox.zph(mf3)
 mf4 <- coxph(Surv(age, status) ~ larv_adult + strata(sex), eelife)
 summary(mf4)
 cox.zph(mf4)
+#ggforest(mf4, data = eelife)
+anova(mf4)
 
 mf5 <- coxph(Surv(age, status) ~ larv_adult + strata(sex) + cageID, eelife)
 summary(mf5)

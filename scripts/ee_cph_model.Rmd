@@ -324,6 +324,7 @@ anova(mod6.1, mod6.2, mod6.3)
 
 ```
 
+# Final models
 
 ```{r}
 mf1 <- coxph(Surv(age, status) ~ larv_adult * strata(sex) + cageID, eelife)

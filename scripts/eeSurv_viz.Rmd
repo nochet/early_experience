@@ -130,12 +130,12 @@ mp.plot <- ggsurvplot(mp, data = eelife,
                      # font.main = 11,
                      #risk.table = FALSE,
                      legend = c(0.9, 0.6),
-                     risk.table = TRUE,
+                     risk.table = FALSE,
                      #risk.table.col = "strata",
-                     risk.table.y.text.col = T,
-                     risk.table.y.text = FALSE,
+                     # risk.table.y.text.col = T,
+                     # risk.table.y.text = FALSE,
                      #risk.table.fontsize = 4,
-                     tables.height = 0.4,
+                     #tables.height = 0.4,
                      #tables.theme = theme_cleantable(),
                     # title = "Females & Males",
                      legend.labs = c("C-C","C-DR","DR-C","DR-DR"),
@@ -144,7 +144,7 @@ mp.plot <- ggsurvplot(mp, data = eelife,
   xlab("Age (days)")
 mp.plot
 
-ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", height=6, width=6, plot=mp.plot)
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", last_plot(),device = "pdf")
 
 survdiff(Surv(age) ~larvalTreat + adultTreat, 
                      data = eelife, rho = 0) 

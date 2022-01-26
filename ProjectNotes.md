@@ -36,6 +36,15 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+
+
+## 2022-01-19
+Completed Leslie matrix analysis to compute a proxy of fitness by combining age-specific lifespan and fecundity into a single metric. The script is `fitnessEstimates.Rmd`.The visualization is `/plots/leslie_fitness.pdf`
+
+# Some time here!
+`ee_cph_finalMods.Rmd` Analysis of the Cox model and model selection
+`ee_cph_model.Rmd` The selected models above come from a general exploration in this script.
+
 Reporting Cox model
 HR, CI and P-value
 
