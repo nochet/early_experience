@@ -27,11 +27,11 @@ source("ggplot_theme.R")
 eggs <- read.table("~/MyGithub/early_experience/processed/tricount.txt",
             sep = '\t', header = TRUE)
 
-zdn <-eggs %>%  
-  select(id,age,cam_id,larvalTreat,adultTreat,
-                NstartF,alive,aj1_count,aj2_count,dd1_count,numEggs,
+zdn <- eggs %>% 
+  dplyr::select(id,age,cam_id,larvalTreat,adultTreat,NstartF,alive,aj1_count,aj2_count,dd1_count,numEggs,
                 eggpDay,eggpFemDay) %>%
-  unite(treat,larvalTreat,adultTreat,sep = "_", remove = FALSE,na.rm = FALSE) 
+  unite(treat,larvalTreat,adultTreat,sep = "_", remove = FALSE) 
+
 head(zdn)
 
 # Check for missing data
@@ -51,8 +51,9 @@ ggplot(zdn, aes(eggpFemDay, treat, label = id)) +
                   arrow = arrow(length = unit(0.01, 'npc'))) +
   labs(x = "Eggs per female per day", 
        y = "Larval-adult treatment combination") +
-  theme_half_open() +
-  my_theme
+  my_theme +
+  theme_half_open() 
+  
 ```
 
 # Diet combi effects on per female fecundity
@@ -66,7 +67,6 @@ summary(zn1.0)$r.squared
 # Use vial values instead of per female values
 zn1.1 <- lm(numEggs ~ treat, data=zdn)
 summary(zn1.1)
-coef(zn1.1)
 summary(zn1.1)$r.squared
 
 # Plot diet combi data
@@ -138,9 +138,9 @@ ggplot(zdn, aes(sample = eggpFemDay)) +
 # Normalize with a weighted regression
 
 ```{r}
-variance_struct <- varPower(form = ~ treat | age)
+variance_struct <- varPower(form = ~ treat | age) # empty
 
-zn2.2 <- gls(eggpFemDay ~ treat * age, data = zdn,
+zn2.2 <- gls(eggpFemDay ~ treat * age, data = zdn, 
            weights = variance_struct)
 
 plot(zn2.2)

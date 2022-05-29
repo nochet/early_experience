@@ -44,10 +44,6 @@ library(visR)
 #source("color_map.R")
 source("ggplot_theme.R")
 ```
-# An R Package for ANOVA
-```{r}
-# library(ExpDes)
-```
 
 ## Load data & combine female and male events
 

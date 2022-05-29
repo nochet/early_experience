@@ -54,14 +54,22 @@ lh <- zdn %>%
 
 lh$ad <- str_split(zdn$cageID, "_", simplify = TRUE)[,2]
 
-lh <- lh %>%
+lf <- lh %>%
   group_by(Diet,age) %>%
   summarize(n.eggs=mean(eggpFemDay),n=n()) %>%
   as.data.frame()
 
-write.csv(lh,
+write.csv(lf,
           file = "../processed/eggDat_Leslie.csv",
           row.names = FALSE)
+
+lf %>%
+  group_by(Diet) %>%
+  summarize(m.eggs=mean(n.eggs),n=n()) %>%
+  as.data.frame()
+
+lf$Diet <- factor(lf$Diet)
+pairwise.t.test(lf$n.eggs, lf$Diet)
 
 
 # Lifespan
