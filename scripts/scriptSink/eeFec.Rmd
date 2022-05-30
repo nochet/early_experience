@@ -20,7 +20,7 @@ set.seed(30111)
 
 ```{r}
 # Fecundity data
-eeFec <- read.table("../processed/Early_Experience_LiFec.txt",
+eeFec <- read.table("../../processed/Early_Experience_LiFec.txt",
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
 
@@ -38,7 +38,7 @@ fec <- subset(fec, fec$numEggs>0)
 # Lifespan data - females only
 
 ```{r}
-eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+eelife <- read.csv("../../processed/eeAlldat.csv", header=TRUE)
 names(eelife)[1]<-"event"
 eelife$cageID <- as.character(eelife$cageID)
 head(eelife)

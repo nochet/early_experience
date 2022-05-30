@@ -10,6 +10,11 @@ library(tidyverse)
 library(cowplot)
 library(colorblindr)
 library(forcats)
+library(ggpubr) # arrange plots
+library(jtools) # for effect plots
+library(ggstance) # additional functions for effect plots
+library(sandwich) # additional functions for effect plots
+library(broom.mixed)  # additional functions for effect plots
 
 source("color_map.R")
 source("ggplot_theme.R")
@@ -29,14 +34,38 @@ zdn <-eggs %>%
                 eggpDay,eggpFemDay)
 head(zdn)
 
+zdn %>% group_by(id) %>% summarise(sum(numEggs),n=n())
+hist(log(zdn$numEggs))
+
 ```
 
 # Lifetime group fecundity patterns
 
 ```{r}
 
-# Subset by larval-adult diet combinations
+# Create regime column
 zdn$Regime <- gsub("\\d", "", zdn$id)
+
+# Mean fecundity for treatments at each age
+fi <- group_by(zdn, age, Regime) %>% 
+  summarise(Sum = sum(numEggs))
+fi
+
+# Overal mean fecundity for treatments
+fii <-  group_by(zdn, Regime) %>%
+  summarise(Mean = (numEggs))
+fii
+
+zz <- ggplot(fi, aes(x=Regime, y=Sum, color = Regime)) + 
+  geom_jitter(size = 2, width=0.1, height=0.5) +
+  geom_point(data = fii, size = 4, shape = 0) +
+  #geom_point(data = fif, size = 5, shape = 23) +
+  labs(x = "Diet", 
+       y = "log(Daily fecundity)", 
+       color = "Regime") + 
+  theme_half_open() +
+  my_theme
+zz
 
 lt <- zdn %>% 
   ggplot(aes(x = age, y = log(numEggs), color = Regime, group = Regime)) +
@@ -60,7 +89,7 @@ summary(ltime)
 coef(ltime)
 summary(ltime)$r.squared
 
-library(jtools)
+
 ltp <- effect_plot(ltime, pred=Regime, interval=TRUE, 
                    int.type="confidence", int.width=0.95,
                    plot.points=TRUE, jitter = c(0.3,0), line.thickness=0.3,
@@ -68,9 +97,7 @@ ltp <- effect_plot(ltime, pred=Regime, interval=TRUE,
                    x.label="Diet Regime",data=zdn)
 ltp <- ltp + geom_point(color=c("#009E73","#56B4E9","#E69F00", "#000000")) + theme_half_open() + my_theme
 
-library(ggstance)
-library(sandwich)
-library(broom.mixed)
+
 lts <- plot_summs(ltime,inner_ci_level = .9,
                   plot.distributions = FALSE,
                   colors = 'grey')
@@ -78,12 +105,16 @@ lts <- lts + theme_half_open() + my_theme
 
 #plot_coefs(ltime,inner_ci_level = .9)
 
-library(ggpubr)
 ltf <- ggarrange(lt,ltp,lts, ncol = 3, nrow = 1, 
                  labels = c("a", "b","c"),
                  font.label = list(size = 10))
 ggsave(ltf,file = "../plots/lifetime_fec_reg.pdf",
                 width = 8,height=3)
+
+# Add cage
+ltimec <-lm(log(numEggs) ~ Regime + id, data=zdn)
+summary(ltimec)
+
 ```
 
 # Per female patterns
@@ -142,7 +173,6 @@ ggsave(fec,file = "../plots/fec_panel.pdf",
 # Daily per female fecundity grouped by: 1) larval diet; 2) adult diet
 
 ```{r}
-# zdn %>% group_by(Regime) %>% summarise(sum(numEggs),n=n())
 # 
 # # Group by larval diet
 # aa <- zdn %>% 
@@ -224,7 +254,6 @@ ggsave(fec,file = "../plots/fec_panel.pdf",
 #            strip.text.x = element_blank())
 # 
 # # On the same page
-# library(ggpubr)
 # eggs <- ggarrange(aa,bb, ncol = 1, nrow = 2, 
 #                  labels = c("A", "B"))
 # 
@@ -358,6 +387,9 @@ ggsave(tf,file = "../plots/Eggs_perFemale_Quartile.pdf",
 # grid.draw(rbind(ggplotGrob(tv), ggplotGrob(tt), size = "last"))
 
 ```
+
+
+
 
 
 
