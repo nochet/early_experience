@@ -40,6 +40,7 @@ hist(log(zdn$numEggs))
 ```
 
 # Lifetime group fecundity patterns
+## Group by regime
 
 ```{r}
 
@@ -58,7 +59,7 @@ fii
 
 zz <- ggplot(fi, aes(x=Regime, y=Sum, color = Regime)) + 
   geom_jitter(size = 2, width=0.1, height=0.5) +
-  geom_point(data = fii, size = 4, shape = 0) +
+  #geom_point(data = fi, size = 4, shape = 0) +
   #geom_point(data = fif, size = 5, shape = 23) +
   labs(x = "Diet", 
        y = "log(Daily fecundity)", 
@@ -66,6 +67,7 @@ zz <- ggplot(fi, aes(x=Regime, y=Sum, color = Regime)) +
   theme_half_open() +
   my_theme
 zz
+
 
 lt <- zdn %>% 
   ggplot(aes(x = age, y = log(numEggs), color = Regime, group = Regime)) +
@@ -115,12 +117,18 @@ ggsave(ltf,file = "../plots/lifetime_fec_reg.pdf",
 ltimec <-lm(log(numEggs) ~ Regime + id, data=zdn)
 summary(ltimec)
 
+library(lme4)
+library(report)
+ltimecr <- lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
+summary(ltimecr)
+
+report(ltimecr) %>% as.data.frame()
 ```
 
 # Per female patterns
+# Group by regime
 
 ```{r}
-# Subset by larval-adult diet combinations
 pp <- zdn %>% 
   ggplot(aes(x = age, y = log(eggpFemDay), color = Regime, group = Regime)) +
   geom_jitter(alpha = 0.6) +
@@ -168,29 +176,92 @@ fec <- ggarrange(ltf,pfdf, ncol = 1, nrow = 2,
 ggsave(fec,file = "../plots/fec_panel.pdf",
                 width = 8,height=4)
 
+pfec <-lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
+summary(pfec)
+report(pfec) 
 ```
 
 # Daily per female fecundity grouped by: 1) larval diet; 2) adult diet
 
 ```{r}
-# 
-# # Group by larval diet
-# aa <- zdn %>% 
-#   ggplot(aes(x = age, y = log(eggpFemDay), 
-#              color=larvalTreat, group_by(larvalTreat))) +
-#   geom_jitter(alpha = 0.6) +
-#   geom_smooth(method='lm', formula= y~x, size=0.8) +
-#   scale_color_manual(values=c("#000000", "#E69F00")) +
-#   # scale_colour_OkabeIto() +
-#   # tx_color_map() +
-#   #facet_grid(. ~ larvalTreat) +
-#   labs(x = "Age (days)", y = "log(Eggs/female/day)") +
-#   #theme(legend.position = "none") +
-#   theme_half_open() +
-#   my_theme
-# 
-# aa <- aa + theme(legend.position = "top")
-# 
+
+# Group by larval diet
+aa <- zdn %>%
+  ggplot(aes(x = age, y = log(eggpFemDay),
+             color=larvalTreat, group_by(larvalTreat))) +
+  geom_jitter(alpha = 0.6) +
+  geom_smooth(size=0.8) +
+  scale_color_manual(values=c("#000000", "#E69F00")) +
+  # scale_colour_OkabeIto() +
+  # tx_color_map() +
+  #facet_grid(. ~ larvalTreat) +
+  labs(x = "Age (days)", y = "log(Eggs/female/day)") +
+  #theme(legend.position = "none") +
+  theme_half_open() +
+  my_theme
+
+aa <- aa + theme(legend.position = "top")
+
+#########
+library(ggfortify)
+library(magrittr) # for piping %>%
+
+eggs <- tidyr::unite(eggs,regime,larvalTreat,adultTreat,sep = "-",remove = FALSE)
+
+
+
+eggs_wide <- eggs %>%
+  select(age,id, regime, numEggs) %>% 
+  group_by(regime, age) %>%
+  summarise(numEggs=log(mean(numEggs)),  n=n()) 
+
+vv <- eggs_wide %>% 
+  unite(gp,regime, age,sep = "_",remove = FALSE) %>%
+  remove_rownames %>% 
+  column_to_rownames(var="gp") 
+
+vv <- vv %>% pivot_wider(names_from=regime,
+              values_from = numEggs,
+              values_fn = {mean})
+vv <- vv %>% select(-n) %>% drop_na() %>%
+  remove_rownames %>% column_to_rownames(var="age")  
+
+vv %>% ts() %>% autoplot()
+
+# Time series for each regime
+av <- vv$`C-C` %>% ts() %>%
+  changepoint:: cpt.meanvar() %>%  # Identify change points
+  autoplot(label.size = 3)
+av <- av + theme_half_open() +
+  my_theme + theme(legend.position = "top")
+
+aw <- vv$`C-DR` %>% ts() %>%
+  changepoint:: cpt.meanvar() %>%  
+  autoplot()
+aw <- aw + theme_half_open() +
+  my_theme + theme(legend.position = "top")
+
+ax <- vv$`DR-C` %>% ts() %>%
+  changepoint:: cpt.meanvar() %>%  
+  autoplot()
+ax <- ax + theme_half_open() +
+  my_theme + theme(legend.position = "top")
+
+ay <- vv$`DR-DR` %>% ts() %>%
+  changepoint:: cpt.meanvar() %>%  
+  autoplot()
+ay <- ay + theme_half_open() +
+  my_theme + theme(legend.position = "top")
+
+eggs_ts <- ggarrange(av,aw,ax,ay, ncol = 1, nrow = 4,
+                 labels = c("C_C", "C_DR","DR_C","DR_DR"),
+                 font.label=list(size=10,face="plain",color="grey"),
+                 label.x = 0.65, label.y = 1)
+
+ggsave(eggs_ts,file = "../plots/eggs_ts.pdf",
+                width = 3,height=5)
+########
+
 # aam <-lm(log(eggpFemDay) ~ larvalTreat, data=zdn)
 # summary(aam)
 # 
@@ -218,24 +289,25 @@ ggsave(fec,file = "../plots/fec_panel.pdf",
 #                 width = 8,height=2)
 # 
 # # Group by adult diet
-# bb <- zdn %>%
-#   ggplot(aes(x = age, y = log(eggpFemDay), color = adultTreat,
-#              group_by(adultTreat))) +
-#   geom_jitter(alpha=0.6) +
-#   geom_smooth(aes(se = FALSE, size=0.8)) +
-#   scale_color_manual(values=c("#999999", "#E69F00"),guide=FALSE) +
-#   #tx_color_map() +
-#   facet_grid(. ~ adultTreat) +
-#   labs(x = "Age (days)", y = "Eggs/female/day") +
-#   #theme(legend.position = "none") +
-#   theme_half_open() +
-#   my_theme
-# 
-# bb + labs(title="Adult Diet")
-# 
-# # bb <- bb + theme(
-# #   strip.background = element_blank(),
-# #   strip.text.x = element_blank())
+bb <- zdn %>%
+  ggplot(aes(x = age, y = log(eggpFemDay), color = adultTreat,
+             group_by(adultTreat))) +
+  geom_jitter(alpha = 0.6) +
+  geom_smooth(size=0.8) +
+  scale_color_manual(values=c("#000000", "#E69F00")) +
+  # scale_colour_OkabeIto() +
+  # tx_color_map() +
+  #facet_grid(. ~ larvalTreat) +
+  labs(x = "Age (days)", y = "log(Eggs/female/day)") +
+  #theme(legend.position = "none") +
+  theme_half_open() +
+  my_theme
+
+bb <- bb + theme(legend.position = "top")
+
+# bb <- bb + theme(
+#   strip.background = element_blank(),
+#   strip.text.x = element_blank())
 # 
 # cc <- zdn %>% 
 #   ggplot(aes(x = age, y = eggpFemDay, color = larvalTreat, group = Regime)) +
@@ -254,11 +326,13 @@ ggsave(fec,file = "../plots/fec_panel.pdf",
 #            strip.text.x = element_blank())
 # 
 # # On the same page
-# eggs <- ggarrange(aa,bb, ncol = 1, nrow = 2, 
-#                  labels = c("A", "B"))
-# 
-# ggsave(eggs,file = "../plots/eggs_perFemale_perDay.pdf",
-#                 width = 3,height=4)
+eggs <- ggarrange(aa,bb, ncol = 2, nrow = 1,
+                 labels = c("g", "h"),
+                 font.label = list(size = 10))
+
+ggsave(eggs,file = "../plots/eggs_perFemale_perDay.pdf",
+                width = 5,height=3)
+
 
 ```
 

@@ -52,7 +52,7 @@ aj1$sampleDate <- as.Date(aj1$sampleDate , "%m/%d/%y")
 aj1$age <- (aj1$sampleDate - aj1$startDate)
 aj1$age <- as.numeric(aj1$age)
 aj1 <- aj1 %>%
-  dplyr::select(-c(startDate,sampleDate))
+  dplyr::select(-sampleDate)
 aj1$id <- gsub("EE_","",aj1$id)
 
 # Check re-counted images (original data was altered for new counts)
@@ -189,7 +189,7 @@ get_camnum <- get_camnum %>%
 tri_count <- cbind(get_camnum,ffQ)
 
 tri_count <- tri_count %>%
-  rename(c(sampleDate="collectedEggs",aj1_count="numEggs"))
+  rename(aj1_count="numEggs")
 
 # Mean of counts
 tri_count$numEggs <- format(
