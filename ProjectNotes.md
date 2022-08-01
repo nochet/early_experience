@@ -36,6 +36,13 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+
+## 2022-08-01
+Update time series
+
+## 2022-06-05
+`fec_timeSeries.Rmd` - an improved time series analysis of fecundity.
+
 ## 2022-05-29
 Revise visuals and models for fecundity. Models now integrated in `eefecund_viz.Rmd`.
 

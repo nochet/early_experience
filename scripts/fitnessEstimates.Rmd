@@ -104,7 +104,7 @@ write.csv(surv4,
 # Tx=eggs per female per day
 # mx=number of eggs per female in age class X
 
-surv_eggs <- inner_join(surv4,lh) 
+surv_eggs <- inner_join(surv4,lf) 
   # rename(X="age",Sx="n.risk",Dx="n.event",lx="surv",Tx="n.eggs") %>%
   # select(-n)
 
@@ -112,12 +112,15 @@ surv_eggs <- inner_join(surv4,lh)
 # write.csv(surv_eggs,
 #           file = "../processed/surv_eggs.csv",
 #           row.names = FALSE)
-# surv_eggs <- read.csv("../processed/surv_eggs.csv") 
+
 ```
 
 # Life tables
 
 ```{r}
+
+surv_eggs <- read.csv("../processed/surv_eggs.csv") 
+
 # Add row for zero mortality and fecundity before first age class
 # Add row for zero survival and fecundity at the end of experiment
 
@@ -260,15 +263,70 @@ drdrpl <- drdrpl + ggtitle("DR_DR")
 
 library(ggpubr)
 fitn <- ggarrange(ccpl,cdrpl,drcpl,drdrpl, ncol = 2, nrow = 2, 
-                 labels = c("a", "b","c"))
+                 labels = c("a", "b","c","d"))
 
 ggsave(fitn,file = "../plots/leslie_fitness.pdf",
                 width = 4,height=4)
 
 c(cc.eig$lambda1,cc.eig$rho)
+log(cc.eig$rho)
+max(cc.eig$repro.value)
+range(cc.eig$repro.value)
+c(cc.age$age[5:12],cc.eig$repro.value)
+
 c(cdr.eig$lambda1,cdr.eig$rho)
+log(cdr.eig$rho)
+max(cdr.eig$repro.value)
+range(cdr.eig$repro.value)
+
 c(drc.eig$lambda1,drc.eig$rho)
+log(drc.eig$rho)
+max(drc.eig$repro.value)
+range(drc.eig$repro.value)
+
 c(drdr.eig$lambda1,drdr.eig$rho)
+log(drdr.eig$rho)
+max(drdr.eig$repro.value)
+range(drdr.eig$repro.value)
+
+# ?eigen.analysis:
+# lambda - asymptotic growth rate of a pop. (i.e. the dominant eigen val. of the matrix)
+# rho - damping ratio (ratio of the dominant eigenvalue and the absolute value of the second eigenvalue)
+# rho is a measure of the rate of convergence to the stable age-distribution. 
+# rho is the rate by which the population will converge asymptotically to the stable age distribution exponentially with rate at least as fast as log(rho).
+```
+
+# Compare stable age distributions
+
+```{r}
+
+age <- cc.age
+par(mfrow=c(2,2))
+barplot(cc.eig$stable.age, names.arg=age, 
+	     horiz=TRUE, 
+	     col="grey", 
+	     ylab="Age")
+
+age <- cdr.age
+barplot(cdr.eig$stable.age, names.arg=age, 
+	     horiz=TRUE, 
+	     col="blue", 
+	     ylab="Age", 
+	     xlim=c(0,0.2))
+
+age <- drc.age
+barplot(drc.eig$stable.age, names.arg=age, 
+	     horiz=TRUE, 
+	     col="blue", 
+	     ylab="Age", 
+	     xlim=c(0,0.2))
+
+age <- drdr.age
+barplot(drdr.eig$stable.age, names.arg=age, 
+	     horiz=TRUE, 
+	     col="blue", 
+	     ylab="Age", 
+	     xlim=c(0,0.2))
 ```
 
 

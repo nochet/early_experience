@@ -202,66 +202,6 @@ aa <- zdn %>%
 
 aa <- aa + theme(legend.position = "top")
 
-#########
-library(ggfortify)
-library(magrittr) # for piping %>%
-
-eggs <- tidyr::unite(eggs,regime,larvalTreat,adultTreat,sep = "-",remove = FALSE)
-
-
-
-eggs_wide <- eggs %>%
-  select(age,id, regime, numEggs) %>% 
-  group_by(regime, age) %>%
-  summarise(numEggs=log(mean(numEggs)),  n=n()) 
-
-vv <- eggs_wide %>% 
-  unite(gp,regime, age,sep = "_",remove = FALSE) %>%
-  remove_rownames %>% 
-  column_to_rownames(var="gp") 
-
-vv <- vv %>% pivot_wider(names_from=regime,
-              values_from = numEggs,
-              values_fn = {mean})
-vv <- vv %>% select(-n) %>% drop_na() %>%
-  remove_rownames %>% column_to_rownames(var="age")  
-
-vv %>% ts() %>% autoplot()
-
-# Time series for each regime
-av <- vv$`C-C` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  # Identify change points
-  autoplot(label.size = 3)
-av <- av + theme_half_open() +
-  my_theme + theme(legend.position = "top")
-
-aw <- vv$`C-DR` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  
-  autoplot()
-aw <- aw + theme_half_open() +
-  my_theme + theme(legend.position = "top")
-
-ax <- vv$`DR-C` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  
-  autoplot()
-ax <- ax + theme_half_open() +
-  my_theme + theme(legend.position = "top")
-
-ay <- vv$`DR-DR` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  
-  autoplot()
-ay <- ay + theme_half_open() +
-  my_theme + theme(legend.position = "top")
-
-eggs_ts <- ggarrange(av,aw,ax,ay, ncol = 1, nrow = 4,
-                 labels = c("C_C", "C_DR","DR_C","DR_DR"),
-                 font.label=list(size=10,face="plain",color="grey"),
-                 label.x = 0.65, label.y = 1)
-
-ggsave(eggs_ts,file = "../plots/eggs_ts.pdf",
-                width = 3,height=5)
-########
-
 # aam <-lm(log(eggpFemDay) ~ larvalTreat, data=zdn)
 # summary(aam)
 # 
