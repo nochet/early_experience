@@ -17,6 +17,7 @@ library(ggpubr) # arrange plots
 library(ggfortify)
 library(magrittr) # for piping %>%
 library(survival)
+library(changepoint)
 
 source("../../Functions_and_Themes/color_map.R")
 source("../../Functions_and_Themes/ggplot_theme.R")
@@ -60,34 +61,34 @@ eggs_wide <- eggs %>%
   group_by(regime, age) %>%
   summarise(numEggs=log(mean(numEggs)),  n=n()) 
 
-vv <- eggs_wide %>% 
+vx <- eggs_wide %>% 
   unite(gp,regime, age,sep = "_",remove = FALSE) %>%
   remove_rownames %>% 
   column_to_rownames(var="gp") %>%
   rename(Regime="regime")
 
-eh <- ggplot(vv, aes(x=age,y=numEggs,col=Regime)) +
+eh <- ggplot(vx, aes(x=age,y=numEggs,col=Regime)) +
   geom_smooth(se = FALSE) +
   scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73")) + #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
   labs(x = "Age (days)", 
-       y = "Eggs per female per 3 hr") +
+       y = "Mean per female per 3 hrs") +
   theme_half_open() +
   my_theme
 eh <- eh + theme(legend.position = c(0.7, 0.7))
 eh
 
-er <- ggplot(vv, aes(x=age,y=numEggs,col=Regime)) +
+er <- ggplot(vx, aes(x=age,y=numEggs,col=Regime)) +
   geom_point(alpha=0.6) +
   geom_smooth(method = "lm",se = FALSE) +
   scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73")) + #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
   labs(x = "Age (days)", 
-       y = "Eggs per female per 3 hr") +
+       y = "Mean per female per 3 hrs") +
   theme_half_open() +
   my_theme
 er <- er + theme(legend.position = c(0.7, 0.7))
 er
 
-vv <- vv %>% pivot_wider(names_from=regime,
+vv <- vv %>% pivot_wider(names_from=Regime,
               values_from = numEggs,
               values_fn = {mean})
 vv <- vv %>% select(-n) %>% drop_na() %>%
@@ -95,47 +96,55 @@ vv <- vv %>% select(-n) %>% drop_na() %>%
 
 vv %>% ts() %>% autoplot()
 
-###############
-vv <- vv %>% pivot_wider(names_from=regime,
-              values_from = c(age,numEggs),
-              values_fn = {mean})
-vv <- vv %>% select(-n) %>% drop_na() %>%
-  remove_rownames %>% column_to_rownames(var="age")  
-
-vv %>% ts() %>% ggplot(aes())
-################
 
 # Time series for each regime
 av <- vv$`C-C` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  # Identify change points
-  autoplot(label.size = 3)
+
+  # Identify change points
+  changepoint:: cpt.var(penalty="AIC",method="PELT",
+                            class=TRUE,param.estimates=TRUE) %>% 
+  #summarise(var(values)) %>%
+  autoplot(label.size = 3, cpt.col="grey")
 av <- av + theme_half_open() +
   my_theme + theme(legend.position = "top")
+av
 
 aw <- vv$`C-DR` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  
-  autoplot()
+  changepoint:: cpt.var(penalty="AIC",method="PELT",
+                            class=TRUE,param.estimates=TRUE) %>%  
+  autoplot(label.size = 3, cpt.col="grey")
 aw <- aw + theme_half_open() +
   my_theme + theme(legend.position = "top")
+aw
 
 ax <- vv$`DR-C` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  
-  autoplot()
+  changepoint:: cpt.var(penalty="AIC",method="PELT",
+                            class=TRUE,param.estimates=TRUE) %>%  
+  autoplot(label.size = 3, cpt.col="grey")
 ax <- ax + theme_half_open() +
   my_theme + theme(legend.position = "top")
+ax
 
 ay <- vv$`DR-DR` %>% ts() %>%
-  changepoint:: cpt.meanvar() %>%  
-  autoplot()
+  changepoint:: cpt.var(penalty="AIC",method="PELT",
+                            class=TRUE,param.estimates=TRUE) %>%  
+  autoplot(label.size = 3, cpt.col="grey")
 ay <- ay + theme_half_open() +
   my_theme + theme(legend.position = "top")
+ay
 
 eggs_ts <- ggarrange(av,aw,ax,ay, ncol = 1, nrow = 4,
                  labels = c("C_C", "C_DR","DR_C","DR_DR"),
                  font.label=list(size=10,face="plain",color="grey"),
                  label.x = 0.65, label.y = 1)
 
-ggsave(eggs_ts,file = "../plots/eggs_ts.pdf",
+require(grid)
+ts <- annotate_figure(eggs_ts, 
+                left = textGrob("var per female per 3 hrs", 
+                                rot = 90, vjust = 1.5, gp = gpar(cex = 0.8)),
+                bottom = textGrob("Age (days)", vjust = -1,gp = gpar(cex = 0.8)))
+
+ggsave(ts,file = "../plots/eggs_ts_var_PELT_AIC.pdf",
                 width = 3,height=5)
 ```
 
@@ -158,8 +167,6 @@ vv <- vv %>% select(-n) %>% drop_na() %>%
 vv %>% ts() %>% autoplot()
 
 # Time series for each regime
-library(changepoint)
-
 av <- vv$`C-C` %>% ts() %>%
   changepoint:: cpt.meanvar(method = "BinSeg") %>%   # Identify change in mean and variance
   autoplot(label.size = 3,cpt.col="grey")

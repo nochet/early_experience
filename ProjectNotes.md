@@ -38,6 +38,12 @@ STEP 4: A Bayesian approach
 
 ## 2023-12-16
 Made new plots of eggs/female/3hr in `fec_timeSeries`
+Changepoint analysis in egg time series
+Ref: https://zealous-wiles-e22e83.netlify.app/post/changepoint_detection/
+Following parameters used in changeplot():
+test.sat="Normal"
+method="AMOC" and method="PELT"
+pen.value=DEFAULT
 
 ## 2023-12-14 Hope this is the final push!!
 Remake the design figure
