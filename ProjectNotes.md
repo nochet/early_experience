@@ -36,6 +36,11 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+## 2023-12-16
+Made new plots of eggs/female/3hr in `fec_timeSeries`
+
+## 2023-12-14 Hope this is the final push!!
+Remake the design figure
 
 ## 2022-08-01
 Update time series

@@ -18,8 +18,8 @@ library(ggfortify)
 library(magrittr) # for piping %>%
 library(survival)
 
-source("color_map.R")
-source("ggplot_theme.R")
+source("../../Functions_and_Themes/color_map.R")
+source("../../Functions_and_Themes/ggplot_theme.R")
 #source("color_map_blindr.R")
 
 ```
@@ -63,7 +63,29 @@ eggs_wide <- eggs %>%
 vv <- eggs_wide %>% 
   unite(gp,regime, age,sep = "_",remove = FALSE) %>%
   remove_rownames %>% 
-  column_to_rownames(var="gp") 
+  column_to_rownames(var="gp") %>%
+  rename(Regime="regime")
+
+eh <- ggplot(vv, aes(x=age,y=numEggs,col=Regime)) +
+  geom_smooth(se = FALSE) +
+  scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73")) + #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
+  labs(x = "Age (days)", 
+       y = "Eggs per female per 3 hr") +
+  theme_half_open() +
+  my_theme
+eh <- eh + theme(legend.position = c(0.7, 0.7))
+eh
+
+er <- ggplot(vv, aes(x=age,y=numEggs,col=Regime)) +
+  geom_point(alpha=0.6) +
+  geom_smooth(method = "lm",se = FALSE) +
+  scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73")) + #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
+  labs(x = "Age (days)", 
+       y = "Eggs per female per 3 hr") +
+  theme_half_open() +
+  my_theme
+er <- er + theme(legend.position = c(0.7, 0.7))
+er
 
 vv <- vv %>% pivot_wider(names_from=regime,
               values_from = numEggs,
@@ -72,6 +94,16 @@ vv <- vv %>% select(-n) %>% drop_na() %>%
   remove_rownames %>% column_to_rownames(var="age")  
 
 vv %>% ts() %>% autoplot()
+
+###############
+vv <- vv %>% pivot_wider(names_from=regime,
+              values_from = c(age,numEggs),
+              values_fn = {mean})
+vv <- vv %>% select(-n) %>% drop_na() %>%
+  remove_rownames %>% column_to_rownames(var="age")  
+
+vv %>% ts() %>% ggplot(aes())
+################
 
 # Time series for each regime
 av <- vv$`C-C` %>% ts() %>%
