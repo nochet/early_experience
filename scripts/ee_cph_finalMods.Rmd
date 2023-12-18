@@ -16,11 +16,13 @@ library(forcats)
 library(car)
 library(broom)
 library(AICcmodavg)
+library(MuMIn)
 ```
 
 # Data
 
 ```{r}
+
 eelife <- read.csv("../processed/eeAlldat.csv") %>%
   select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex) 
 
@@ -42,6 +44,8 @@ eelifeM <- eelife %>%
 
 
 ```{r}
+set.seed(148)
+
 mf1 <- coxph(Surv(age, status) ~ larv_adult * strata(sex) + cageID, eelife)
 summary(mf1)
 cox.zph(mf1)
@@ -73,4 +77,81 @@ anova(mf1,mf2,mf3,mf4,mf5,mf6)
 anova(mf5,mf4)
 ```
 
+# Dredge a global model
+
+```{r}
+
+# Whole population
+
+mf7 <- coxph(Surv(age,status) ~ larv_adult*strata(sex) + cageID, data=eelife)
+summary(mf7)
+
+options(na.action = "na.fail") #required for dredge to run
+mf7_dr <- dredge(mf7, evaluate=TRUE,rank=AICc,trace=1)
+options(na.action = "na.omit") #set back to default
+nrow(mf7_dr)
+head(mf7_dr)
+
+top_mf7_dr <- get.models(mf7_dr, subset=1)[[1]]
+top_mf7_dr
+head(top_mf7_dr)
+summary(top_mf7_dr)
+
+# Dredge identified 2 competing models needing to average
+avmod7 <- summary(model.avg(mf7_dr, subset = delta <= 2))
+
+# Write table
+# Get top-most models, but fitted by REML:
+allflies <- get.models(mf7_dr, subset = delta < 4)
+
+# Coerce the model selection output to dataframe
+allflies_modsel<-as.data.frame(mf7_dr)[6:10]
+allflies_modsel[,2:5]<- round(allflies_modsel[,2:5],2)
+
+write.csv(allflies_modsel,"allflies_modsel.csv", row.names = F)
+
+
+
+# Females only
+mf8 <- coxph(Surv(age,status) ~ larv_adult*cageID, data=eelifeF)
+summary(mf8)
+
+options(na.action = "na.fail") #required for dredge to run
+mf8_dr <- dredge(mf8, evaluate=TRUE,rank=AICc,trace=1)
+options(na.action = "na.omit") #set back to default
+nrow(mf8_dr)
+head(mf8_dr)
+
+top_mf8_dr <- get.models(mf8_dr, subset=1)[[1]]
+top_mf8_dr
+head(top_mf8_dr)
+summary(top_mf8_dr)
+
+summary(model.avg(mf8_dr, subset = delta <= 2))
+
+females_modsel<-as.data.frame(mf8_dr)
+females_modsel[,6:9]<- round(females_modsel[,6:9],2)
+
+write.csv(females_modsel,"females_modsel.csv", row.names = F)
+
+
+# Males only
+mf9 <- coxph(Surv(age,status) ~ larv_adult*cageID, data=eelifeM)
+summary(mf9)
+
+options(na.action = "na.fail") #required for dredge to run
+mf9_dr <- dredge(mf9, evaluate=TRUE,rank=AICc,trace=1)
+options(na.action = "na.omit") #set back to default
+nrow(mf9_dr)
+head(mf9_dr)
+
+top_mf9_dr <- get.models(mf9_dr, subset=1)[[1]]
+top_mf9_dr
+head(top_mf9_dr)
+summary(top_mf9_dr)
+
+#summary(model.avg(mf9_dr, subset = delta <= 2))
+
+
+```
 
