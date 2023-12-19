@@ -36,6 +36,15 @@ STEP 4: A Bayesian approach
 
 ## Project Notes 
 
+
+## 2023-12-19
+
+Core datasets being used:
+Lifespan: "~/MyGithub/early_experience/processed/eeAlldat.csv"
+Fecundity: "~/MyGithub/early_experience/processed/tricount.txt"
+
+Redo some of the fecundity visuals into a panel.
+
 ## 2023-12-17
 dredge: Automated model selection can be performed on a large number of global models including coxph.
 See https://www.rdocumentation.org/packages/MuMIn/versions/1.7.0/topics/dredge

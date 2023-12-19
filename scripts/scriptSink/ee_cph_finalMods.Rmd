@@ -143,7 +143,7 @@ options(na.action = "na.fail") #required for dredge to run
 mf9_dr <- dredge(mf9, evaluate=TRUE,rank=AICc,trace=1)
 options(na.action = "na.omit") #set back to default
 nrow(mf9_dr)
-head(mf9_dr)
+mf9_dr
 
 top_mf9_dr <- get.models(mf9_dr, subset=1)[[1]]
 top_mf9_dr
@@ -151,6 +151,11 @@ head(top_mf9_dr)
 summary(top_mf9_dr)
 
 #summary(model.avg(mf9_dr, subset = delta <= 2))
+
+males_modsel<-as.data.frame(mf9_dr)
+males_modsel[,6:9]<- round(males_modsel[,6:9],2)
+
+write.csv(males_modsel,"males_modsel.csv", row.names = F)
 
 
 ```

@@ -42,8 +42,7 @@ hist(log(zdn$numEggs))
 
 ```
 
-# Time series fecundity over whole lifespan
-# Merge fecundity and lifespan data
+# ts fec over whole lifespan
 
 ```{r}
 
@@ -55,7 +54,6 @@ mp <- survfit(Surv(age, status) ~ larv_adult,
                    data = eelife)
 summary(mp)$table[, "median"]
 
-# Merge lifespan and fecundity
 eggs <- tidyr::unite(eggs,regime,larvalTreat,adultTreat,sep = "-",remove = FALSE)
 
 eggs_wide <- eggs %>%
@@ -90,17 +88,7 @@ er <- ggplot(vx, aes(x=age,y=numEggs,col=Regime)) +
 er <- er + theme(legend.position = c(0.7, 0.7))
 er
 
-ehr <- ggarrange(eh,er, ncol = 2, nrow = 1)
-
-
-ggsave(ehr,file = "../plots/eggs_timeSeries.pdf",
-                width = 5,height=3)
-```
-
-# Time series for each regime
-
-```{r}
-vv <- vx %>% pivot_wider(names_from=Regime,
+vv <- vv %>% pivot_wider(names_from=Regime,
               values_from = numEggs,
               values_fn = {mean})
 vv <- vv %>% select(-n) %>% drop_na() %>%
@@ -109,6 +97,7 @@ vv <- vv %>% select(-n) %>% drop_na() %>%
 vv %>% ts() %>% autoplot()
 
 
+# Time series for each regime
 av <- vv$`C-C` %>% ts() %>%
 
   # Identify change points
@@ -159,4 +148,62 @@ ggsave(ts,file = "../plots/eggs_ts_var_PELT_AIC.pdf",
                 width = 3,height=5)
 ```
 
+# ts fec up to median lifespan
+# ? cpt.meanvar
+
+```{r}
+aa <- eggs_wide %>% 
+  filter() %>%
+  unite(gp,regime, age,sep = "_",remove = FALSE) %>%
+  remove_rownames %>% 
+  column_to_rownames(var="gp") 
+
+vv <- aa %>% pivot_wider(names_from=regime,
+              values_from = numEggs,
+              values_fn = {mean})
+vv <- vv %>% select(-n) %>% drop_na() %>%
+  remove_rownames %>% column_to_rownames(var="age")  
+
+vv %>% ts() %>% autoplot()
+
+# Time series for each regime
+av <- vv$`C-C` %>% ts() %>%
+  changepoint:: cpt.meanvar(method = "BinSeg") %>%   # Identify change in mean and variance
+  autoplot(label.size = 3,cpt.col="grey")
+av <- av + theme_half_open() + 
+  my_theme + theme(legend.position = "top")
+
+aw <- vv$`C-DR` %>% ts() %>%
+  changepoint:: cpt.meanvar(method = "BinSeg") %>%  
+  autoplot(label.size = 3,cpt.col="grey")
+aw <- aw + theme_half_open() +
+  my_theme + theme(legend.position = "top")
+
+ax <- vv$`DR-C` %>% ts() %>%
+  changepoint:: cpt.meanvar(method = "BinSeg") %>%  
+  autoplot(label.size = 3,cpt.col="grey")
+ax <- ax + theme_half_open() +
+  my_theme + theme(legend.position = "top")
+
+ay <- vv$`DR-DR` %>% ts() %>%
+  changepoint:: cpt.meanvar(method = "BinSeg") %>%  
+  autoplot(label.size = 3,cpt.col="grey")
+ay <- ay + theme_half_open() + 
+  #labs(x = "Pre-median age (days)") +
+  my_theme + theme(legend.position = "top")
+
+eggs_ts <- ggarrange(av,aw,ax,ay, ncol = 1, nrow = 4,
+                 labels = c("C_C", "C_DR","DR_C","DR_DR"),
+                 font.label=list(size=10,face="plain",color="grey"),
+                 label.x = 1, label.y = 1)
+
+require(grid)
+ts <- annotate_figure(eggs_ts, 
+                left = textGrob("Mean per female eggs/day", 
+                                rot = 90, vjust = 1.5, gp = gpar(cex = 0.8)),
+                bottom = textGrob("Pre-median age (days)", vjust = -1,gp = gpar(cex = 0.8)))
+
+ggsave(ts,file = "../plots/eggs_binseg.pdf",
+                width = 3,height=5)
+```
 

@@ -72,17 +72,17 @@ zz
 lt <- zdn %>% 
   ggplot(aes(x = age, y = log(numEggs), color = Regime, group = Regime)) +
   geom_jitter(alpha = 0.6) +
-  geom_smooth(method='lm', formula= y~x, size=0.8) +
+  geom_smooth(method='lm', formula= y~x, size=0.8, se = FALSE) +
   scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73")) + #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
- theme(legend.key.size = unit(0.5, 'cm'), 
+ theme(legend.key.size = unit(0.4, 'cm'), 
         legend.key.height = unit(0.25, 'cm'), 
-        legend.key.width = unit(0.5, 'cm'), 
-        legend.title = element_text(size=11), 
-        legend.text = element_text(size=8)) +
+        legend.key.width = unit(0.4, 'cm'), 
+        legend.title = element_text(size=6), 
+        legend.text = element_text(size=6)) +
   labs(x = "Age (days)", y = "log(Lifetime fecundity") +
   theme_half_open() +
   my_theme
-lt <- lt + theme(legend.position = c(0.7, 0.8))
+lt <- lt + theme(legend.position = c(0.7,0.8))
     
 
 # Diet effects on lifetime fecundity
@@ -111,18 +111,8 @@ ltf <- ggarrange(lt,ltp,lts, ncol = 3, nrow = 1,
                  labels = c("a", "b","c"),
                  font.label = list(size = 10))
 ggsave(ltf,file = "../plots/lifetime_fec_reg.pdf",
-                width = 8,height=3)
+                width = 8,height=4)
 
-# Add cage
-ltimec <-lm(log(numEggs) ~ Regime + id, data=zdn)
-summary(ltimec)
-
-library(lme4)
-library(report)
-ltimecr <- lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
-summary(ltimecr)
-
-report(ltimecr) %>% as.data.frame()
 ```
 
 # Per female patterns
@@ -132,7 +122,7 @@ report(ltimecr) %>% as.data.frame()
 pp <- zdn %>% 
   ggplot(aes(x = age, y = log(eggpFemDay), color = Regime, group = Regime)) +
   geom_jitter(alpha = 0.6) +
-  geom_smooth(method='lm', formula= y~x,size=0.8) +
+  geom_smooth(method='lm', formula= y~x,size=0.8, se = FALSE) +
   scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
   # scale_colour_OkabeIto() +
   # tx_color_map() +
@@ -143,6 +133,7 @@ pp <- zdn %>%
   my_theme
 
 pp <-  pp + theme(legend.position = "none")
+pp
 
 # Diet effects on per female fecundity
 pff <-lm(log(eggpFemDay) ~ Regime, data=zdn)
@@ -157,6 +148,7 @@ pffe <- effect_plot(pff, pred=Regime, interval=TRUE,
                    point.alpha=0.2, y.label="log(Eggs/female/day)",
                    x.label="Diet Regime",data=zdn)
 pffe <- pffe + geom_point(color=c("#009E73","#56B4E9","#E69F00", "#000000")) + theme_half_open() + my_theme
+
 
 pffs <- plot_summs(pff,inner_ci_level = .9,
                   plot.distributions = FALSE,
@@ -174,8 +166,9 @@ ggsave(pfdf,file = "../plots/per_female_fec_reg.pdf",
 fec <- ggarrange(ltf,pfdf, ncol = 1, nrow = 2,
                  font.label = list(size = 10))
 ggsave(fec,file = "../plots/fec_panel.pdf",
-                width = 8,height=4)
+                width = 8,height=6)
 
+# Random effect 'id'
 pfec <-lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
 summary(pfec)
 report(pfec) 
@@ -190,7 +183,8 @@ aa <- zdn %>%
   ggplot(aes(x = age, y = log(eggpFemDay),
              color=larvalTreat, group_by(larvalTreat))) +
   geom_jitter(alpha = 0.6) +
-  geom_smooth(size=0.8) +
+  geom_smooth(size=0.8,method = "lm",se = FALSE) +
+  #geom_smooth() +
   scale_color_manual(values=c("#000000", "#E69F00")) +
   # scale_colour_OkabeIto() +
   # tx_color_map() +
@@ -201,6 +195,7 @@ aa <- zdn %>%
   my_theme
 
 aa <- aa + theme(legend.position = "top")
+aa
 
 # aam <-lm(log(eggpFemDay) ~ larvalTreat, data=zdn)
 # summary(aam)
@@ -233,7 +228,8 @@ bb <- zdn %>%
   ggplot(aes(x = age, y = log(eggpFemDay), color = adultTreat,
              group_by(adultTreat))) +
   geom_jitter(alpha = 0.6) +
-  geom_smooth(size=0.8) +
+  #geom_smooth(size=0.8) +
+  geom_smooth(size=0.8,method = "lm",se = FALSE) +
   scale_color_manual(values=c("#000000", "#E69F00")) +
   # scale_colour_OkabeIto() +
   # tx_color_map() +
@@ -244,6 +240,7 @@ bb <- zdn %>%
   my_theme
 
 bb <- bb + theme(legend.position = "top")
+bb
 
 # bb <- bb + theme(
 #   strip.background = element_blank(),
@@ -270,7 +267,7 @@ eggs <- ggarrange(aa,bb, ncol = 2, nrow = 1,
                  labels = c("g", "h"),
                  font.label = list(size = 10))
 
-ggsave(eggs,file = "../plots/eggs_perFemale_perDay.pdf",
+ggsave(eggs,file = "../plots/eggs_perFemale_perDay_lm.pdf",
                 width = 5,height=3)
 
 
