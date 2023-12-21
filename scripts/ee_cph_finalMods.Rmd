@@ -83,7 +83,7 @@ anova(mf5,mf4)
 
 # Whole population
 
-mf7 <- coxph(Surv(age,status) ~ larv_adult*strata(sex) + cageID, data=eelife)
+mf7 <- coxph(Surv(age,status) ~ larv_adult*strata(sex) + larv_adult*cageID, data=eelife)
 summary(mf7)
 
 options(na.action = "na.fail") #required for dredge to run

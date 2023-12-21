@@ -316,7 +316,7 @@ se = function(x) sd(x)/sqrt(length(x))
 
 zdn$Regime <- gsub("\\d", "", zdn$id)
                             
-quantile(zdn$age)
+quantile(zdn$age, prob = c(0.1,0.5,0.9))
 
 
 uq25 <- filter(zdn, age <= 20) %>%
@@ -356,19 +356,19 @@ uq75se$Quartile <- "q75"
 
 
 uq100 <- filter(zdn, age %in% (60:85)) %>%
-  dplyr::select(Regime,age,eggpFemDay)
+  dplyr::select(Regime, age, eggpFemDay)
 uq100$Quartile <- "q100"
 
 uq100se <- uq100 %>%
-  dplyr::select(Regime,age,eggpFemDay) %>%
+  dplyr::select(Regime, age, eggpFemDay) %>%
   group_by(Regime) %>%
   summarise(qe = mean(eggpFemDay, na.rm = TRUE),
             qse = se(eggpFemDay))
 uq100se$Quartile <- "q100"
 
 
-uq <- rbind(uq25,uq50,uq75,uq100)
-uqse <- rbind(uq25se,uq50se,uq75se,uq100se)
+uq <- rbind(uq25, uq50, uq75, uq100)
+uqse <- rbind(uq25se, uq50se, uq75se, uq100se)
 
 
 tf <- uq %>%
@@ -395,6 +395,103 @@ ggsave(tf,file = "../plots/Eggs_perFemale_Quartile.pdf",
 
 ```
 
+```{r}
+# Lifespan
+
+mmm <- read.csv("../processed/mini-med-max.csv")
+#zdn$sgroup <- gsub("\\d", "", zdn$id)
+#edata <- edata[order(edata$age),]
+
+mmm$X <- gsub("[a-z]", "", mmm$X)
+mmm$X <- gsub("T=", "", mmm$X)
+mmm$X <- gsub("=", "", mmm$X)
+mmm$X <- gsub(", ", "_", mmm$X)
+mmm$X <- gsub(" ", "", mmm$X)
+
+mmm <- mmm%>%
+  rename(sgroup="X",
+         q10="quantile.10",ci10l="lower.10",ci10h="upper.10",
+         q50="quantile.50",ci50l="lower.50",ci50h="upper.50",
+         q90="quantile.90",ci90l="lower.90",ci90h="upper.90") %>%
+  unite("ci10",ci10l,ci10h,sep="-") %>%
+  unite("ci50",ci50l,ci50h,sep="-") %>%
+  unite("ci90",ci90l,ci90h,sep="-")
+
+mfemale <- mmm %>%
+  filter(stringr::str_detect(sgroup, "_F"))
+
+mfemale$Regime <- str_split(mfemale$sgroup, "_F", simplify = TRUE)[,1] 
+
+mfemale <- dplyr::select(mfemale, Regime,q10,q50,q90) %>%
+  pivot_longer(cols=2:4,names_to = "Quartile",values_to="surv_prob")
+mfemale$Regime <- as.factor(mfemale$Regime)
+mfemale <- mfemale[order(mfemale$Regime), ]
+
+quantile(zdn$age, prob = c(0.1,0.5,0.9))
+
+
+uq10 <- filter(zdn, age <= 15) %>%
+  dplyr::select(Regime,age,eggpFemDay)
+uq10$Quartile <- "q10"
+
+uq10se <- uq10 %>%
+  dplyr::select(Regime,age,eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+              qse = se(eggpFemDay))
+uq10se$Quartile <- "q10"
+
+
+uq50 <- filter(zdn, age %in% (26:40)) %>%
+  dplyr::select(Regime,age,eggpFemDay)
+uq50$Quartile <- "q50"
+
+uq50se <- uq50 %>%
+  dplyr::select(Regime,age,eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+              qse = se(eggpFemDay))
+uq50se$Quartile <- "q50"
+
+
+uq90 <- filter(zdn, age %in% (57:68)) %>%
+  dplyr::select(Regime,age,eggpFemDay)
+uq90$Quartile <- "q90"
+
+uq90se <- uq90 %>%
+  dplyr::select(Regime,age,eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+              qse = se(eggpFemDay))
+uq90se$Quartile <- "q90"
+
+
+uq100 <- filter(zdn, age %in% (70:85)) %>%
+  dplyr::select(Regime, age, eggpFemDay)
+uq100$Quartile <- "q100"
+
+uq100se <- uq100 %>%
+  dplyr::select(Regime, age, eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+            qse = se(eggpFemDay))
+uq100se$Quartile <- "q100"
+
+
+uq <- rbind(uq10, uq50, uq90)
+uqse <- rbind(uq10se, uq50se, uq90se)
+uqse$Regime <- as.factor(uqse$Regime)
+uqse <- uqse[order(uqse$Regime), ]
+
+tgt <- cbind(mfemale,uqse)
+tgt <- tgt[,c(1:3,5:6)]
+tgt <- rename(tgt,Regime="Regime", Q="Quartile",sprob="surv_prob",
+              mean_eggs="qe",qse="qse")
+
+ggplot(tgt, aes(x=sprob,y=mean_eggs,group=Q,col=Regime)) +
+  geom_point()
+
+```
 
 
 

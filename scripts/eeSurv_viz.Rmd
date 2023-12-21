@@ -185,6 +185,9 @@ write.csv(sum_survfit,
 write.csv(quantile(mf, probs = c(0.25, 0.5, 0.75)), 
           file = "../processed/quantiles.csv")
 
+write.csv(quantile(mf, probs = c(0.9, 0.5, 0.1)), 
+          file = "../processed/mini-med-max.csv")
+
 # OkabeIto palette in Hex: "#000000","#E69F00","#56B4E9",
 # "#009E73", #F0E442","#0072B2","#D55E00","#CC79A7"
 
@@ -241,31 +244,16 @@ head(mftab)
 
 mfilt <- subset(mftab, surv %in% c(0.9,0.5,0.1))
 mfilt$strata <- gsub(",[^=]+=", "_",mfilt$strata) # remove everything between ',' and '=', add '_'
-mfilt$Diet <- gsub(".*=","",mfilt$strata) # remove everything before '='
+mfilt$Diet <- gsub(" .*","",mfilt$strata) # remove everything before '='
+mfilt$Diet <- gsub(".*=", "",mfilt$Diet) # Remove all before and up to "=":
+
+
 
 # Aggregate by treatment
 #mpfilt$strata <- as.factor(mpfilt$strata)
 mfeval <- mfilt %>%
   group_by(Diet,surv) %>%
   summarise_at(c("time", "std.err", "lower", "upper"), mean, na.rm = TRUE)
-
-jx <- ggplot(mpeval, aes(x=surv, y=time, group=Diet, color=Diet)) + 
-  #geom_line() +
-  geom_point(alpha=0.6)+
-  geom_errorbar(aes(ymin=surv-std.err, ymax=surv+std.err),alpha=0.6) +
-  #scale_colour_discrete("Diet \n combination") +
-  facet_grid(cols=vars(Diet), rows=vars(surv), scales= "free_y") +
-  scale_x_continuous(limits = c(0, 80), breaks = seq(0, 80, by = 25)) +
-  scale_color_manual(values=c("#999999", "#E69F00","#56B4E9", "#009E73")) +
-  labs(x = "Age (days)", y = "Quantile survival") +
-  theme(legend.position = "none") +
-  my_theme +
-  theme_half_open()
-jx
-
-ggsave(jx,file = "~/MyGithub/early_experience/plots/Quantplots_thumbnail.pdf",
-  width = 4,
-  height = 2)
 
 ```
 ###################
@@ -300,7 +288,7 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
                      font.main = 10,
                      risk.table = FALSE,
                      #legend="none",
-                     legend = c(0.9, 0.8), 
+                     legend = c(0.8, 0.8), 
                      #risk.table.pos = "in",      
                      # ggtheme = theme_classic2(base_family = "Arial"),
                      # font.family = "Arial",
@@ -462,8 +450,8 @@ splots_out <- arrange_ggsurvplots(
 ggsave(
   splots_out,
   file = "~/MyGithub/early_experience/plots/SurvPlots_for_larvalDiet.pdf",
-  width = 6,
-  height = 5)
+  width = 5,
+  height = 4)
 ```
 
 # Survival at 90%, 50% and 10% survival
