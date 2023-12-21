@@ -122,7 +122,7 @@ ggsave(ltf,file = "../plots/lifetime_fec_reg.pdf",
 pp <- zdn %>% 
   ggplot(aes(x = age, y = log(eggpFemDay), color = Regime, group = Regime)) +
   geom_jitter(alpha = 0.6) +
-  geom_smooth(method='lm', formula= y~x,size=0.8, se = FALSE) +
+  geom_smooth(method='lm', formula= y~x, se = FALSE,size=0.8) +
   scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
   # scale_colour_OkabeIto() +
   # tx_color_map() +
@@ -169,9 +169,9 @@ ggsave(fec,file = "../plots/fec_panel.pdf",
                 width = 8,height=6)
 
 # Random effect 'id'
-pfec <-lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
+pfec <-lme4::lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
 summary(pfec)
-report(pfec) 
+report::report(pfec) 
 ```
 
 # Daily per female fecundity grouped by: 1) larval diet; 2) adult diet
@@ -222,7 +222,8 @@ aa
 #                  font.label = list(size = 10))
 # ggsave(aamf,file = "../plots/per_female_fec_larv.pdf",
 #                 width = 8,height=2)
-# 
+
+
 # # Group by adult diet
 bb <- zdn %>%
   ggplot(aes(x = age, y = log(eggpFemDay), color = adultTreat,
@@ -242,10 +243,7 @@ bb <- zdn %>%
 bb <- bb + theme(legend.position = "top")
 bb
 
-# bb <- bb + theme(
-#   strip.background = element_blank(),
-#   strip.text.x = element_blank())
-# 
+
 # cc <- zdn %>% 
 #   ggplot(aes(x = age, y = eggpFemDay, color = larvalTreat, group = Regime)) +
 #   geom_jitter(alpha=0.6) +
@@ -261,8 +259,11 @@ bb
 # 
 # cc <- cc + theme(strip.background = element_blank(),
 #            strip.text.x = element_blank())
-# 
+
+
+
 # # On the same page
+
 eggs <- ggarrange(aa,bb, ncol = 2, nrow = 1,
                  labels = c("g", "h"),
                  font.label = list(size = 10))
@@ -376,7 +377,7 @@ tf <- uq %>%
   group_by(Quartile) %>%
   ggplot(aes(age,eggpFemDay,color=Quartile)) +
   geom_jitter(size=3, alpha = 0.6) +
-  geom_smooth(se=FALSE,color="black") +
+  geom_smooth(se=FALSE,color="black",size=0.8) +
   #geom = c("point", "line",data=uqse,aes(Regime,qe)) +
   #facet_grid(. ~ Regime) +
   facet_grid(cols=vars(Regime), rows=vars(Quartile), scales= "free_y") +
@@ -385,19 +386,15 @@ tf <- uq %>%
   xlab("Age (Days)") + ylab("Eggs/female/day") +
   my_theme +
   theme_half_open() 
-tf + labs(fill = "Quartile")
+tf <- tf + labs(fill = "Quartile")
 
 ggsave(tf,file = "../plots/Eggs_perFemale_Quartiles.pdf",
                 width = 6,height=4)
 ggsave(tf,file = "../plots/Eggs_perFemale_Quartile.pdf",
                 width = 8,height=6)
 
-
-# library(grid)
-# grid.newpage()
-# grid.draw(rbind(ggplotGrob(tv), ggplotGrob(tt), size = "last"))
-
 ```
+
 
 
 

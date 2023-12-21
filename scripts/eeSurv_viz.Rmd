@@ -32,7 +32,6 @@ legSize <- function(myPlot, pointSize = 1.5, textSize = 10, spaceLegend = 1.0) {
 ```{r}
 library(survival)
 library(survminer)
-library(splines)
 library(tidyverse) 
 library(forcats)
 library(cowplot)
@@ -42,7 +41,8 @@ library(visR)
 
 
 #source("color_map.R")
-source("~/MyGithub/Functions_and_Themes/ggplot_theme.R")
+source("../../Functions_and_Themes/color_map.R")
+source("../../Functions_and_Themes/ggplot_theme.R")
 
 ```
 
@@ -50,20 +50,20 @@ source("~/MyGithub/Functions_and_Themes/ggplot_theme.R")
 
 ```{r}
 # Female data
-eelife <- read.table('../ProcessedData/Female_events_lifespan.txt',
+eelife <- read.table('~/MyGithub/early_experience/processed/Female_events_eelife.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
 
-eelifeF <- select(eelifeF, -setDate, -flipDate, -age)
+eelifeF <- select(eelife, -setDate, -flipDate, -age)
 names(eelifeF)[1:2]<-c("age", "cageID")
 eelifeF$sex <- "F"
 
 # Male data
-eelifeM <- read.table('../processed/Male_events_eelife.txt',
+eelifeM <- read.table('~/MyGithub/early_experience/processed/Male_events_eelife.txt',
                      sep = "\t", header = TRUE,
                      stringsAsFactors = FALSE) 
 
-eelifeM <- select(eelifeM, -setDate, -flipDate, -age)
+eelifeM <- select(eelife, -setDate, -flipDate, -age)
 names(eelifeM)[1:2]<-c("age", "cageID")
 eelifeM$sex <- "M"
   
@@ -75,7 +75,7 @@ eelife <- na.omit(eelife)
 
 eelife$status <- ifelse(eelife[,"status"] == 2, 1, 0)
 
-write.csv(eelife, file="../processed/eeAlldat.csv, row.names = FALSE")
+write.csv(eelife, file="~/MyGithub/early_experience/processed/eeAlldat.csv, row.names = FALSE")
 ```
 
 # Testing developmental theories
@@ -91,7 +91,7 @@ write.csv(eelife, file="../processed/eeAlldat.csv, row.names = FALSE")
 
 ```{r}
 
-eelife <- read.csv("../processed/eeAlldat.csv") %>%
+eelife <- read.csv("~/MyGithub/early_experience/processed/eeAlldat.csv") %>%
   select(-X)
 
 # Look at distribution of events
@@ -139,6 +139,7 @@ mp.plot <- ggsurvplot(mp, data = eelife,
                      legend.title = "Diet \n combination") +
                      guides(colour = guide_legend(nrow = 4)) +
   xlab("Age (days)")
+
 mp.plot
 
 ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", last_plot(),device = "pdf")
@@ -162,29 +163,8 @@ surv_pvalue(mpc)
 mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
 #summary(mp,times=c(1,2,3))
 
-ggsave(jx,file = "~/MyGithub/early_experience/plots/Quantplots_thumbnail.pdf",
-  width = 4,
-  height = 2)
 ```
 
-##################
-```{r}
-mp <- survfit(Surv(age, status) ~ larvalTreat + adultTreat,
-                  group_by = "sex",
-                   data = eelife)
-
-mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
-cols <- lapply(c(2:7, 10,15:16) , function(x) mpsum[x])
-mptab <- do.call(data.frame, cols)
-mptab$surv <- round(mptab$surv,digits = 1)
-head(mptab)
-
-mpfilt <- subset(mptab, surv %in% c(0.9,0.5,0.1))
-mpfilt$strata <- gsub(",[^=]+=", "_",mpfilt$strata) # remove everything between ',' and '=', add '_'
-mpfilt$Diet <- gsub(".*=","",mpfilt$strata) # remove everything before '='
-
-```
-###################
 
 ```{r}
 mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
@@ -195,7 +175,7 @@ mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
                    data = eelife)
 #summary(mf)
 summary(mf)$table[, "median"]
-#surv_summary(mf, data = eelife)
+sum_survfit <- surv_summary(mf, data = eelife)
 
 write.csv(sum_survfit, 
           file = "../processed/SummarySurvModel_larvAdulSex.csv",

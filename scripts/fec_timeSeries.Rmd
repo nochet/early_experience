@@ -18,6 +18,9 @@ library(ggfortify)
 library(magrittr) # for piping %>%
 library(survival)
 library(changepoint)
+library(grid)
+library(gridExtra)
+library(lattice)
 
 source("../../Functions_and_Themes/color_map.R")
 source("../../Functions_and_Themes/ggplot_theme.R")
@@ -40,6 +43,11 @@ head(zdn)
 zdn %>% group_by(id) %>% summarise(sum(numEggs),n=n())
 hist(log(zdn$numEggs))
 
+# Create regime column
+zdn$Regime <- gsub("\\d", "", zdn$id)
+
+
+
 ```
 
 # Time series fecundity over whole lifespan
@@ -56,7 +64,7 @@ mp <- survfit(Surv(age, status) ~ larv_adult,
 summary(mp)$table[, "median"]
 
 # Merge lifespan and fecundity
-eggs <- tidyr::unite(eggs,regime,larvalTreat,adultTreat,sep = "-",remove = FALSE)
+eggs <- tidyr::unite(zdn,regime,larvalTreat,adultTreat,sep = "-",remove = FALSE)
 
 eggs_wide <- eggs %>%
   select(age,id, regime, numEggs) %>% 
@@ -71,6 +79,7 @@ vx <- eggs_wide %>%
 
 eh <- ggplot(vx, aes(x=age,y=numEggs,col=Regime)) +
   geom_smooth(se = FALSE) +
+  geom_point(alpha=0.6) +
   scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9", "#009E73")) + #"#F0E442", "#0072B2", "#D55E00", "#CC79A7")) +
   labs(x = "Age (days)", 
        y = "Mean per female per 3 hrs") +
@@ -97,7 +106,7 @@ ggsave(ehr,file = "../plots/eggs_timeSeries.pdf",
                 width = 5,height=3)
 ```
 
-# Time series for each regime
+# Time series for each regime 
 
 ```{r}
 vv <- vx %>% pivot_wider(names_from=Regime,
@@ -111,17 +120,17 @@ vv %>% ts() %>% autoplot()
 
 av <- vv$`C-C` %>% ts() %>%
 
-  # Identify change points
-  changepoint:: cpt.var(penalty="AIC",method="PELT",
+# Identify change points
+changepoint:: cpt.mean(penalty="AIC",method="PELT",
                             class=TRUE,param.estimates=TRUE) %>% 
-  #summarise(var(values)) %>%
+#summarise(var(values)) %>%
   autoplot(label.size = 3, cpt.col="grey")
 av <- av + theme_half_open() +
   my_theme + theme(legend.position = "top")
 av
 
 aw <- vv$`C-DR` %>% ts() %>%
-  changepoint:: cpt.var(penalty="AIC",method="PELT",
+  changepoint:: cpt.mean(penalty="AIC",method="PELT",
                             class=TRUE,param.estimates=TRUE) %>%  
   autoplot(label.size = 3, cpt.col="grey")
 aw <- aw + theme_half_open() +
@@ -129,7 +138,7 @@ aw <- aw + theme_half_open() +
 aw
 
 ax <- vv$`DR-C` %>% ts() %>%
-  changepoint:: cpt.var(penalty="AIC",method="PELT",
+  changepoint:: cpt.mean(penalty="AIC",method="PELT",
                             class=TRUE,param.estimates=TRUE) %>%  
   autoplot(label.size = 3, cpt.col="grey")
 ax <- ax + theme_half_open() +
@@ -137,7 +146,7 @@ ax <- ax + theme_half_open() +
 ax
 
 ay <- vv$`DR-DR` %>% ts() %>%
-  changepoint:: cpt.var(penalty="AIC",method="PELT",
+  changepoint:: cpt.mean(penalty="AIC",method="PELT",
                             class=TRUE,param.estimates=TRUE) %>%  
   autoplot(label.size = 3, cpt.col="grey")
 ay <- ay + theme_half_open() +
@@ -155,8 +164,146 @@ ts <- annotate_figure(eggs_ts,
                                 rot = 90, vjust = 1.5, gp = gpar(cex = 0.8)),
                 bottom = textGrob("Age (days)", vjust = -1,gp = gpar(cex = 0.8)))
 
-ggsave(ts,file = "../plots/eggs_ts_var_PELT_AIC.pdf",
+ggsave(ts,file = "../plots/eggs_ts_mean_PELT_AIC.pdf",
                 width = 3,height=5)
 ```
 
+# Reaction norms
+
+```{r}
+norms <- zdn[,c("larvalTreat","adultTreat","eggpFemDay","Regime")]
+
+# Calculate means
+
+# Get the four main treatments
+C_DR <- subset(norms,larvalTreat=="C" & adultTreat=="DR")
+C_C <- subset(norms,larvalTreat=="C" & adultTreat=="C")
+DR_C <- subset(norms,larvalTreat=="DR" & adultTreat=="C")
+DR_DR <- subset(norms,larvalTreat=="C" & adultTreat=="DR")
+
+remed <- C_DR %>%
+  group_by(adultTreat) %>%
+  summarise(med_eggs = mean(eggpFemDay), n = n())
+colnames(remed) <- c("adult", "mean_eggs", "N")
+remed$grp <- "C_DR"
+
+pemed <- C_C %>%
+  group_by(adultTreat) %>%
+  summarise(med_eggs = mean(eggpFemDay), n = n())
+colnames(pemed) <- c("adult", "mean_eggs", "N")
+pemed$grp <- "C_C"
+
+kemed <- DR_C %>%
+  group_by(adultTreat) %>%
+  summarise(med_eggs = mean(eggpFemDay), n = n())
+colnames(kemed) <- c("adult", "mean_eggs", "N")
+kemed$grp <- "DR_C"
+
+temed <- DR_DR %>%
+  group_by(adultTreat) %>%
+  summarise(med_eggs = mean(eggpFemDay), n = n())
+colnames(temed) <- c("adult", "mean_eggs", "N")
+temed$grp <- "DR_DR"
+
+
+med <- rbind(remed,pemed,kemed,temed)
+# Join data frames
+med.all <- select(med, grp,adult,mean_eggs,N)
+
+med.all$larval <- gsub("_.*","",med.all$grp)
+CC <- 0
+CDR <- med.all$mean_eggs[[1]]-med.all$mean_eggs[[2]]
+DRC <- med.all$mean_eggs[[3]]-med.all$mean_eggs[[2]]
+DRDR <- med.all$mean_eggs[[4]]-med.all$mean_eggs[[2]]
+med.all$chg <- c(CDR,CC,DRC,DRDR) 
+
+med.all <- med.all[order(med.all$chg),]
+#med.all <- select(med.all, grp,chg)
+# all.piv <- pivot_wider(med.all,
+#     names_from = adult,
+#     values_from = mean_eggs,
+#     values_fill = 0
+#     )
+
+fec_norms <- ggplot(med.all,aes(x=grp, y=chg,group=1)) +
+  geom_line(col="black") +
+  geom_point(size=3, col="grey") +
+  guides(color = guide_legend(title = "Larval Diet")) +
+  labs(x = "Adult Diet", y = "Mean change per 3hrs") +
+  theme_half_open() +
+  my_theme
+#lt <- lt + theme(legend.position = c(0.7,0.8))
+
+
+
+
+# Group by larval diet
+aa <- zdn %>%
+  ggplot(aes(x = age, y = log(eggpFemDay),
+             color=larvalTreat, group_by(larvalTreat))) +
+  geom_jitter(alpha = 0.6) +
+  geom_smooth(size=0.8,se = FALSE) +
+  #geom_smooth() +
+  scale_color_manual(values=c("#000000", "#E69F00")) +
+  # scale_colour_OkabeIto() +
+  # tx_color_map() +
+  #facet_grid(. ~ larvalTreat) +
+  labs(x = "Age (days)", y = "log(Eggs per female per 3 hrs)") +
+  theme(legend.position = "none") +
+  theme_half_open() +
+  my_theme
+
+aa <- aa + theme(legend.position = "top")
+aa
+
+ aam <-lm(log(eggpFemDay) ~ larvalTreat, data=zdn)
+ summary(aam)
+
+
+# Group by adult diet
+
+bb <- zdn %>%
+  ggplot(aes(x = age, y = log(eggpFemDay), color = adultTreat,
+             group_by(adultTreat))) +
+  geom_jitter(alpha = 0.6) +
+  #geom_smooth(size=0.8) +
+  geom_smooth(size=0.8,se = FALSE) +
+  scale_color_manual(values=c("#000000", "#E69F00")) +
+  # scale_colour_OkabeIto() +
+  # tx_color_map() +
+  #facet_grid(. ~ larvalTreat) +
+  labs(x = "Age (days)", y = "log(Eggs per female per 3 hrs)") +
+  #theme(legend.position = "none") +
+  theme_half_open() +
+  my_theme
+
+bb <- bb + theme(legend.position = "top")
+bb
+
+# # On the same page
+
+eggs <- ggarrange(aa,fec_norms, bb,ts, ncol = 2, nrow = 3,
+                 labels = c("a","c", "b","d"),
+                 font.label = list(size = 10))
+
+ggsave(eggs,file = "../plots/eggs_perFemale_changepoints.pdf",
+                width = 5,height=5)
+```
+
+# On same frame
+
+```{r}
+pdf("../plots/eggs_perFemale_changepoints.pdf",width = 4.5,height=6)
+
+pushViewport(viewport(layout = grid.layout(3, 2)))
+vplayout <- function(x, y) 
+  viewport(layout.pos.row = x, layout.pos.col = y)
+print(ts, vp = vplayout(1:3, 2))
+print(aa, vp = vplayout(1, 1))
+print(bb, vp = vplayout(2, 1))
+vb <- print(fec_norms, vp = vplayout(3, 1))
+
+dev.off()
+
+```
 

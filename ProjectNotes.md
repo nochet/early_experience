@@ -37,8 +37,23 @@ STEP 4: A Bayesian approach
 ## Project Notes 
 
 
-## 2023-12-19
+## 2023-12-20
+Complex plot arrangement:
 
+Use grid R package
+
+The grid R package can be used to create a complex layout with the help of the function grid.layout(). It provides also the helper function viewport() to define a region or a viewport on the layout. The function print() is used to place plots in a specified region.
+
+The different steps can be summarized as follow :
+
+1. Create plots : p1, p2, p3, ….
+2. Move to a new page on a grid device using the function grid.newpage()
+3. Create a layout 2X2 - number of columns = 2; number of rows = 2
+4. Define a grid viewport : a rectangular region on a graphics device
+5. Print a plot into the viewport
+Source: http://www.sthda.com/english/articles/24-ggpubr-publication-ready-plots/81-ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page/
+
+## 2023-12-19
 Core datasets being used:
 Lifespan: "~/MyGithub/early_experience/processed/eeAlldat.csv"
 Fecundity: "~/MyGithub/early_experience/processed/tricount.txt"
