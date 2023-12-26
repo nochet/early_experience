@@ -160,9 +160,9 @@ eggs_ts <- ggarrange(av,aw,ax,ay, ncol = 1, nrow = 4,
 
 require(grid)
 ts <- annotate_figure(eggs_ts, 
-                left = textGrob("var per female per 3 hrs", 
+                left = textGrob("Mean per female per 3 hrs", 
                                 rot = 90, vjust = 1.5, gp = gpar(cex = 0.8)),
-                bottom = textGrob("Age (days)", vjust = -1,gp = gpar(cex = 0.8)))
+                bottom = textGrob("Time Index", vjust = -1,gp = gpar(cex = 0.8)))
 
 ggsave(ts,file = "../plots/eggs_ts_mean_PELT_AIC.pdf",
                 width = 3,height=5)

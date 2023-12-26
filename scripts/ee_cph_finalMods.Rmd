@@ -90,23 +90,24 @@ options(na.action = "na.fail") #required for dredge to run
 mf7_dr <- dredge(mf7, evaluate=TRUE,rank=AICc,trace=1)
 options(na.action = "na.omit") #set back to default
 nrow(mf7_dr)
-head(mf7_dr)
+#head(mf7_dr)
+mf7_dr
 
 top_mf7_dr <- get.models(mf7_dr, subset=1)[[1]]
 top_mf7_dr
 head(top_mf7_dr)
 summary(top_mf7_dr)
 
-# Dredge identified 2 competing models needing to average
+# Dredge identified 3 competing models needing to average
 avmod7 <- summary(model.avg(mf7_dr, subset = delta <= 2))
 
 # Write table
-# Get top-most models, but fitted by REML:
-allflies <- get.models(mf7_dr, subset = delta < 4)
+# Get top-most models:
+allflies <- get.models(mf7_dr, subset = delta < 2) # AIC cutoff
 
 # Coerce the model selection output to dataframe
-allflies_modsel<-as.data.frame(mf7_dr)[6:10]
-allflies_modsel[,2:5]<- round(allflies_modsel[,2:5],2)
+allflies_modsel<-as.data.frame(mf7_dr) #[6:10]
+#allflies_modsel<- round(allflies_modsel[,2:5],2)
 
 write.csv(allflies_modsel,"allflies_modsel.csv", row.names = F)
 
@@ -127,12 +128,15 @@ top_mf8_dr
 head(top_mf8_dr)
 summary(top_mf8_dr)
 
-summary(model.avg(mf8_dr, subset = delta <= 2))
+avmod8 <- summary(model.avg(mf8_dr, subset = delta <= 2))
 
 females_modsel<-as.data.frame(mf8_dr)
 females_modsel[,6:9]<- round(females_modsel[,6:9],2)
 
 write.csv(females_modsel,"females_modsel.csv", row.names = F)
+
+mfm4 <- coxph(Surv(age,status) ~ larv_adult, data=eelifeF)
+summary(mfm4)
 
 
 # Males only

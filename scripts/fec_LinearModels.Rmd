@@ -1,0 +1,132 @@
+---
+title: "Lifetime fecundity"
+author: "Enoch Ng'oma"
+date: "March 10, 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+
+library(tidyverse) 
+library(cowplot)
+library(gplots)
+library(gdata)
+library(gtools)
+
+source("color_map.R")
+source("ggplot_theme.R")
+```
+
+# Fecundity data
+
+```{r}
+eggs <- read.table("~/MyGithub/early_experience/processed/tricount.txt",
+            sep = '\t', header = TRUE)
+
+zdn <-eggs %>%  
+  dplyr::select(id,age,cam_id,larvalTreat,adultTreat,
+                NstartF,alive,aj1_count,aj2_count,dd1_count,numEggs,
+                eggpDay,eggpFemDay)
+head(zdn)
+
+zdn %>% group_by(id) %>% summarise(sum(numEggs),n=n())
+hist(log(zdn$numEggs))
+
+```
+
+# Age-specific fecundity
+
+```{r}
+
+ltime <- unite(zdn, "larad", larvalTreat, 
+               adultTreat, sep = "_", remove=FALSE) %>%
+  select(id, larad, age,  larvalTreat, adultTreat, 
+         numEggs, eggpDay, eggpFemDay) %>%
+  rename(cage="id")
+
+ltime$cage <- as.factor(ltime$cage)
+ltime$larad <- as.factor(ltime$larad)
+
+fii <- ltime %>% group_by(larad) %>%
+  summarise(Samu = sum(numEggs))
+fii
+
+pairwise.t.test(ltime$numEggs, ltime$larad)
+```
+
+# Effect of larval treatment on fecundity
+
+- Larval diet has effect (***, ncq)
+- Some effect of cage (*, ncq2)
+- DR_C combination increases fecundity (***,nqc3b)
+- Larval DR has effect(**,nql1,nql3)
+- Adult DR has some effect (*. nql2)
+- Larval DR interacts with adult DR (**,nql4)
+- Interaction disappears if adult diet included as main effect (nql5)
+
+```{r}
+nqc1 <- aov(eggpFemDay ~ larad, data = ltime)
+nqc2 <- aov(eggpFemDay ~ larad + id, data = ltime)
+
+plotmeans(eggpFemDay ~ id, data = ltime)
+plotmeans(eggpFemDay ~ larad, data = ltime)
+
+# Effect of larval diet
+nql1 <- lm(eggpFemDay ~ larvalTreat, data = ltime)
+nql2 <- lm(eggpFemDay ~ adultTreat, data = ltime)
+nql3 <- lm(eggpFemDay ~ larvalTreat + adultTreat, data = ltime)
+nql4 <- lm(eggpFemDay ~larvalTreat + larvalTreat:adultTreat, data = ltime)
+nql5 <- lm(eggpFemDay ~larvalTreat + adultTreat + 
+             larvalTreat:adultTreat, data = ltime)
+
+summary(nql1)
+summary(nql2)
+summary(nql3)
+summary(nql4)
+summary(nql5)
+
+```
+
+# Dredge a saturated per female per 3-hr model
+
+```{r}
+# Per female per day
+egg_lm <- lm(eggpFemDay ~ larad*age + larad*cage, data=ltime)
+
+# Per female per day - dredge
+
+options(na.action = "na.fail") #required for dredge to run
+egg_dr <- dredge(egg_lm, evaluate=TRUE,rank=AICc,trace=1)
+options(na.action = "na.omit") #set back to default
+nrow(egg_dr)
+head(egg_dr)
+
+top_egg_dr <- get.models(egg_dr, subset=1)[[1]]
+top_egg_dr
+#head(top_egg_dr)
+summary(top_egg_dr)
+
+avmod <- summary(model.avg(egg_dr, subset = delta <= 2))
+```
+
+# Dredge a saturated age-specific fecundity
+
+```{r}
+egg_lft <- lm(numEggs ~ larad*age + larad*cage, data=ltime)
+
+options(na.action = "na.fail") #required for dredge to run
+lft_dr <- dredge(egg_lft, evaluate=TRUE,rank=AICc,trace=1)
+options(na.action = "na.omit") #set back to default
+nrow(lft_dr)
+head(lft_dr)
+
+top_lft_dr <- get.models(lft_dr, subset=1)[[1]]
+top_lft_dr
+#head(top_lft_dr)
+summary(top_lft_dr)
+
+avmod_lft <- summary(model.avg(lft_dr, subset = delta <= 2))
+```
+
