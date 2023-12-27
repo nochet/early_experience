@@ -42,6 +42,7 @@ eelifeM <- eelife %>%
 
 ```
 
+# Models
 
 ```{r}
 set.seed(148)
@@ -95,7 +96,7 @@ mf7_dr
 
 top_mf7_dr <- get.models(mf7_dr, subset=1)[[1]]
 top_mf7_dr
-head(top_mf7_dr)
+#head(top_mf7_dr)
 summary(top_mf7_dr)
 
 # Dredge identified 3 competing models needing to average
@@ -125,7 +126,7 @@ head(mf8_dr)
 
 top_mf8_dr <- get.models(mf8_dr, subset=1)[[1]]
 top_mf8_dr
-head(top_mf8_dr)
+#head(top_mf8_dr)
 summary(top_mf8_dr)
 
 avmod8 <- summary(model.avg(mf8_dr, subset = delta <= 2))
@@ -151,7 +152,7 @@ mf9_dr
 
 top_mf9_dr <- get.models(mf9_dr, subset=1)[[1]]
 top_mf9_dr
-head(top_mf9_dr)
+#head(top_mf9_dr)
 summary(top_mf9_dr)
 
 #summary(model.avg(mf9_dr, subset = delta <= 2))

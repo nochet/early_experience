@@ -24,7 +24,7 @@ eelife <- eelife  %>%
 eelife$age <- as.numeric(eelife$age)
 
 eelife[320,]
-hist(eelife$age)
+#hist(eelife$age)
 
 #Make unique ids
 #eelife$id <- paste(eelife$fID,'_',eelife$treat,sep='')

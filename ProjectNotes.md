@@ -10,25 +10,67 @@ date: "7/17/2018"
 
 ### Summary: This is data from a factorial experiment with Drosophila melanogaster in which larvae were raised on control (C) and dietary restriction (DR) nutrition conditions. Eclosed flies from each treatment were split between C and DR diets followed by measurement of fecundity and lifespan of adult flies. Two replicates were made for each diet treatment resulting into 8 total cages.
 
-`InitialProcess.R`
+
+STEP 1: PROCESS RAW EVENT DATA
+
+Script: `InitialProcess.R`
 - `source("PreProcess_lifespan_functions.R")`
 - Process raw data for male and female separately.
+
 Input: `/data/processed/ee_lifespan_only.txt`
-Output: `/data/processed/Female_events_eelife.txt` and `/data/processed/Male_events_eelife.txt`
+Output: `/data/processed/Female_events_eelife.txt` and
+        `/data/processed/Male_events_eelife.txt`
+
+- Then, script calculates N for each cage from the death and censored events
+
+- A knit script: `/scripts/eeSurv_viz.html`
 
 
-`ee_InitialProcess.R`
-- attempt to include both sexes. Not usable yet.
-Input: `/data/processed/ee_lifespan_only.txt`
 
-STEP 1: Initial processing of raw data
+STEP 2: ANALYSIS OF LIFESPAN
 
-STEP 2: Exploration analyses
+A) KAPLAN-MEIER MODELS
+
+Script: `eeSurv_viz.Rmd`
+
+Input files:
+  - `/processed/Female_events_eelife.txt`
+  - `/processed/Male_events_eelife.txt`
+
+Output files:
+  - `/processed/eeAlldat.csv`
+- Combines male and female events
+- Explores survival models for various subsets of data
+- Makes K-M plots: `/plots/SurvPlots_for_larvalDiet.pdf`
+- Makes quantile plots - not reported on.
+
+B) COX MODELS
+
+Script: `/scriptss/ss_cph_model.Rmd`
+- Testing proportionality assumptions
+
+Input: `/processed/eeAlldat.csv`
+Output: Many model summaries, see html
+A knit script: `/scripts/eeSurv_viz.html`
+
+Final cox models
+Script: `ee_cph_finalMods.Rmd`
+
+Input: `/processed/eeAlldat.csv`
+Output: Dredge model selection `ee_cph_finalMods.html`
 
 
-STEP 3: Two-way ANOVA
 
-STEP 4: Generalized linear mixed models
+
+STEP 3: PROCESS RAW FECUNDITY DATA
+
+
+
+
+
+STEP 4: ANALYSIS OF FECUNDITY
+
+
 
 STEP 4: A Bayesian approach
 
