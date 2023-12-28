@@ -5,9 +5,6 @@ date: "6/16/2022"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 ```{r}
 library(tidyverse)
@@ -163,6 +160,7 @@ ts <- annotate_figure(eggs_ts,
                 left = textGrob("Mean per female per 3 hrs", 
                                 rot = 90, vjust = 1.5, gp = gpar(cex = 0.8)),
                 bottom = textGrob("Time Index", vjust = -1,gp = gpar(cex = 0.8)))
+ts
 
 ggsave(ts,file = "../plots/eggs_ts_mean_PELT_AIC.pdf",
                 width = 3,height=5)
@@ -234,7 +232,7 @@ fec_norms <- ggplot(med.all,aes(x=grp, y=chg,group=1)) +
   my_theme
 #lt <- lt + theme(legend.position = c(0.7,0.8))
 
-
+fec_norms
 
 
 # Group by larval diet
@@ -285,12 +283,13 @@ bb
 eggs <- ggarrange(aa,fec_norms, bb,ts, ncol = 2, nrow = 3,
                  labels = c("a","c", "b","d"),
                  font.label = list(size = 10))
+eggs
 
 ggsave(eggs,file = "../plots/eggs_perFemale_changepoints.pdf",
                 width = 5,height=5)
 ```
 
-# On same frame
+# pdf
 
 ```{r}
 pdf("../plots/eggs_perFemale_changepoints.pdf",width = 4.5,height=6)

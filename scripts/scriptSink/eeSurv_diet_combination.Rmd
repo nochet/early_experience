@@ -1,0 +1,272 @@
+---
+title: "eeSurv_diet_combination"
+author: "Andrew Jones"
+date: "3/3/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Loading PAckages
+
+```{r cars}
+library(survival)
+library(survminer)
+library(splines) #needed by survival package
+library(tidyverse) 
+library(forcats)
+library(cowplot)
+library(brms)
+
+
+source("color_map.R")
+source("ggplot_theme.R")
+```
+
+## Reading Prcessed Data
+
+```{r pressure, echo=FALSE}
+eelifeF <- read.table('~/early_experience/processed/Female_events_eelife.txt',
+                      sep = "\t", header = TRUE,
+                      stringsAsFactors = FALSE) 
+sexF <- "Female"
+
+eelifeF$Sex <- sexF
+# the diet combination column is stripped in the functions, recreate it
+eelifeF <- eelifeF %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+# Male data
+eelifeM <- read.table('~/early_experience/processed/Male_events_eelife.txt',
+                      sep = "\t", header = TRUE,
+                      stringsAsFactors = FALSE) 
+
+# the diet combination column is tripped in the functions, recreate it
+eelifeM <- eelifeM %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+sexM <- "Male"
+eelifeM$Sex <- sexM
+
+```
+
+#Subsetting Into Diet Combinations by Sex
+```{r}
+CCF <- subset(eelifeF, eelifeF$larvalTreat == "C" & eelifeF$adultTreat == "C")
+CDRF <- subset(eelifeF, eelifeF$larvalTreat == "C" & eelifeF$adultTreat == "DR")
+DRCF <- subset(eelifeF, eelifeF$larvalTreat == "DR" & eelifeF$adultTreat == "C")
+DRDRF <- subset(eelifeF, eelifeF$larvalTreat == "DR" & eelifeF$adultTreat == "DR")
+
+CCM <- subset(eelifeM, eelifeM$larvalTreat == "C" & eelifeM$adultTreat == "C")
+CDRM <- subset(eelifeM, eelifeM$larvalTreat == "C" & eelifeM$adultTreat == "DR")
+DRCM <- subset(eelifeM, eelifeM$larvalTreat == "DR" & eelifeM$adultTreat == "C")
+DRDRM <- subset(eelifeM, eelifeM$larvalTreat == "DR" & eelifeM$adultTreat == "DR")
+
+```
+
+
+
+#Survival By Combination
+```{r}
+eeSurvF <- survfit(Surv(NewAge, status == 2) ~ lvadComb,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = eelifeF)
+
+eeSurvM <- survfit(Surv(NewAge, status == 2) ~ lvadComb,
+                   conf.type = "log",
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = eelifeM)
+
+summary(eeSurvF)
+summary(eeSurvM)
+```
+
+#Getting Median By Itself
+```{r}
+eeSumF <- summary(eeSurvF)$table[, "median"]
+
+
+eeSumM <- summary(eeSurvM)$table[, "median"]
+
+idseeF<-strsplit(names(eeSumF), split="=", fixed=TRUE)
+idseeM<-strsplit(names(eeSumM), split="=", fixed=TRUE)
+
+```
+
+#Combining Elements into One Data Drame
+```{r}
+eeMedF<-data.frame('Diet'=unlist(lapply(idseeF, function(x) x[2])),
+                   'Median'=eeSumF,'Sex'="Female",stringsAsFactors=FALSE)
+
+
+eeMedM<-data.frame('Diet'=unlist(lapply(idseeM, function(x) x[2])),
+                   'Median'=eeSumM,'Sex'="Male",stringsAsFactors=FALSE)
+
+
+EETotalSumFM <- rbind(eeMedF, eeMedM)
+
+```
+
+#First Plots
+```{r}
+ggplot(EETotalSumFM, aes(x = Diet, y = Median, group = Sex, color = Sex)) +
+  geom_point() +
+  geom_line()
+
+ggplot(EETotalSumFM, aes(x = Diet, y = Median)) +
+  geom_dotplot(binaxis='y', stackdir='center') +
+  stat_summary()
+
+ggplot(EETotalSumFM, aes(x = Diet, y = Median, color = Sex)) +
+  geom_boxplot(notch = TRUE, notchwidth = .5)
+
+EETotalSumFMWide <- spread(EETotalSumFM, Sex, Median)
+
+lifespan_stagger_plot<- ggplot(EETotalSumFM, aes(x = Diet, y = Median, color = Diet)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_jitterdodge(dodge.width = 3)) 
+
+lifespan_stagger_plot
+
+lifespan_stagger_plot + 
+  stat_summary(data = EETotalSumFM, fun.data = "mean_sdl", geom = "errorbar", width =0.3)
+
+ggplot(EETotalSumFM, aes(x = Diet, y = Median, color = Diet, group = Sex)) +
+  geom_point(position = "dodge") +
+  geom_errorbar(ymin = EEposition = "dodge")
+
+
+```
+
+
+#Working with Diet Combinations Combined
+```{r}
+eelife <- bind_rows(eelifeF,eelifeM)
+
+CC <- subset(eelife, eelife$larvalTreat == "C" & eelife$adultTreat == "C")
+CDR <- subset(eelife, eelife$larvalTreat == "C" & eelife$adultTreat == "DR")
+DRC <- subset(eelife, eelife$larvalTreat == "DR" & eelife$adultTreat == "C")
+DRDR <- subset(eelife, eelife$larvalTreat == "DR" & eelife$adultTreat == "DR")
+
+eeSurv <- survfit(Surv(NewAge, status == 2) ~ lvadComb,
+                  conf.type = "log", 
+                  conf.int = 0.95,
+                  type = "kaplan-meier",
+                  error = "greenwood",
+                  data = eelife)
+
+summary(eeSurv)
+
+eeSum <- summary(eeSurv)$table[, "median"]
+
+idsee<-strsplit(names(eeSum), split="=", fixed=TRUE)
+
+eeMed<-data.frame('Diet'=unlist(lapply(idseeF, function(x) x[2])),
+                  'Median'=eeSum, stringsAsFactors=FALSE)
+
+ggplot(eeMed, aes(x = Diet, y = Median, color = Diet)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85) +
+  stat_summary(data = EETotalSumFM, fun.data = "mean_sdl", geom = "errorbar", width =0.3)
+```
+
+
+#Integrating Median into the original plot
+```{r}
+eelifeF$Lifespan <- ifelse(eelifeF$status >=2, eelifeF$NewAge, 0)
+
+eelifeM$Lifespan <- ifelse(eelifeM$status >=2, eelifeM$NewAge, 0)
+
+#Means, SD, min, max
+eelifespanF <- data.frame(
+aggregate(Lifespan~lvadComb, data=eelifeF, min),
+aggregate(Lifespan~lvadComb, data=eelifeF, max),
+aggregate(Lifespan~lvadComb, data=eelifeF, mean),
+aggregate(Lifespan~lvadComb, data = eelifeF, sd))
+
+eelifespanF <- eelifespanF[,c(1,2,4,6, 8)]
+
+colnames(eelifespanF) <- c("Diet", "Min", "Max", "Mean", "SD")
+
+eelifespanF$Sex <-sexF
+
+eelifespanM <- data.frame(
+aggregate(Lifespan~lvadComb, data=eelifeM, min),
+aggregate(Lifespan~lvadComb, data=eelifeM, max),
+aggregate(Lifespan~lvadComb, data=eelifeM, mean),
+aggregate(Lifespan~lvadComb, data = eelifeM, sd))
+
+eelifespanM <- eelifespanM[,c(1,2,4,6, 8)]
+
+colnames(eelifespanM) <- c("Diet", "Min", "Max", "Mean", "SD")
+
+eelifespanM$Sex <-sexM
+
+eelifespan <- rbind(eelifespanF, eelifespanM)
+
+```
+
+#Attempting new plots with new data frames
+```{r}
+ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_dodge2(width = .3, preserve = c("total"))) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.3, position = position_dodge2(width = .3, preserve = c("total")))
+
+#Modulated by Sex
+ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet, group = Sex)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_dodge()) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.3, position = position_dodge())
+
+#With Jitterdodge
+ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85, position = position_jitterdodge(dodge.width = .95)) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.05, position = position_jitterdodge(dodge.width = .95))
+
+#Enoch's Chunk
+ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .15) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.2) +
+  geom_jitter(position = position_jitter(width = 0.4), alpha = 1) 
+
+#Poistion Dodge Stack exchange   ****WORKED****
+ggplot(eelifespan, aes(x = Diet, y = Mean, color = Diet, group = Sex)) +
+  geom_point(size = 1, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD),
+                width = 0.2,
+                position = position_dodge(width = 0.5))
+
+
+```
+
+#Trying Dot and Error Plot without Sex
+```{r}
+eelife$Lifespan <- ifelse(eelife$status >=2, eelife$NewAge, 0)
+
+eelifeComb <- eelife[,c(4,5,7,8,9,10,12)]
+
+eelifespanComb <- data.frame(
+aggregate(Lifespan~lvadComb, data=eelifeComb, min),
+aggregate(Lifespan~lvadComb, data=eelifeComb, max),
+aggregate(Lifespan~lvadComb, data=eelifeComb, mean),
+aggregate(Lifespan~lvadComb, data = eelifeComb, sd))
+
+eelifespanComb <- eelifespanComb[,c(1,2,4,6, 8)]
+
+colnames(eelifespanComb) <- c("Diet", "Min", "Max", "Mean", "SD")
+
+ggplot(eelifespanComb, aes(x = Diet, y = Mean, color = Diet)) +
+  geom_dotplot(binaxis = "y", stackdir='center', dotsize = .85) +
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.3)
+
+ggplot(eelifespanComb, aes(x = Diet, y = Mean, color = Diet))
+```
+
+
+

@@ -1,5 +1,5 @@
 ---
-title: "PerFemaleFecundity"
+title: "Processing of raw fecundity data"
 author: "Enoch Ng'oma"
 date: "4/14/2020"
 output: html_document
@@ -17,7 +17,7 @@ library(tidyverse)
 
 # Look at data
 
-```{r pressure, echo=FALSE}
+```{r}
 
 # Andrew data 1
 aj1 <- read.table("~/MyGithub/early_experience/processed/Early_Experience_Data_rechecked.txt",sep = "\t", header = TRUE,stringsAsFactors = FALSE)

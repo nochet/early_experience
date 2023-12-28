@@ -1,0 +1,92 @@
+---
+title: "Examine mcmc posterior"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rstanarm)
+library(cowplot)
+library(bayesplot)
+
+```
+
+```{r}
+# Examine the posterior
+
+# Central posterior uncertainty intervals
+# The default is to show 50% intervals (the thick segments) and 90% intervals (the thinner outer lines). These defaults can be changed using the prob and prob_outer arguments, respectively. Points in the plot are posterior medians.
+color_scheme_set("red")
+mcmc_intervals(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"))
+
+# Uncertainty intervals as shaded areas under the estimated posterior density curves
+color_scheme_set("red")
+mcmc_areas(mod1, 
+           pars=c("larvalTreatDR","adultTreatDR","sexM"),
+           prob=0.8,prob_outer = .999,point_est = "mean")
+# Some marginals significantly away from zero
+
+# Marginal posterior distributions (combining all chains)
+color_scheme_set("green")
+mcmc_hist(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"))
+
+# Marginal posterior distributions (on a log scale)
+color_scheme_set("blue")
+mcmc_hist(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"), 
+          transformations = list("larvalTreatDR" = "log"))
+
+# View separate histograms of each of the four Markov chains
+color_scheme_set("brightblue")
+mcmc_hist_by_chain(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"))
+
+# Plots kernel density estimates instead of histograms
+color_scheme_set("purple")
+mcmc_dens(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"))
+
+# Kernel density plots separated by Markov chains
+mcmc_dens_overlay(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"))
+
+# Density estimates of each chain as violins and draws horizontal line segments at user-specified quantiles
+color_scheme_set("teal")
+mcmc_violin(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"), 
+            probs = c(0.1, 0.5, 0.9))
+
+# Bivariate Plots
+
+# A simple scatterplot of two parameters
+color_scheme_set("gray")
+mcmc_scatter(mod1, pars = c("(Intercept)", "sexM"), 
+             size = 1.5, alpha = 0.5)
+
+# Scatter plot but using hexagonal binning, useful to avoid overplotting
+if (requireNamespace("hexbin", quietly = TRUE)) {
+  mcmc_hex(mod1, pars = c("(Intercept)", "larvalTreatDR"))
+}
+
+# Pairs of plots with more than two parameters
+color_scheme_set("pink")
+mcmc_pairs(mod1, pars = c("(Intercept)", "larvalTreatDR","adultTreatDR","sexM"),
+           off_diag_args = list(size = 1.5))
+
+# Trace Plots
+
+# A standard trace plot
+color_scheme_set("blue")
+mcmc_trace(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"))
+
+# We can change to a mixed color scheme to see the differences between the chains 
+color_scheme_set("mix-blue-red")
+mcmc_trace(mod1, pars = c("larvalTreatDR","adultTreatDR","sexM"), 
+           facet_args = list(ncol = 1, strip.position = "left"))
+
+# Viridis color scheme
+color_scheme_set("viridis")
+mcmc_trace(mod1, pars = "(Intercept)")
+
+# Use points instead of lines and reduce the opacity of all but a single chain
+mcmc_trace_highlight(mod1, pars = "larvalTreatDR", highlight = 3)
+
+```
+

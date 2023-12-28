@@ -83,7 +83,7 @@ lt <- zdn %>%
   theme_half_open() +
   my_theme
 lt <- lt + theme(legend.position = c(0.7,0.8))
-    
+lt  
 
 # Diet effects on lifetime fecundity
 ltime <-lm(log(numEggs) ~ Regime, data=zdn)
@@ -98,12 +98,13 @@ ltp <- effect_plot(ltime, pred=Regime, interval=TRUE,
                    point.alpha=0.2, y.label="log(Lifetime fecundity)",
                    x.label="Diet Regime",data=zdn)
 ltp <- ltp + geom_point(color=c("#009E73","#56B4E9","#E69F00", "#000000")) + theme_half_open() + my_theme
-
+ltp
 
 lts <- plot_summs(ltime,inner_ci_level = .9,
                   plot.distributions = FALSE,
                   colors = 'grey')
 lts <- lts + theme_half_open() + my_theme
+lts
 
 #plot_coefs(ltime,inner_ci_level = .9)
 
@@ -148,13 +149,13 @@ pffe <- effect_plot(pff, pred=Regime, interval=TRUE,
                    point.alpha=0.2, y.label="log(Eggs/female/day)",
                    x.label="Diet Regime",data=zdn)
 pffe <- pffe + geom_point(color=c("#009E73","#56B4E9","#E69F00", "#000000")) + theme_half_open() + my_theme
-
+pffe
 
 pffs <- plot_summs(pff,inner_ci_level = .9,
                   plot.distributions = FALSE,
                   colors = 'grey')
 pffs <- pffs + theme_half_open() + my_theme
-
+pffs
 
 pfdf <- ggarrange(pp,pffe,pffs, ncol = 3, nrow = 1, 
                  labels = c("d", "e","f"),
@@ -167,6 +168,7 @@ fec <- ggarrange(ltf,pfdf, ncol = 1, nrow = 2,
                  font.label = list(size = 10))
 ggsave(fec,file = "../plots/fec_panel.pdf",
                 width = 8,height=6)
+fec
 
 # Random effect 'id'
 pfec <-lme4::lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
@@ -271,6 +273,7 @@ eggs <- ggarrange(aa,bb, ncol = 2, nrow = 1,
 ggsave(eggs,file = "../plots/eggs_perFemale_perDay_lm.pdf",
                 width = 5,height=3)
 
+eggs
 
 ```
 
@@ -388,6 +391,8 @@ tf <- uq %>%
   theme_half_open() 
 tf <- tf + labs(fill = "Quartile")
 
+tf
+
 ggsave(tf,file = "../plots/Eggs_perFemale_Quartiles.pdf",
                 width = 6,height=4)
 ggsave(tf,file = "../plots/Eggs_perFemale_Quartile.pdf",
@@ -488,8 +493,8 @@ tgt <- tgt[,c(1:3,5:6)]
 tgt <- rename(tgt,Regime="Regime", Q="Quartile",sprob="surv_prob",
               mean_eggs="qe",qse="qse")
 
-ggplot(tgt, aes(x=sprob,y=mean_eggs,group=Q,col=Regime)) +
-  geom_point()
+# ggplot(tgt, aes(x=sprob,y=mean_eggs,group=Q,col=Regime)) +
+#   geom_point()
 
 ```
 

@@ -1,7 +1,0 @@
-              elpd_diff se_diff
-mod1_mspline2     0.0       0.0
-mod1_mspline1   -10.1       5.3
-mod1_bspline    -16.8       6.3
-mod1_weibull    -23.2       6.7
-mod1_exp       -219.2      15.2
-mod1_gompertz -2091.6     246.3

@@ -1,0 +1,337 @@
+---
+title: "Bayesian analysis of early experience experiment"
+author: "Enoch Ng'oma"
+date: "3/3/2019"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2 #defaults to 3 if not specified
+    toc_float: true
+    number_sections: true
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rstanarm)
+library(ggplot2)
+library(broom)
+library(bayesplot)
+
+source("color_map.R")
+
+set.seed(9725)
+
+# default plotting theme
+theme_set(bayesplot::theme_default(base_size = 15))
+
+# note: the line below to run chains in parallel (saves time)
+options(mc.cores = parallel::detectCores())
+```
+
+# Data
+
+```{r}
+eelife <- read.csv("../data/processed/eeAlldat.csv", header=TRUE)
+names(eelife)[1]<-"event"
+head(eelife)
+```
+
+# Exploratory plot
+
+```{r}
+
+ggplot(eelife, aes(age, color = larv_adult)) + 
+  geom_density(alpha = 0.5) +
+  coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+  #adjust frame of x-axis
+  
+  scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+  expand_limits(x=125) +
+  #limit plot area on x-axis
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  tx_color_map() +
+  theme(axis.title = element_text(size = 12)) +
+  xlab("Age (days)") +
+  ylab("Density") +
+  theme(legend.position = c(0.7, 0.8))
+
+#ggsave("plots/dataplot.pdf", width = 8, height = 8)
+```
+
+# Single-level model
+
+```{r}
+# predict lifespan from treatment
+#    * repeated measures are treated independent, 
+#     and diet combination dependency ignored
+
+# Example of adapting priors and sampler settings
+slmMod <-  stan_glm(
+  age ~ larv_adult,
+  data = eelife,
+  prior = normal(0, 1, autoscale = FALSE),
+  prior_smooth = exponential(autoscale = FALSE),
+  prior_intercept = normal(50, 100),
+  iter = 8000,
+  adapt_delta = 0.99
+)
+
+# View summaries
+prior_summary(slmMod)
+
+summaryslmMod <- summary(slmMod)
+print(summaryslmMod)
+
+# Plot traceplot
+plot(slmMod, "trace", pars = "larv_adultC_DR")
+
+# Plot traceplot with slightly modified color scheme and axis labels
+color_scheme_set("mix-brightblue-red")  # see help("color_scheme_set")
+plot(slmMod, "trace", pars = "larv_adultC_DR") +
+  labs(x = "Post-warmup Iteration", y = "Slope on treatment")      
+ggsave("../plots/traceplot.pdf", width = 7, height = 3.5)
+
+# Use shinystan to explore the results
+launch_shinystan(slmMod)
+
+
+# Check pp plots: compare posterior predictive distribution of lifespan with 
+# distribution of observed lifespan
+color_scheme_set("brightblue")
+pp_dist1 <- pp_check(slmMod, nreps = 1000) + xlab("age")
+plot(pp_dist1)
+#pp_check(slmMod, "dens_overlay")
+pp_check(slmMod, "stat")
+pp_check(slmMod, "stat_2d")
+
+posteriorSamples <- as.matrix(slmMod, pars = "larv_adultC_DR")
+mean(posteriorSamples > 0.7)
+```
+
+# Plot regression lines
+
+```{r}
+# Extract the (post-warmup) posterior draws
+posterior1 <- as.matrix(slmMod)
+colnames(posterior1)
+means1 <- colMeans(posterior1)
+
+# Take random 100 posterior draws of intercept and slope
+# 100 isn't special, but enough to show uncertainty without
+# making the graph unreadable
+betas <- posterior1[sample(nrow(posterior1), 100), 1:2]
+
+# Plot regression lines implied by the betas
+blues <- color_scheme_get("brightblue")
+mod1p1 <- ggplot(eelife, aes(x = larv_adult, y = age)) +
+  geom_point(color = "gray30") +
+  geom_abline(
+    intercept = betas[, 1], 
+    slope = betas[, 2],
+    color = blues[[2]], 
+    size = 0.15, 
+    alpha = 0.5
+  ) +
+  geom_abline(
+    intercept = means1[1], 
+    slope = means1[2],
+    size = 1.25, 
+    color = blues[[6]]
+  ) +
+  ylim(0, 100)
+
+plot(mod1p1)
+ggsave("plots/regression1.pdf", width = 8, height = 6)
+
+pSamples <- as.matrix(slmMod, pars = "larv_adultC_DR")
+mean(pSamples > 0.7)
+```
+
+# Optional 
+
+```{r}
+#    Estimate out-of-sample predictive performance
+#    Can use later to compare to the hierarchical model
+looSingle <- loo(slmMod) 
+
+```
+
+#  Multi-level model
+
+```{r}
+# Predicting lifespan from treatment with diet-specific variation 
+
+tlMod <- stan_glmer(age ~ larv_adult + 
+                          (1 + larv_adult | cageID), 
+                          data = eelife)
+
+# View summary of priors used
+prior_summary(tlMod)
+
+pairs(tlMod, pars = c("y", "x[1]", "lp__"), las = 1)
+
+
+# Check sampling quality and results
+summary(tlMod)
+summaryTLmod<-summary(tlMod )
+
+# Check convergence statistics - R-hat and ESS
+print(summaryTLmod[, c("mcse", "Rhat", "n_eff")])
+
+# Explore trace plots: for example, the covariance matrix
+plot(tlMod, "trace", regex_pars = "Sigma")
+
+# for a particular participant 
+# (the parameters are person-specific deviations from the population parameters)
+color_scheme_set("mix-brightblue-red")
+plot(tlMod, "trace", regex_pars = "PID:19", 
+     facet_args = list(nrow = 2))
+
+# Or just simply use shinystan to explore the results
+launch_shinystan(TwoLevelModel)
+
+
+# Posterior predictive plot
+color_scheme_set("purple")
+pp_dist2 <- pp_check(tlMod, nreps=1000) + xlab("Lifespan")
+plot(pp_dist2)
+
+# compare to model 1
+comparison <- bayesplot_grid(
+  pp_dist1, pp_dist2, 
+  xlim = c(-30, 145), ylim = c(0, 0.025),
+  legends = FALSE,
+  subtitles = c("Single-level model", "Two-level model"), 
+  grid_args = list(ncol = 2)
+)
+ggsave(plot = comparison, filename = "../plots/ppc_compare.pdf", 
+       width = 8, height = 4)
+
+
+# Check fit and interpret results
+# View model summaries - now with different levels of hierarchical output
+
+# Large summary table with all parameters, with convergence statistics
+summaryTLmod <- summary(tlMod)
+print(tlMod)
+
+# write.csv(summary2, file = "rstanarm_2HLM_summary.csv") # uncomment to write to csv
+
+# tidy summary tables for HLM parameters 
+#   Population-level estimates
+summaryTLmodPop <- tidy(tlMod, intervals=TRUE, prob=.95, parameters = "non-varying")
+print(summaryTLmodPop, digits = 2)
+
+#   Variance estimates
+summaryTLmodVar<- tidy(tlMod, intervals=TRUE, prob=.95, 
+                       parameters = "hierarchical")
+print(summaryTLmodVar, digits = 2)
+
+#   Diet-specific estimates
+summaryTLmodDiet <- tidy(tlMod, intervals=TRUE, 
+                         prob=.95, parameters = "varying")
+print(summaryTLmodDiet, digits = 2)
+# uncomment to write to csv
+# write.csv(mod2summarynv, file = "mod2summarynv.csv")
+# write.csv(mod2summaryps, file = "mod2summaryps.csv")
+# write.csv(mod2summaryv, file = "mod2summaryvy.csv")
+
+# Use shinystan to explore the results
+launch_shinystan(TwoLevelModel)
+
+
+# Plots for each Diet  
+
+laad <- sort(unique(eelife$larv_adult))
+posterior2 <- as.matrix(tlMod)
+samp <- posterior2[sample(nrow(posterior2), 100), ]
+
+plotdata <- lapply(laad, FUN = function(j) {
+  data.frame(
+    alpha = samp[, "(Intercept)"] + samp[, paste0("b[(Intercept) laad:", j, "]")],
+    beta = samp[, "age"] + samp[, paste0("b[age PID:", j, "]")]
+  )
+})
+plotdata <- do.call(rbind, plotdata)
+plotdata$PID <- rep(PIDs, each = nrow(samp))
+means2 <- aggregate(cbind(alpha, beta) ~ PID, data = plotdata, FUN = "mean")
+
+blues <- color_scheme_get("brightblue")
+reg_by_pid_grid <- 
+  ggplot(dat, aes(arousal, valence)) +
+  geom_abline(
+    aes(intercept = alpha, slope = beta), 
+    data = plotdata,
+    color = blues[[2]],
+    size = 0.1
+  ) +
+  geom_abline(
+    aes(intercept = alpha, slope = beta), 
+    data = means2,
+    color = blues[[6]]
+  ) + 
+  geom_abline(
+    # add line from single-level model
+    intercept = means1[1],
+    slope = means1[2],
+    linetype = 2,
+    size = 0.25
+  ) +
+  geom_point(
+    size = 1,
+    color = "gray30",
+    alpha = 0.8
+  ) +
+  facet_wrap("PID", scales = "free") + 
+  coord_cartesian(xlim = range(dat$arousal), ylim = range(dat$valence))
+
+plot(reg_by_pid_grid)
+ggsave("plots/regression_by_pid.pdf", width = 8, height = 8)
+
+
+
+
+# Model comparison
+#    Estimate out-of-sample predictive performance
+#    and compare to model1. A positive elpd_diff 
+#    indicates a preference for model2 in terms of 
+#    estimated out-of-sample predictive performance
+
+looSingle <- loo(SingleLevelModel) 
+looTwo <- loo(TwoLevelModel) 
+compare_models(looSingle, looTwo)
+
+
+
+###########################
+# Extra material
+# Inference via prediction
+# 
+# Predictions for participant 19 and various arousal values
+newdat <- data.frame(arousal = c(30, 60, 90), PID = 19)
+preds19 <- posterior_predict(TwoLevelModel, newdata = newdat)
+colMeans(preds19)
+qplot(preds19[, 1]) + 
+  ggtitle("Participant 19\n(arousal = 30)") + 
+  labs(x = "Distribution of valence predictions", y = NULL)
+
+# What does model predict for a new participant with arousal level
+# at the sample average? 
+# (note: compared to the previous plot we have a lot more uncertainty about 
+# a new participant than an observed participant, as we should)
+newdat <- data.frame(arousal = mean(dat$arousal), PID = "new")
+qplot(posterior_predict(TwoLevelModel, newdata = newdat)) + 
+  ggtitle("New participant\n(average arousal)") + 
+  labs(x = "Distribution of valence predictions", y = NULL)
+
+# Uncomment to save workspace for later reference
+# save.image(sprintf("rstanarmHLMs%s.Rdata", Sys.Date()))
+
+
+```
+

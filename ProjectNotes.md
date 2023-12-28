@@ -1,14 +1,16 @@
 
 ---
 title: "Early Experience Project Record & Notes"
-author: "Enoch Ng'oma (EN), Andrew Jones (AJ) and Elizabeth King (EGK)"
+author: "Enoch Ng'oma (EN), Andrew Jones (AJ), De'anne Donnell and Elizabeth King (EGK)"
 date: "7/17/2018"
 ---
 
 
-## Project Record
+# Project Record
 
-### Summary: This is data from a factorial experiment with Drosophila melanogaster in which larvae were raised on control (C) and dietary restriction (DR) nutrition conditions. Eclosed flies from each treatment were split between C and DR diets followed by measurement of fecundity and lifespan of adult flies. Two replicates were made for each diet treatment resulting into 8 total cages.
+## Summary: The data from a factorial experiment with Drosophila melanogaster in which larvae were raised on control (C) and dietary restriction (DR) diet conditions. The DR diet is 50% restricted in the amount of yeast, a major protein source. Eclosed flies from each treatment were split between C and DR diets followed by measurement of fecundity and lifespan of adult flies. Two replicates were made for each diet treatment resulting into 8 total cages (dimensions 20.3 cm x 20.3 cm x 20.3 cm). Eggs were filtered to paper, imaged, and counted manually in ImageJ software.
+
+
 
 
 STEP 1: PROCESS RAW EVENT DATA
@@ -24,6 +26,7 @@ Output: `/data/processed/Female_events_eelife.txt` and
 - Then, script calculates N for each cage from the death and censored events
 
 - A knit script: `/scripts/eeSurv_viz.html`
+
 
 
 
@@ -43,6 +46,10 @@ Output files:
 - Explores survival models for various subsets of data
 - Makes K-M plots: `/plots/SurvPlots_for_larvalDiet.pdf`
 - Makes quantile plots - not reported on.
+- Writes several data files used later:
+  - `/processed/SummarySurvModel_larvAdulSex.csv`
+  - `/processed/quantiles.csv` - is input in fecundity analysis
+  - `/processed/mini-med-max.csv` - is input in fecundity analysis
 
 B) COX MODELS
 
@@ -64,15 +71,50 @@ Output: Dredge model selection `ee_cph_finalMods.html`
 
 STEP 3: PROCESS RAW FECUNDITY DATA
 
+a) Egg count data, script: `compare_counts.Rmd`
+Inputs: `scripts/name_conversion.txt`
+        `/original/ee_temp_Values_Sheet_AJ.txt` - counted by Andrew Jones
+        `/original/EE_counts_DD.txt` - counted by De'anne Donnel
+        `/processed/Early_Experience_LiFec.txt` - merging with other data
+  - This script is only for checking counts - its outputs are not used further.
+
+b) Data cleaning, script: `process_fecundity.Rmd`
+
+Input: `/processed/Early_Experience_Data_rechecked.txt` # cleaned data
+Output: `/processed/tricount.txt`
+
+c) Visualization, script: `scripts/eefecund_viz.Rmd` and `eefecund_viz.html` 
+
+Inputs: `/processed/tricount.txt`
+        `/processed/quantiles.csv` created in `eeSurv_viz.Rmd`
+
+d) Linear models for fecundity, script: `fec_LinearModels.Rmd`
+Input: `/processed/tricount.txt`
+  - Two approaches are take. Only dredge() results are interpreted. 
+  - Model selection and averaging.
+Output: `fec_LinearModels.html`
+
+e) Time series analysis, script: `fec_timeSeries.Rmd`
+  - Makes time series, change point, and reaction norm plots
+  
+Inputs: `/processed/tricount.txt`
+        - `/processed/eeAlldat.csv`
+Output: `fec_timeSeries.html`
+
+f) Fitness analysis, script: `/scripts/fitnessEstimates.Rmd`
+  - Computes reproductive values from fecundity and lifespan data using a Leslie matrix.
+
+Input: `/processed/tricount.txt` (fecundity)
+Writes: `/processed/eggDat_Leslie.csv`
+
+Input: `/processed/eeAlldat.csv` (lifespan)
+Writes: `/processed/survDat_bestModelF.csv`  
+
+Html Output: `/scripts/fitnessEstimates.html`
 
 
 
 
-STEP 4: ANALYSIS OF FECUNDITY
-
-
-
-STEP 4: A Bayesian approach
 
 
 
@@ -473,7 +515,7 @@ cam_id <- c("9318","9389","9397")
 new_count <- c(1043,645,709)
 
 ### 2020-04-13
-Andrew recounted eggs on 3 unreasonably outlier images. On April 7th he reported these counts (below). The original data was copied to a new file called `Early_Experience_Data_rechecked.txt` and saved to `/early_experience/processed`. This data should be used for further analysis. (Note, the original raw data remains unaltered in `/early_experience/original`.) Slack message from Andrew:
+Andrew recounted eggs on 3 unreasonably outlier images. On April 7th he reported these counts (below). The original data was copied and saved to a new file called `/processed/Early_Experience_Data_rechecked.txt`. This data should be used for further analysis. (Note, the original raw data remains unaltered in `/early_experience/original`.) Slack message from Andrew:
 
 Ok Enoch I recounted those 3 images. I got some more reasonable numbers for all three. Originally they were: 9318-2491, 9389-1136, and 9397-1461. The new numbers are 9318-1043, 9389-645, and 9397-709.
 

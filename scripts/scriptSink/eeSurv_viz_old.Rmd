@@ -1,0 +1,431 @@
+---
+title: "Early Experience Factorial Experiment"
+author: "Enoch Ng'oma"
+date: "7/4/2018"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+# Analysis of diet-dependent developmental plasticity in D. melanogaster lifespan
+
+# Load packages
+
+```{r}
+library(survival)
+library(survminer)
+library(splines)
+library(tidyverse) 
+library(forcats)
+library(cowplot)
+#library(Greg)
+
+
+source("color_map.R")
+#source("ggplot_theme.R")
+```
+
+## Load data & combine female and male events
+
+```{r}
+# Female data
+eelifeF <- read.table('../processed/Female_events_eelife.txt',
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE) 
+
+eelifeF <- select(eelifeF, -setDate, -flipDate, -age)
+names(eelifeF)[1:2]<-c("age", "cageID")
+eelifeF$sex <- "F"
+
+# Male data
+eelifeM <- read.table('../processed/Male_events_eelife.txt',
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE) 
+
+eelifeM <- select(eelifeM, -setDate, -flipDate, -age)
+names(eelifeM)[1:2]<-c("age", "cageID")
+eelifeM$sex <- "M"
+  
+eelife <- rbind(eelifeF,eelifeM)
+  
+
+#eelife$carried <- 0 
+eelife <- na.omit(eelife)
+
+eelife$status <- ifelse(eelife[,"status"] == 2, 1, 0)
+
+#write.csv(eelife, file="../processed/eeAlldat.csv, row.names = FALSE")
+```
+
+# Descriptives
+
+```{r, dens}
+cohort <- c('F&M','FF','MM')
+
+dens.list <- vector(mode='list', length=3)
+names(dens.list) <- cohort
+
+for (ii in cohort) {
+  
+if(ii=='F&M')
+{
+# Male and female together
+
+pp <- ggplot(eelife, aes(age, color = larv_adult)) + 
+    geom_density(alpha = 0.5) +
+    coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+    #adjust frame of x-axis
+  
+    scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+    expand_limits(x=125) +
+    #limit plot area on x-axis
+  
+    scale_y_continuous(expand = c(0, 0)) +
+    tx_color_map() +
+    theme(axis.title = element_text(size = 12)) +
+    xlab("Age (days)") +
+    ylab("Density") +
+    theme_half_open() +
+    theme(legend.position = "none") 
+
+    #element.text = 12
+    #tx_fill_map() +
+    #my_theme
+#fm
+}
+  
+if(ii=='FF')
+  
+{
+
+# Female alone
+
+pp <- ggplot(eelifeF, aes(age, color = larv_adult)) + 
+    geom_density(alpha = 0.5) +
+    coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+    #adjust frame of x-axis
+    scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+    expand_limits(x=125) +
+    #limit plot area on x-axis
+    scale_y_continuous(expand = c(0, 0)) +
+    tx_color_map() +
+    theme(axis.title = element_text(size = 12)) +
+    xlab("Age (days)") +
+    ylab("Density") +
+    theme_half_open() +
+    theme(legend.position = "none") 
+#ff
+
+}
+  
+if(ii=='MM')
+
+{
+# Male alone
+
+pp <- ggplot(eelifeM, aes(age, color = larv_adult)) + 
+    geom_density(alpha = 0.5) +
+    coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.03)) + 
+    #adjust frame of x-axis
+    scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) +
+    expand_limits(x=125) +
+    #limit plot area on x-axis
+    scale_y_continuous(expand = c(0, 0)) +
+    tx_color_map() +
+    theme(axis.title = element_text(size = 12)) +
+    xlab("Age (days)") +
+    ylab("Density") +
+    theme_half_open() +
+    theme(legend.position = c(0.7, 0.8)) 
+#mm
+}
+dens.list[[ii]] <- pp
+}
+
+densPlot <- plot_grid(dens.list[[1]],dens.list[[2]],dens.list[[3]],
+                      nrow =3, ncol=1, 
+                      labels = c('a.', 'b.', 'c.'), 
+                      align = 'h', 
+                      rel_widths = c(1.5,1.5, 1.5), 
+                      label_size = 10)
+densPlot
+# ggsave(last_plot(), file = "../plots/density_male_female.pdf",
+#        width = 6, height = 4)
+```
+
+# Testing developmental theories
+
+## a) Survival
+#### Males and females together
+#### Females alone
+#### Males alone
+## b) Reaction norms
+
+
+# Male and female combined
+
+```{r}
+
+eelife <- read.csv("../processed/eeAlldat.csv") %>%
+  select(-X)
+
+# Look at distribution of events
+eelife <- eelife %>% 
+  mutate(stats = ifelse(status == 2, 1, 0)) %>%
+  select(cageID,larvalTreat,adultTreat,age,status,sex)
+
+
+mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = eelife)
+
+summary(mf)$table[, "median"]
+sum_survfit <- surv_summary(mf, data = eelife)
+
+write.csv(sum_survfit, 
+          file = "../processed/SummarySurvModel_larvAdulSex.csv",
+          row.names = FALSE) 
+
+# Write quantiles
+write.csv(quantile(mf, probs = c(0.25, 0.5, 0.75)), 
+          file = "../processed/quantiles.csv")
+
+
+mf.plot <- ggsurvplot(mf, data = eelife, 
+                     conf.int = FALSE,
+                     break.time.by = 20,
+                     palette = pal,
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                    # font.y = c(14),
+                     font.x = c(font_size),
+                     font.y = c(font_size),
+                     font.tickslab = c(font_size),
+                     #font.main = 11,
+                     #risk.table = FALSE,
+                     legend = "none",
+                     risk.table = TRUE,
+                     risk.table.col = "strata",
+                     risk.table.height = 0.5,
+                    # title = "Females & Males",
+                     legend.labs = c("C-C-F","C-C-M",
+                                     "C-DR-F","C-DR-M",
+                                     "DR-C-F","DR-C-M",
+                                     "DR-DR-F","DR-DR-M"),
+                     legend.title = "Diet-Sex \n combination") +
+                     guides(colour = guide_legend(nrow = 8)) +
+                     theme_survminer(font.main = 11)  +
+  xlab("Age (days)")
+mf.plot
+
+ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable.pdf", height=6, width=8, print(mf.plot))
+
+# Test significance
+survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
+                     data = eelife, rho = 0) 
+
+#quantile(mf,  probs = c(0.1, 0.5, 0.9))
+```
+
+# EarlyRich (C diet) 
+
+### Females only
+
+```{r}
+earlyRichF <- subset(eelife, c(eelife$larvalTreat=="C" & eelife$sex=="F"))
+
+erf <- survfit(Surv(age, status) ~ adultTreat,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = earlyRichF)
+
+summary(erf)$table[, "median"]
+
+erf.plot <- ggsurvplot(erf, data = earlyRichF, 
+                     conf.int = FALSE,
+                     break.time.by = 20,
+                     palette = c("#999999", "#E69F00", 
+                                 "#56B4E9", "#009E73"),
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                     font.x = 10,
+                     font.y = 10,
+                     font.tickslab = 10,
+                     font.main = 10,
+                     risk.table = FALSE,
+                     #legend="none",
+                     legend = c(0.9, 0.8),                     
+                     title = "Early-C Females",
+                     legend.labs = c("C", "DR"),
+                     legend.title = "Adult Diet") +
+  xlab("Age (days)") 
+erf.plot
+
+# Test significance
+survdiff(Surv(age, status) ~ adultTreat,
+                     data = earlyRichF, rho = 0) 
+
+#quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
+
+```
+
+# EarlyRich (C diet) 
+
+### Males only
+
+```{r}
+earlyRichM <- subset(eelife, c(eelife$larvalTreat=="C" & eelife$sex=="M"))
+
+erm <- survfit(Surv(age, status) ~ adultTreat,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = earlyRichM)
+
+summary(erm)$table[, "median"]
+
+erm.plot <- ggsurvplot(erm, data = earlyRichM, 
+                     conf.int = FALSE,
+                     break.time.by = 30,
+                     palette = c("#999999", "#E69F00", 
+                                 "#56B4E9", "#009E73"),
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                     font.x = 10,
+                     font.y = 10,
+                     font.tickslab = 10,
+                     font.main = 10,
+                     risk.table = FALSE,
+                     legend="none",
+                     # legend = c(0.9, 0.8),                     
+                     # legend.labs = c("C", "DR"),
+                     legend.title="",
+                     title = "Early-C Males") +
+  xlab("Age (days)") 
+erm.plot
+
+survdiff(Surv(age) ~ adultTreat,
+                     data = earlyRichM, rho = 0) 
+
+```
+
+# EarlyPoor (DR diet) 
+
+### Females only
+
+```{r}
+earlyPoorF <- subset(eelife, c(eelife$larvalTreat=="DR" & eelife$sex=="F"))
+
+epf <- survfit(Surv(age, status) ~ adultTreat,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = earlyPoorF,)
+summary(epf)$table[, "median"]
+
+epf.plot <- ggsurvplot(epf, data = earlyPoorF, 
+                     conf.int = FALSE,
+                     break.time.by = 20,
+                     palette = c("#999999", "#E69F00", 
+                                 "#56B4E9", "#009E73"),
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                     font.x = 10,
+                     font.y = 10,
+                     font.tickslab = 10,
+                     font.main = 10,
+                     risk.table = FALSE,
+                     legend="none",
+                     # legend = c(0.9, 0.8),                     
+                     # legend.labs = c("C", "DR"),
+                     # legend.title = "Adult Diet",
+                     title = "Early-DR Females") +
+  xlab("Age (days)") +
+  ylab("")
+epf.plot
+
+# Test significance
+survdiff(Surv(age, status) ~ adultTreat,
+                     data = earlyPoorF, rho = 0) 
+
+#quantile(f_er1,  probs = c(0.1, 0.5, 0.9))
+
+```
+
+### Males only
+
+```{r}
+earlyPoorM <- subset(eelife, c(eelife$larvalTreat=="DR" & eelife$sex=="M"))
+
+epm <- survfit(Surv(age, status) ~ adultTreat,
+                   conf.type = "log", 
+                   conf.int = 0.95,
+                   type = "kaplan-meier",
+                   error = "greenwood",
+                   data = earlyPoorM)
+
+summary(epm)$table[, "median"]
+
+epm.plot <- ggsurvplot(epm, data = earlyPoorM, 
+                     conf.int = FALSE,
+                     break.time.by = 20,
+                     palette = c("#999999", "#E69F00", 
+                                 "#56B4E9", "#009E73"),
+                     fun = "pct", 
+                     surv.median.line = "hv",
+                     font.x = 10,
+                     font.y = 10,
+                     font.tickslab = 10,
+                     font.main = 10,
+                     risk.table = FALSE,
+                     legend="none",
+                     # legend = c(0.9, 0.8),                     
+                     # legend.labs = c("C", "DR"),
+                     # legend.title = "Adult Diet",
+                     title = "Early-DR Males") +
+  xlab("Age (days)") +
+  ylab("")
+epm.plot
+
+survdiff(Surv(age, status) ~ adultTreat,
+                     data = earlyPoorM, rho = 0) 
+```
+
+# Arrange plots
+
+```{r}
+splots <- list()
+splots[[1]] <- erf.plot
+splots[[2]] <- erm.plot
+splots[[3]] <- epf.plot
+splots[[4]] <- epm.plot
+
+splots_out <- arrange_ggsurvplots(
+  splots,
+  print = FALSE,
+  ncol = 2,
+  nrow = 2)
+#ggpar(splots_out, font.main=10)
+
+ggsave(
+  splots_out,
+  file = "~/MyGithub/early_experience/plots/SurvPlots_for_larvalDiet.pdf",
+  width = 6,
+  height = 5)
+```
+
+
+
+
+

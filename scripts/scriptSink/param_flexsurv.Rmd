@@ -1,0 +1,104 @@
+---
+title: "Parametric analysis"
+author: "Enoch Ng'oma"
+date: "2/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse) 
+library(cowplot)
+library(survival)
+library(survminer)
+library(flexsurv)
+library(rms) #HR
+library(msmtools)
+
+source("color_map.R")
+
+set.seed(428)
+
+```
+
+# Data
+
+```{r}
+#eelife <- read.csv("../processed/eeAlldat.csv", header=TRUE)
+eelife <- read.table("../processed/Female_events_eelife.txt", header=TRUE,sep = "\t")
+names(eelife)[1]<-"event"
+head(eelife)
+
+eelife <- eelife[complete.cases(eelife),]
+```
+
+# Weibull models
+
+```{r}
+
+pm1 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult, 
+                   data = eelife, dist = "weibull")
+pm1
+
+# Generalized gamma
+pm2 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult, 
+                   data = eelife, dist = "gengamma")
+pm2
+
+#Generalized gamma
+pm3 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult + sigma(larv_adult), 
+                   data = eelife, dist = "gengamma")
+pm3
+
+pm31 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult, 
+                    data = eelife, anc = list(sigma = ~ larv_adult), 
+                    dist = "gengamma")
+pm31
+
+#Sex
+pm4 <- flexsurvreg(Surv(age, status == 2) ~ larv_adult + sex, 
+                    data = eelife, dist = "gengamma")
+pm4
+
+```
+
+# Reaction norms for fig 2 in Monaghan et al, 2008
+# Need medians in different columns for each treatment
+
+```{r}
+react <- eelife[eelife$status !=3,]
+react$NewAge <- as.numeric(react$NewAge)
+
+# Calculate medians
+
+# Get the four main treatments
+rich.early <- subset(react,larvalTreat=="C")
+poor.early <- subset(react,larvalTreat=="DR")
+
+# rich.rich <- subset(react,c(larvalTreat=="C" & adultTreat=="C"))
+
+re_med <- rich.early %>%
+  group_by(adultTreat) %>%
+  summarise(med_age = median(NewAge), n = n())
+colnames(re_med) <- c("adult", "age", "N")
+re_med$grp <- "RichEarly"
+
+pe_med <- poor.early %>%
+  group_by(adultTreat) %>%
+  summarise(med_age = median(NewAge), n = n())
+colnames(pe_med) <- c("adult", "age", "N")
+pe_med$grp <- "PoorEarly"
+
+med.dat <- rbind(re_med,pe_med)
+
+# Join data frames
+med.dat <- select(med.dat, grp,adult,age)
+
+med.piv <- pivot_wider(med.dat,
+    names_from = adult,
+    values_from = age,
+    values_fill = 0
+    )
+```
+

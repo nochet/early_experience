@@ -1,5 +1,5 @@
 ---
-title: "NewCountComparisons"
+title: "New Count Comparisons"
 author: "Andrew Jones"
 date: "8/20/2020"
 output: html_document
@@ -21,10 +21,12 @@ library(ggpubr)
 library(data.table)
 ```
 
-## Getting Name Conversion
+# Getting Name Conversion
+# Several students counted eggs from a set of images. This script comapres counts.
 
-```{r pressure, echo=FALSE}
+```{r }
 Random <- read.table("/Users/ngomae/MyGithub/early_experience/scripts/name_conversion.txt", header = FALSE,stringsAsFactors = FALSE)
+
 ```
 
 # Setting Up Randomized Table 
@@ -43,7 +45,6 @@ Ordered <- Organized[order(Organized[,1]),]
  
  row.names(Ordered) <- c(1:280)
 ```
-
 
 # Integrating Two New Tables
 

@@ -1,0 +1,157 @@
+---
+title: "Fecundity Data"
+author: "Andrew Jones"
+date: "July 23, 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(survival)
+library(survminer)
+library(splines) #needed by survival package
+library(tidyverse) 
+library(forcats)
+library(cowplot)
+#library(coxme)
+#library(brms)
+
+source("color_map.R")
+source("ggplot_theme.R")
+```
+
+```{r}
+eefecundity <- read.table('../processed/Early_Experience_Data_rechecked.txt',
+                     sep = "\t", header = TRUE,
+                     stringsAsFactors = FALSE)
+eefecundity <- eefecundity %>%
+  unite(lvadComb, larvalTreat, adultTreat, sep = "_", remove = FALSE)
+
+```
+
+#Density
+```{r}
+ggplot(eefecundity, aes(numEggs, color = id)) + geom_density(alpha = 0.5) + coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.3))+ scale_x_continuous(expand = c(0, 0), limits = c(-10, 120)) + expand_limits(x=125) + scale_y_continuous(expand = c(0, 0)) + xlab("Fecundity") + ylab("Density") + theme(legend.position = c(0.7, 0.8))
+                                                                                            
+ggplot(eefecundity, aes(numEggs, color = id))+
+  geom_density(alpha = 0.5)+
+  coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.3)) +
+xlab("Fecundity") + 
+ ylab("Density") +
+  theme(legend.position = c(0.7, 0.8))
+
+
+
+ggplot(eefecundity, aes(numEggs, color = larvalTreat))+
+  geom_density(alpha = 0.5)+
+  coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.3)) +
+xlab("Fecundity") + 
+ ylab("Density") +
+  theme(legend.position = c(0.7, 0.8))
+
+ggplot(eefecundity, aes(numEggs, color = adultTreat))+
+  geom_density(alpha = 0.5)+
+  coord_cartesian(xlim = c(-10, 120), ylim = c(0, 0.3)) +
+xlab("Fecundity") + 
+ ylab("Density") +
+  theme(legend.position = c(0.7, 0.8))
+ 
+ggplot(eefecundity, aes(eefecundity$numEggs)) + geom_histogram()
+
+ggplot(eefecundity, aes(x =id, y = numEggs, fill = id)) + geom_violin()
+
+ggplot(eefecundity, aes(x =numEggs, y = id, fill = id)) + geom_violin()
+                      
+ggplot(eefecundity, aes(x =larvalTreat, y = numEggs, fill = larvalTreat)) + geom_violin()
+
+ggplot(eefecundity, aes(x =adultTreat, y = numEggs, fill = adultTreat)) + geom_violin()
+```
+#Point
+```{r}
+ggplot(eefecundity, aes(x = numEggs,y = larvalTreat))+
+  geom_point(alpha = 0.5)+
+xlab("Fecundity") + 
+ ylab("Point") +
+  theme(legend.position = c(0.7, 0.8))
+
+ggplot(eefecundity, aes(x = larvalTreat,y = numEggs))+
+  geom_boxplot(alpha = 0.5)+
+xlab("Diet") + 
+ ylab("Fecundity") +
+  theme(legend.position = c(0.7, 0.8))
+
+```
+
+#Boxplot
+```{r}
+ggplot(eefecundity, aes(x = id,y = numEggs))+
+  geom_boxplot(alpha = 0.5)+
+xlab("Fecundity") + 
+ ylab("Point") +
+  theme(legend.position = c(0.7, 0.8))
+```
+
+
+```{r}
+ggplot(eefecundity, aes(numEggs, color = lvadComb)) +
+  geom_density(alpha = 0.5) +
+  coord_cartesian(xlim = c(-10, 620), ylim = c(0, 0.016)) +
+  labs(x = "Eggs", y = "Density", color = "Diet Combination", title = "AJ Density Old")
+
+ggplot(eefecundity, aes(age, numEggs, color = lvadComb)) +
+  geom_line() +
+  coord_cartesian(xlim = c(-5, 60), ylim = c(0, 1100)) +
+  geom_smooth() +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Counts Old")
+
+ggplot(eefecundity, aes(age, numEggs, color = lvadComb)) +
+  geom_point() +
+  coord_cartesian(xlim = c(-5, 95), ylim = c(0, 1100)) +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Counts Old")
+
+ggplot(eefecundity, aes(x = lvadComb,y = numEggs, color = id))+
+  geom_boxplot(alpha = 0.5) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Diets Old")
+
+ggplot(eefecundity, aes(x = age, y = numEggs, color = lvadComb)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  coord_cartesian(xlim = c(-5, 80), ylim = c(0, 1100)) +
+  labs(x = "Age (Days)", y = "Eggs", color = "Diet Combination", title = "AJ Line Old")
+
+ggplot(eefecundity, aes(x = lvadComb, y = numEggs, color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.1) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Point Old")
+
+ggplot(eefecundity, aes(x = lvadComb, y = log(numEggs), color = lvadComb)) +
+  geom_point() +
+  geom_jitter(width = 0.05) +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Log Point Old")
+
+ggplot(eefecundity, aes(x = lvadComb, y = numEggs, color = lvadComb)) +
+  geom_violin() +
+  labs(x = "Diet Combination", y = "Eggs", color = "Diet Combination", title = "AJ Violin Old")
+```
+
+
+#Means
+```{r}
+mean(eefecundity$numEggs)
+group_by(eefecundity, )
+sum(eefecundity$numEggs)
+
+aggregate(eefecundity$numEggs, by = list( Diet =eefecundity$id), FUN=sum)
+
+cc <- 1352 + 2838
+cdr <- 1445 + 2271
+drc <- 3849 + 8166
+drdr <- 2075 + 3890
+
+cc/638
+cdr/682
+drc/856
+drdr/742
+```
+

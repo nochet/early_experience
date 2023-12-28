@@ -14,6 +14,7 @@ library(cowplot)
 library(gplots)
 library(gdata)
 library(gtools)
+library(MuMIn)
 
 source("color_map.R")
 source("ggplot_theme.R")
@@ -40,10 +41,10 @@ hist(log(zdn$numEggs))
 
 ```{r}
 
-ltime <- unite(zdn, "larad", larvalTreat, 
+ltime <- zdn %>% unite("larad", larvalTreat, 
                adultTreat, sep = "_", remove=FALSE) %>%
   select(id, larad, age,  larvalTreat, adultTreat, 
-         numEggs, eggpDay, eggpFemDay) %>%
+                numEggs, eggpDay, eggpFemDay) %>%
   rename(cage="id")
 
 ltime$cage <- as.factor(ltime$cage)
@@ -54,6 +55,7 @@ fii <- ltime %>% group_by(larad) %>%
 fii
 
 pairwise.t.test(ltime$numEggs, ltime$larad)
+
 ```
 
 # Effect of larval treatment on fecundity
@@ -68,9 +70,9 @@ pairwise.t.test(ltime$numEggs, ltime$larad)
 
 ```{r}
 nqc1 <- aov(eggpFemDay ~ larad, data = ltime)
-nqc2 <- aov(eggpFemDay ~ larad + id, data = ltime)
+nqc2 <- aov(eggpFemDay ~ larad + cage, data = ltime)
 
-plotmeans(eggpFemDay ~ id, data = ltime)
+plotmeans(eggpFemDay ~ cage, data = ltime)
 plotmeans(eggpFemDay ~ larad, data = ltime)
 
 # Effect of larval diet

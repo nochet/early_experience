@@ -35,7 +35,7 @@ eggs <- read.table("~/MyGithub/early_experience/processed/tricount.txt",
             sep = '\t', header = TRUE)
 
 zdn <-eggs %>%  
-  select(id,sampleDate,age,cam_id,larvalTreat,adultTreat,
+  select(id,age,cam_id,larvalTreat,adultTreat,
                 NstartF,alive,numEggs,eggpDay,eggpFemDay) %>%
   rename(cageID=id,larval=larvalTreat,adult=adultTreat)
 
@@ -59,17 +59,21 @@ lf <- lh %>%
   summarize(n.eggs=mean(eggpFemDay),n=n()) %>%
   as.data.frame()
 
+# Some ages are unmatched across regimes at the ends. Remove these to balance lengths, otherwise matrices will not form.
+
+lf <- lf[!lf$age==73 & !lf$age==80 & !lf$age==85, ]
+lf <- lf[!lf$age==87, ]
+
+
 write.csv(lf,
           file = "../processed/eggDat_Leslie.csv",
           row.names = FALSE)
+
 
 lf %>%
   group_by(Diet) %>%
   summarize(m.eggs=mean(n.eggs),n=n()) %>%
   as.data.frame()
-
-lf$Diet <- factor(lf$Diet)
-pairwise.t.test(lf$n.eggs, lf$Diet)
 
 
 # Lifespan
@@ -88,7 +92,13 @@ mf4_data <- survfit(Surv(age, status) ~ larv_adult + strata(sex), eelifeF)
 surv4 <- mf4_data %>%
   surv_summary(data = eelifeF) %>%
   rename(age = time, Diet = larv_adult) %>%
-  select(Diet, 1:3,5,)
+  select(Diet, 1:3,5,) 
+
+# Some ages are unmatched across regimes at the ends. Remove these to balance lengths, otherwise matrices will not form.
+surv4 <- surv4[!surv4$age==73 & !surv4$age==82 & !surv4$age==85 & !surv4$age==87 & !surv4$age==89 ,]
+
+# C_DR ends at age 75; add last row of zeros
+# surv4 <- rbind(surv4, data.frame(Diet="C_DR",age=78, n.risk=0, n.event=0,surv=0))
 
 write.csv(surv4,
           file = "../processed/survDat_bestModelF.csv",
@@ -105,13 +115,18 @@ write.csv(surv4,
 # mx=number of eggs per female in age class X
 
 surv_eggs <- inner_join(surv4,lf) 
+
   # rename(X="age",Sx="n.risk",Dx="n.event",lx="surv",Tx="n.eggs") %>%
   # select(-n)
 
+# surv_eggs <- surv_eggs[!surv_eggs$age==73 & !surv_eggs$age==80 & !surv_eggs$age==85,]
+
+
+
   
-# write.csv(surv_eggs,
-#           file = "../processed/surv_eggs.csv",
-#           row.names = FALSE)
+write.csv(surv_eggs,
+          file = "../processed/surv_eggs.csv",
+          row.names = FALSE)
 
 ```
 
@@ -132,12 +147,12 @@ cc <- rbind(cc, data.frame(Diet="C_C",age=80, count=0, death=0,surv=0,mx=0))
 cdr <- surv_eggs %>% filter(Diet=="C_DR") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
 cdr <- rbind(data.frame(Diet="C_DR",age=0, count=393, death=0,surv=1,mx=0), cdr)
-cdr <- rbind(cdr, data.frame(Diet="C_DR",age=78, count=0, death=0,surv=0,mx=0))
+cdr <- rbind(cdr, data.frame(Diet="C_DR",age=80, count=0, death=0,surv=0,mx=0))
 
 drc <- surv_eggs %>% filter(Diet=="DR_C") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
 drc <- rbind(data.frame(Diet="DR_C",age=0, count=625, death=0,surv=1,mx=0), drc)
-drc <- rbind(drc, data.frame(Diet="DR_C",age=78, count=0, death=0,surv=0,mx=0))
+drc <- rbind(drc, data.frame(Diet="DR_C",age=80, count=0, death=0,surv=0,mx=0))
 
 drdr <- surv_eggs %>% filter(Diet=="DR_DR") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
@@ -264,6 +279,7 @@ drdrpl <- drdrpl + ggtitle("DR_DR")
 library(ggpubr)
 fitn <- ggarrange(ccpl,cdrpl,drcpl,drdrpl, ncol = 2, nrow = 2, 
                  labels = c("a", "b","c","d"))
+fitn
 
 ggsave(fitn,file = "../plots/leslie_fitness.pdf",
                 width = 4,height=4)
