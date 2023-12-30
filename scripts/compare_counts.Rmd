@@ -44,6 +44,7 @@ Organized$rand_num <-  as.numeric(Organized$rand_num)
 Ordered <- Organized[order(Organized[,1]),]
  
  row.names(Ordered) <- c(1:280)
+ 
 ```
 
 # Integrating Two New Tables
@@ -58,15 +59,21 @@ CountsDD <- read.table("/Users/ngomae/MyGithub/early_experience/original/EE_coun
 colnames(CountsDD) <- c("rand_num", "Count")
 
 CombinedAJ <- left_join(Ordered, CountsAJ, by = NULL, copy = FALSE)
+
 CombinedAJ <- CombinedAJ %>% 
   mutate(Image_id = sub('IMG_', '', Image_id))
+
 CombinedAJ <- CombinedAJ %>% 
   mutate(Image_id = sub('.JPG', '', Image_id))
+
 CombinedDD <- left_join(Ordered, CountsDD, by = NULL, copy = FALSE)
+
 CombinedDD <- CombinedDD %>% 
   mutate(Image_id = sub('IMG_', '', Image_id))
+
 CombinedDD <- CombinedDD %>% 
   mutate(Image_id = sub('.JPG', '', Image_id))
+
 
 CombinedAJ$Image_id <-  as.numeric(CombinedAJ$Image_id)
 CombinedDD$Image_id <-  as.numeric(CombinedDD$Image_id)

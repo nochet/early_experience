@@ -13,7 +13,7 @@ date: "7/17/2018"
 
 
 
-STEP 1: PROCESS RAW EVENT DATA
+STEP 1: PROCESS RAW EVENT DATA (LIFESPAN)
 
 Script: `InitialProcess.R`
 - `source("PreProcess_lifespan_functions.R")`
@@ -25,7 +25,7 @@ Output: `/data/processed/Female_events_eelife.txt` and
 
 - Then, script calculates N for each cage from the death and censored events
 
-- A knit script: `/scripts/eeSurv_viz.html`
+- Html: `/scripts/eeSurv_viz.html`
 
 
 
@@ -72,15 +72,20 @@ Output: Dredge model selection `ee_cph_finalMods.html`
 STEP 3: PROCESS RAW FECUNDITY DATA
 
 a) Egg count data, script: `compare_counts.Rmd`
-Inputs: `scripts/name_conversion.txt`
+Inputs: `scripts/name_conversion.txt` - linking egg images to metadata
         `/original/ee_temp_Values_Sheet_AJ.txt` - counted by Andrew Jones
         `/original/EE_counts_DD.txt` - counted by De'anne Donnel
-        `/processed/Early_Experience_LiFec.txt` - merging with other data
-  - This script is only for checking counts - its outputs are not used further.
+
+  - This script is only for checking counts by different people, not for further analysis. 
+
 
 b) Data cleaning, script: `process_fecundity.Rmd`
+This scripts brings together several tables that were created by three people whoc counted images in ImageJ. It also includes tables where we swapped random images to check each others' counts. Some images were flagged as too high or low in counts and were re-counted.
 
-Input: `/processed/Early_Experience_Data_rechecked.txt` # cleaned data
+Input: `/processed/Early_Experience_Data_rechecked.txt` - data checked by Andrew
+        `/processed/Early_Experience_LiFec.txt` - Partial counts made previously
+        `/processed/recounts_checked.csv` - some images were recounted
+        `/processed/Recount_ImagesFlagged_extremeOutliers.csv` - rechecking outlying counts
 Output: `/processed/tricount.txt`
 
 c) Visualization, script: `scripts/eefecund_viz.Rmd` and `eefecund_viz.html` 
