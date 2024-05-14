@@ -39,7 +39,7 @@ hist(log(zdn$numEggs))
 
 ```
 
-# Lifetime group fecundity patterns
+# Age specific group fecundity patterns
 ## Group by regime
 
 ```{r}
@@ -79,7 +79,7 @@ lt <- zdn %>%
         legend.key.width = unit(0.4, 'cm'), 
         legend.title = element_text(size=6), 
         legend.text = element_text(size=6)) +
-  labs(x = "Age (days)", y = "log(Lifetime fecundity") +
+  labs(x = "Age (days)", y = "log(Age-specific fecundity") +
   theme_half_open() +
   my_theme
 lt <- lt + theme(legend.position = c(0.7,0.8))
@@ -95,7 +95,7 @@ summary(ltime)$r.squared
 ltp <- effect_plot(ltime, pred=Regime, interval=TRUE, 
                    int.type="confidence", int.width=0.95,
                    plot.points=TRUE, jitter = c(0.3,0), line.thickness=0.3,
-                   point.alpha=0.2, y.label="log(Lifetime fecundity)",
+                   point.alpha=0.2, y.label="log(Age-specific fecundity)",
                    x.label="Diet Regime",data=zdn)
 ltp <- ltp + geom_point(color=c("#009E73","#56B4E9","#E69F00", "#000000")) + theme_half_open() + my_theme
 ltp
@@ -128,7 +128,7 @@ pp <- zdn %>%
   # scale_colour_OkabeIto() +
   # tx_color_map() +
   #facet_grid(. ~ larvalTreat) +
-  labs(x = "Age (days)", y = "log(Eggs/female/day)") +
+  labs(x = "Age (days)", y = "log(Eggs/female/3 hrs)") +
   #theme(legend.position = "none") +
   theme_half_open() +
   my_theme
@@ -146,7 +146,7 @@ summary(pff)$r.squared
 pffe <- effect_plot(pff, pred=Regime, interval=TRUE, 
                    int.type="confidence", int.width=0.95,
                    plot.points=TRUE, jitter = c(0.3,0), line.thickness=0.3,
-                   point.alpha=0.2, y.label="log(Eggs/female/day)",
+                   point.alpha=0.2, y.label="log(Eggs/female/3 hrs)",
                    x.label="Diet Regime",data=zdn)
 pffe <- pffe + geom_point(color=c("#009E73","#56B4E9","#E69F00", "#000000")) + theme_half_open() + my_theme
 pffe

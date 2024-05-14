@@ -30,6 +30,8 @@ legSize <- function(myPlot, pointSize = 1.5, textSize = 10, spaceLegend = 1.0) {
 # Load packages
 
 ```{r}
+# remotes::install_github("clauswilke/colorblindr")
+
 library(survival)
 library(survminer)
 library(tidyverse) 
@@ -114,32 +116,17 @@ summary(mp)$table[, "median"]
 mp.plot <- ggsurvplot(mp, data = eelife, 
                      conf.int = FALSE,
                      break.time.by = 20,
-                     #palette = "palette_OkabeIto",
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
-                     #pval = TRUE,
                      surv.median.line = "hv",
-                     #fontsize = 4.5,
                      font.x = 12,
                      font.y = 12,
-                     # font.tickslab = 11,
-                     # font.main = 11,
-                     #risk.table = FALSE,
                      legend = c(0.9, 0.6),
                      risk.table = FALSE,
-                     #risk.table.col = "strata",
-                     # risk.table.y.text.col = T,
-                     # risk.table.y.text = FALSE,
-                     #risk.table.fontsize = 4,
-                     #tables.height = 0.4,
-                     #tables.theme = theme_cleantable(),
-                    # title = "Females & Males",
                      legend.labs = c("C-C","C-DR","DR-C","DR-DR"),
-                     legend.title = "Diet \n combination") +
-                     guides(colour = guide_legend(nrow = 4)) +
-  xlab("Age (days)")
-
+                     legend.title = ("Diet \n combination")) +
+                      xlab("Age (days)")
 mp.plot
 
 ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", last_plot(),device = "pdf")

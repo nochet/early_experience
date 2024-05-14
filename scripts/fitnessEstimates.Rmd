@@ -278,7 +278,8 @@ drdrpl <- drdrpl + ggtitle("DR_DR")
 
 library(ggpubr)
 fitn <- ggarrange(ccpl,cdrpl,drcpl,drdrpl, ncol = 2, nrow = 2, 
-                 labels = c("a", "b","c","d"))
+                 labels = c("a", "b","c","d"),
+                 font.label=list(size=11,face="plain"))
 fitn
 
 ggsave(fitn,file = "../plots/leslie_fitness.pdf",
