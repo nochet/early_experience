@@ -262,6 +262,7 @@ drcpl <- ggplot(drc.rv, aes(age,Rvalue)) +
   theme_half_open() +
   my_theme
 drcpl <- drcpl + ggtitle("DR_C")
+drcpl <- drcpl + ylim(0, 8)
 
 drdr.age <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age) 
 drdr.rv <- as.data.frame(cbind(drdr.eig$stable.age,drdr.eig$repro.value)) %>%

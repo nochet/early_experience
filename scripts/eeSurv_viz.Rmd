@@ -89,7 +89,7 @@ write.csv(eelife, file="~/MyGithub/early_experience/processed/eeAlldat.csv, row.
 ## b) Reaction norms
 
 
-# Male and female combined
+# Male and female combined - Summary
 
 ```{r}
 
@@ -152,6 +152,7 @@ mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
 
 ```
 
+# Male and female - by sex
 
 ```{r}
 mf <- survfit(Surv(age, status) ~ larvalTreat + adultTreat + sex,
@@ -181,18 +182,12 @@ write.csv(quantile(mf, probs = c(0.9, 0.5, 0.1)),
 mf.plot <- ggsurvplot(mf, data = eelife, 
                      conf.int = FALSE,
                      break.time.by = 20,
-                     #palette = "palette_OkabeIto",
                      palette = c("#999999", "#E69F00", "#56B4E9", "#009E73", 
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7"),
                      fun = "pct", 
                      surv.median.line = "hv",
-                     #fontsize = 5.5,
-                     #font.main = 3.5,
                      font.x = 12,
                      font.y = 12,
-                     # font.tickslab = 11,
-                     #pval = TRUE,
-                     #font.main = 12,
                      legend = c(0.9, 0.6),
                      risk.table = TRUE,
                      #risk.table.col = "strata",
@@ -200,14 +195,12 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                      risk.table.y.text = FALSE,
                      risk.table.fontsize = 3.5,
                      tables.height = 0.35,
-                     #tables.theme = theme_cleantable(),
-                    # title = "Females & Males",
                      legend.labs = c("C-C-F","C-C-M",
                                      "C-DR-F","C-DR-M",
                                      "DR-C-F","DR-C-M",
                                      "DR-DR-F","DR-DR-M"),
                      legend.title = "Diet-Sex \n combination") +
-                     guides(colour = guide_legend(nrow = 8)) +
+                     #guides(colour = guide_legend(nrow = 8)) +
                      xlab("Age (days)")
 mf.plot
 
@@ -267,18 +260,13 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
-                     #pval = TRUE,
                      surv.median.line = "hv",
                      font.x = 12,
                      font.y = 12,
                      font.tickslab = 10,
                      font.main = 10,
                      risk.table = FALSE,
-                     #legend="none",
                      legend = c(0.8, 0.8), 
-                     #risk.table.pos = "in",      
-                     # ggtheme = theme_classic2(base_family = "Arial"),
-                     # font.family = "Arial",
                      title = "Larval diet: C \n (a) Females",
                      legend.labs = c("C", "DR"),
                      legend.title = "Adult Diet") +
@@ -305,11 +293,27 @@ erm <- survfit(Surv(age, status) ~ adultTreat,
                    error = "greenwood",
                    data = earlyRichM)
 
+summary(erm)
 summary(erm)$table[, "median"]
+erm_bar <- surv_median(erm)
+
+colnames(erm_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
+erm_bar$adultDiet <- as.factor(erm_bar$adultDiet)
+#rownames(erm_bar) <- c("C", "DR")
+levels(erm_bar$adultDiet) <- c("C", "DR")
+
+ermbarp <- ggplot(erm_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
+  geom_col(color="black", width=0.5) + # sets outlines of bars to black
+  scale_fill_manual(values=c("#000000", "#E69F00")) +
+  labs(title="Larval C", x="Adult Diet", y="Median lifespan, days") +
+  theme_half_open() +
+  my_theme
+ 
+ermbarp 
 
 erm.plot <- ggsurvplot(erm, data = earlyRichM, 
                      conf.int = FALSE,
-                     break.time.by = 30,
+                     break.time.by = 20,
                      palette = c("#999999", "#E69F00", 
                                  "#56B4E9", "#009E73"),
                      fun = "pct", 
@@ -330,6 +334,7 @@ erm.plot
 
 survdiff(Surv(age) ~ adultTreat,
                      data = earlyRichM, rho = 0) 
+
 ```
 
 # EarlyPoor (DR diet) 
@@ -372,7 +377,8 @@ epf.plot
 # Test significance
 survdiff(Surv(age, status) ~ adultTreat,
                      data = earlyPoorF, rho = 0) 
-
+summary(epf)
+summary(mf)$table[, "median"]
 ```
 
 ### Males only

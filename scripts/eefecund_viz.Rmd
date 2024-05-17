@@ -10,7 +10,8 @@ library(tidyverse)
 library(cowplot)
 library(colorblindr)
 library(forcats)
-library(ggpubr) # arrange plots
+library(ggpubr) # arrange plots, publication ready plots
+library(rstatix) #  provides pipe-friendly R functions for easy statistical analyses
 library(jtools) # for effect plots
 library(ggstance) # additional functions for effect plots
 library(sandwich) # additional functions for effect plots
@@ -52,9 +53,9 @@ fi <- group_by(zdn, age, Regime) %>%
   summarise(Sum = sum(numEggs))
 fi
 
-# Overal mean fecundity for treatments
+# Overall mean fecundity for treatments
 fii <-  group_by(zdn, Regime) %>%
-  summarise(Mean = (numEggs))
+  summarise(Mean = numEggs)
 fii
 
 zz <- ggplot(fi, aes(x=Regime, y=Sum, color = Regime)) + 
