@@ -17,8 +17,8 @@ library(colorblindr)
 
 
 
-source("ggplot_theme.R")
-source("color_map_blindr.R")
+source("../../../Functions_and_Themes/color_map.R")
+source("../../../Functions_and_Themes/ggplot_theme.R")
 ```
 
 # Look at data

@@ -1,0 +1,238 @@
+---
+title: "Appendix figures"
+author: "Enoch Ng'oma"
+date: "2024-05-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(tidyverse)
+library(cowplot)
+library(colorblindr)
+library(forcats)
+library(ggpubr) # arrange plots, publication ready plots
+library(rstatix) #  provides pipe-friendly R functions for easy statistical analyses
+#library(jtools) # for effect plots
+#library(ggstance) # additional functions for effect plots
+#library(sandwich) # additional functions for effect plots
+#library(broom.mixed)  # additional functions for effect plots
+
+
+source("../../Functions_and_Themes/color_map.R")
+source("../../Functions_and_Themes/ggplot_theme.R")
+
+```
+
+
+```{r}
+fcd <- read.csv(file = "../processed/fecDat_perFemale.csv")
+
+```
+
+# Visualize female fecundity
+
+```{r}
+# Collapse replicates
+dat <- fcd %>%
+  unite(treat,larvalTreat,adultTreat,sep = "_",remove = TRUE,na.rm=TRUE) %>%
+  unite(date_treat,age,treat,sep="_",remove=FALSE)
+#dat <- dat[order(dat$age),]
+names(dat)[3] <- "Treatment"
+
+collapse.dat <- dat %>%
+  group_by(treat, age) %>%
+  summarise(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
+
+# Cage-wise
+# collapse.dat <- dat %>%
+#   group_by(Treatment, age) %>%
+#   summarise(mean_eggs = mean(eggpFemDay, na.rm = TRUE))
+
+collapse.dat <- collapse.dat[complete.cases(collapse.dat[,3]),]
+
+# Plot overall eggs per female per 3-hr sampling period
+pp <- ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) + 
+  stat_boxplot(geom ='errorbar',width = 0.3) + 
+  geom_boxplot() +
+  geom_jitter() +
+  scale_colour_OkabeIto() +
+  xlab("Larval_Adult diet treatment") + 
+  ylab("Mean eggs/Fem/date") +
+  theme_half_open() +
+  my_theme
+pp <- pp + theme(legend.position = "none")
+pp + theme(text=element_text(size=40))
+
+#ggsave(pp, filename="~/MyGithub/early_experience/Plots/lifetime_eggs_perF_per3HR.pdf", height=4, width=4)
+
+# Plot time series of eggs per female per 3-hr sampling period
+qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
+  geom_line() +
+  geom_point() +
+  scale_colour_OkabeIto() +
+  #scale_fill_OkabeIto() +
+  xlab("Age (days)") + 
+  ylab("Mean eggs/Fem/date") +
+  theme_half_open() +
+  my_theme
+qq <- qq + theme(legend.position=c(0.7,0.8))
+qq <- qq + theme(text=element_text(size=20))
+
+skmb <- ggarrange(pp,qq, ncol = 2, nrow = 1, 
+                 labels = c("a", "b"),
+                 font.label = list(size = 12))
+```
+
+# Lifespan Data
+
+```{r}
+eggs <- read.table("~/MyGithub/early_experience/processed/tricount.txt",
+            sep = '\t', header = TRUE)
+
+zdn <-eggs %>%  
+  dplyr::select(id,age,cam_id,larvalTreat,adultTreat,
+                NstartF,alive,aj1_count,aj2_count,dd1_count,numEggs,
+                eggpDay,eggpFemDay)
+head(zdn)
+
+zdn %>% group_by(id) %>% summarise(sum(numEggs),n=n())
+#hist(log(zdn$numEggs))
+
+```
+
+# Relationship between lifespan and fecundity
+
+```{r}
+# Lifespan
+
+quants <- read.csv("../processed/quantiles.csv")
+#zdn$sgroup <- gsub("\\d", "", zdn$id)
+#edata <- edata[order(edata$age),]
+
+quants$X <- gsub("[a-z]", "", quants$X)
+quants$X <- gsub("T=", "", quants$X)
+quants$X <- gsub("=", "", quants$X)
+quants$X <- gsub(", ", "_", quants$X)
+quants$X <- gsub(" ", "", quants$X)
+
+quants <- quants%>%
+  rename(sgroup="X",
+         q25="quantile.25",ci25l="lower.25",ci25h="upper.25",
+         q50="quantile.50",ci50l="lower.50",ci50h="upper.50",
+         q75="quantile.75",ci75l="lower.75",ci75h="upper.75") %>%
+  unite("ci25",ci25l,ci25h,sep="-") %>%
+  unite("ci50",ci50l,ci50h,sep="-") %>%
+  unite("ci75",ci75l,ci75h,sep="-")
+
+qfemale <- quants %>%
+  filter(stringr::str_detect(sgroup, "_F"))
+
+qfemale$Regime <- str_split(qfemale$sgroup, "_F", simplify = TRUE)[,1] 
+
+qfemale <- dplyr::select(qfemale, Regime,q25,q50,q75) %>%
+  pivot_longer(cols=2:4,names_to = "Quartile",values_to="surv_prob")
+
+```
+
+# Summarize quartiles
+
+```{r}
+# Mean eggs per quantile
+se = function(x) sd(x)/sqrt(length(x))
+
+zdn$Regime <- gsub("\\d", "", zdn$id)
+                            
+quantile(zdn$age, prob = c(0.1,0.5,0.9))
+
+
+uq25 <- filter(zdn, age <= 20) %>%
+  dplyr::select(Regime,age,eggpFemDay)
+uq25$Quartile <- "q25"
+
+uq25se <- uq25 %>%
+  dplyr::select(Regime,age,eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+              qse = se(eggpFemDay))
+uq25se$Quartile <- "q25"
+
+
+uq50 <- filter(zdn, age %in% (21:41)) %>%
+  dplyr::select(Regime,age,eggpFemDay)
+uq50$Quartile <- "q50"
+
+uq50se <- uq50 %>%
+  dplyr::select(Regime,age,eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+              qse = se(eggpFemDay))
+uq50se$Quartile <- "q50"
+
+
+uq75 <- filter(zdn, age %in% (42:59)) %>%
+  dplyr::select(Regime,age,eggpFemDay)
+uq75$Quartile <- "q75"
+
+uq75se <- uq75 %>%
+  dplyr::select(Regime,age,eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+              qse = se(eggpFemDay))
+uq75se$Quartile <- "q75"
+
+
+uq100 <- filter(zdn, age %in% (60:85)) %>%
+  dplyr::select(Regime, age, eggpFemDay)
+uq100$Quartile <- "q100"
+
+uq100se <- uq100 %>%
+  dplyr::select(Regime, age, eggpFemDay) %>%
+  group_by(Regime) %>%
+  summarise(qe = mean(eggpFemDay, na.rm = TRUE),
+            qse = se(eggpFemDay))
+uq100se$Quartile <- "q100"
+
+
+uq <- rbind(uq25, uq50, uq75, uq100)
+uqse <- rbind(uq25se, uq50se, uq75se, uq100se)
+
+
+tf <- uq %>%
+  arrange(age) %>%
+  mutate(Quartile = factor(Quartile, levels=c("q25","q50","q75","q100"))) %>%
+  group_by(Quartile) %>%
+  ggplot(aes(age,eggpFemDay,color=Quartile)) +
+  geom_jitter(size=3, alpha = 0.6) +
+  geom_smooth(se=FALSE,color="black",size=0.8) +
+  #geom = c("point", "line",data=uqse,aes(Regime,qe)) +
+  #facet_grid(. ~ Regime) +
+  facet_grid(cols=vars(Regime), rows=vars(Quartile), scales= "free_y") +
+  scale_colour_OkabeIto() +
+  #tx_color_map() +
+  xlab("Age (Days)") + ylab("Eggs/female/day") +
+  my_theme +
+  theme_half_open() 
+tf <- tf + labs(fill = "Quartile")
+
+tf
+
+# ggsave(tf,file = "../plots/Eggs_perFemale_Quartiles.pdf",
+#                 width = 6,height=4)
+ggsave(tf,file = "../plots/Eggs_perFemale_Quartile.pdf",
+                width = 8,height=6)
+
+```
+
+# Arrange plots
+
+```{r}
+ltf <- ggarrange(skmb,tf, ncol = 1, nrow = 2, 
+                 labels = c("a", "c"),
+                 font.label = list(size = 10))
+ggsave(ltf,file = "../plots/lifetime_fec_reg.pdf",
+                width = 8,height=4)
+```
+

@@ -123,11 +123,17 @@ mp.plot <- ggsurvplot(mp, data = eelife,
                      font.x = 12,
                      font.y = 12,
                      legend = c(0.9, 0.6),
-                     risk.table = FALSE,
-                     legend.labs = c("C-C","C-DR","DR-C","DR-DR"),
+                     #risk.table = TRUE,
+                     risk.table = "percentage",
+                     risk.table.fontsize = 4,
+                     tables.height = 0.35,
+                     tables.theme = theme_cleantable(),
+                     legend.labs = c("C_C","C_DR","DR_C","DR_DR"),
                      legend.title = ("Diet \n combination")) +
                       xlab("Age (days)")
+mp.plot$table <- mp.plot$table + labs(y = NULL)
 mp.plot
+#mp.plot$table + theme(plot.title = element_text(size=12))
 
 ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", last_plot(),device = "pdf")
 
@@ -186,24 +192,37 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                        "#F0E442", "#0072B2", "#D55E00", "#CC79A7"),
                      fun = "pct", 
                      surv.median.line = "hv",
-                     font.x = 12,
-                     font.y = 12,
+                     font.x = c(12),
+                     font.y = c(12),
+                     font.caption = c(10), 
+                     font.legend = c(10), 
+                     font.tickslab = c(10),
                      legend = c(0.9, 0.6),
-                     risk.table = TRUE,
-                     #risk.table.col = "strata",
-                     risk.table.y.text.col = T,
+                     risk.table = "percentage",
+                     #tables.col = "strata",
                      risk.table.y.text = FALSE,
-                     risk.table.fontsize = 3.5,
-                     tables.height = 0.35,
-                     legend.labs = c("C-C-F","C-C-M",
-                                     "C-DR-F","C-DR-M",
-                                     "DR-C-F","DR-C-M",
-                                     "DR-DR-F","DR-DR-M"),
+                     risk.table.y.text.col = TRUE,
+                     risk.table.fontsize = 4,
+                     #tables.y.text = TRUE,
+                     #tables.y.fontsize = 3,
+                     tables.height = 0.4,
+                     tables.theme = theme_cleantable(),
+                     legend.labs = c("C_C_F","C_C_M",
+                                     "C_DR_F","C_DR_M",
+                                     "DR_C_F","DR_C_M",
+                                     "DR_DR_F","DR_DR_M"),
                      legend.title = "Diet-Sex \n combination") +
                      #guides(colour = guide_legend(nrow = 8)) +
                      xlab("Age (days)")
+
+mf.plot$table <- mf.plot$table + labs(y = NULL)
 mf.plot
 
+# mf.plot$table <- mf.plot$table + 
+#   theme(
+#     axis.text.y = element_blank(),
+#     axis.ticks.y = element_blank()
+#     )
 
 ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_Sex.png", last_plot(),device = "png")
 
@@ -212,6 +231,30 @@ survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
                      data = eelife, rho = 0) 
 
 quantile(mf,  probs = c(0.1, 0.5, 0.9))
+```
+
+# Arrange supplementsary plots
+
+```{r}
+# Arrange supplementary figures
+
+suplots <- list()
+suplots[[1]] <- mp.plot
+suplots[[2]] <- mf.plot
+
+suplots_out <- arrange_ggsurvplots(
+  suplots,
+  print = FALSE,
+  ncol = 2,
+  nrow = 1,
+  risk.table.height = 0.4)
+#ggpar(suplots_out, font.main=10)
+
+ggsave(
+  suplots_out,
+  file = "~/MyGithub/early_experience/plots/Sup_SurvPlots_for_larvalDiet.pdf",
+  width = 14,
+  height = 8)
 ```
 
 ##################
@@ -253,6 +296,23 @@ erf <- survfit(Surv(age, status) ~ adultTreat,
                    data = earlyRichF)
 
 summary(erf)$table[, "median"]
+erf_bar <- surv_median(erf)
+
+colnames(erf_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
+erf_bar$adultDiet <- as.factor(erf_bar$adultDiet)
+#rownames(epf_bar) <- c("C", "DR")
+levels(erf_bar$adultDiet) <- c("C", "DR")
+
+erfbarp <- ggplot(erf_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
+  geom_col(color="NA", width=0.5) + 
+  # color="black" sets outlines of bars to black
+  # color=NA removes lines around bars
+  scale_fill_manual(values=c("#999999", "#E69F00")) +
+  labs(title="Larval C", x="Adult Diet", y="Median lifespan, days") +
+  theme_half_open() +
+  my_theme
+ 
+erfbarp
 
 erf.plot <- ggsurvplot(erf, data = earlyRichF, 
                      conf.int = FALSE,
@@ -303,8 +363,10 @@ erm_bar$adultDiet <- as.factor(erm_bar$adultDiet)
 levels(erm_bar$adultDiet) <- c("C", "DR")
 
 ermbarp <- ggplot(erm_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
-  geom_col(color="black", width=0.5) + # sets outlines of bars to black
-  scale_fill_manual(values=c("#000000", "#E69F00")) +
+  geom_col(color="NA", width=0.5) + 
+  # color="black" sets outlines of bars to black
+  # color=NA removes lines around bars
+  scale_fill_manual(values=c("#999999", "#E69F00")) +
   labs(title="Larval C", x="Adult Diet", y="Median lifespan, days") +
   theme_half_open() +
   my_theme
@@ -351,6 +413,23 @@ epf <- survfit(Surv(age, status) ~ adultTreat,
                    error = "greenwood",
                    data = earlyPoorF,)
 summary(epf)$table[, "median"]
+epf_bar <- surv_median(epf)
+
+colnames(epf_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
+epf_bar$adultDiet <- as.factor(epf_bar$adultDiet)
+#rownames(epf_bar) <- c("C", "DR")
+levels(epf_bar$adultDiet) <- c("C", "DR")
+
+epfbarp <- ggplot(epf_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
+  geom_col(color="NA", width=0.5) + 
+  # color="black" sets outlines of bars to black
+  # color=NA removes lines around bars
+  scale_fill_manual(values=c("#999999", "#E69F00")) +
+  labs(title="Larval DR", x="Adult Diet", y="Median lifespan, days") +
+  theme_half_open() +
+  my_theme
+ 
+epfbarp 
 
 epf.plot <- ggsurvplot(epf, data = earlyPoorF, 
                      conf.int = FALSE,
@@ -394,6 +473,23 @@ epm <- survfit(Surv(age, status) ~ adultTreat,
                    data = earlyPoorM)
 
 summary(epm)$table[, "median"]
+epm_bar <- surv_median(epm)
+
+colnames(epm_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
+epm_bar$adultDiet <- as.factor(epm_bar$adultDiet)
+#rownames(epm_bar) <- c("C", "DR")
+levels(epm_bar$adultDiet) <- c("C", "DR")
+
+epmbarp <- ggplot(epm_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
+  geom_col(color="NA", width=0.5) + 
+  # color="black" sets outlines of bars to black
+  # color=NA removes lines around bars
+  scale_fill_manual(values=c("#999999", "#E69F00")) +
+  labs(title="Larval DR", x="Adult Diet", y="Median lifespan, days") +
+  theme_half_open() +
+  my_theme
+ 
+epmbarp
 
 epm.plot <- ggsurvplot(epm, data = earlyPoorM, 
                      conf.int = FALSE,
@@ -424,7 +520,7 @@ survdiff(Surv(age, status) ~ adultTreat,
                      data = earlyPoorM, rho = 0) 
 ```
 
-# Arrange plots
+# Arrange survival plots
 
 ```{r}
 splots <- list()
@@ -445,6 +541,7 @@ ggsave(
   file = "~/MyGithub/early_experience/plots/SurvPlots_for_larvalDiet.pdf",
   width = 5,
   height = 4)
+
 ```
 
 # Survival at 90%, 50% and 10% survival

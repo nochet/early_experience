@@ -157,6 +157,7 @@ subset(fcd,fcd$id=="EE_C_C2") #251
 subset(fcd,fcd$id=="EE_C_DR1") #139
 subset(fcd,fcd$id=="EE_C_DR2") #274
 
+write.csv(fcd,file = "../processed/fecDat_perFemale.csv",row.names = FALSE)
 ```
 
 # Visualize

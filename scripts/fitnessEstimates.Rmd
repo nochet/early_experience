@@ -16,9 +16,8 @@ library(survival)
 library(survminer)
 library(demogR)
 
-source("color_map.R")
-source("ggplot_theme.R")
-#source("color_map_blindr.R")
+source("../../../Functions_and_Themes/color_map.R")
+source("../../../Functions_and_Themes/ggplot_theme.R")
 
 # Function to drop +0i from complex numbers
 f <- function(x) {
@@ -101,7 +100,7 @@ surv4 <- surv4[!surv4$age==73 & !surv4$age==82 & !surv4$age==85 & !surv4$age==87
 # surv4 <- rbind(surv4, data.frame(Diet="C_DR",age=78, n.risk=0, n.event=0,surv=0))
 
 write.csv(surv4,
-          file = "../processed/survDat_bestModelF.csv",
+          file = "../../processed/survDat_bestModelF.csv",
           row.names = FALSE)
 
 
