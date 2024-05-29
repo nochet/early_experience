@@ -125,6 +125,8 @@ Html Output: `/scripts/fitnessEstimates.html`
 
 ## Project Notes 
 
+## 2024-05-29
+`Appendix_Figs.Rmd` - a script for producing and arranging figures for the Appendix for EcoEvo Journal.
 
 ## 2023-12-20
 Complex plot arrangement:

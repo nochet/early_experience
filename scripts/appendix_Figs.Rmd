@@ -59,12 +59,13 @@ pp <- ggplot(collapse.dat,aes(x=treat,y=mean_eggs, col=treat)) +
   geom_boxplot() +
   geom_jitter() +
   scale_colour_OkabeIto() +
+  theme(axis.text.x=element_text(size=20)) +
   xlab("Larval_Adult diet treatment") + 
-  ylab("Mean eggs/Fem/date") +
+  ylab("Mean eggs/Fem/day") +
   theme_half_open() +
   my_theme
 pp <- pp + theme(legend.position = "none")
-pp + theme(text=element_text(size=40))
+#pp + theme(text=element_text(size=12))
 
 #ggsave(pp, filename="~/MyGithub/early_experience/Plots/lifetime_eggs_perF_per3HR.pdf", height=4, width=4)
 
@@ -75,15 +76,16 @@ qq <- ggplot(collapse.dat,aes(x=age,y=mean_eggs, col=treat)) +
   scale_colour_OkabeIto() +
   #scale_fill_OkabeIto() +
   xlab("Age (days)") + 
-  ylab("Mean eggs/Fem/date") +
+  #ylab("Mean eggs/Fem/day") +
   theme_half_open() +
   my_theme
 qq <- qq + theme(legend.position=c(0.7,0.8))
-qq <- qq + theme(text=element_text(size=20))
+qq <- qq + theme(axis.title.y = element_blank()) 
+#qq <- qq + theme(text=element_text(size=20))
 
 skmb <- ggarrange(pp,qq, ncol = 2, nrow = 1, 
                  labels = c("a", "b"),
-                 font.label = list(size = 12))
+                 font.label = list(size = 10))
 ```
 
 # Lifespan Data
@@ -213,8 +215,8 @@ tf <- uq %>%
   scale_colour_OkabeIto() +
   #tx_color_map() +
   xlab("Age (Days)") + ylab("Eggs/female/day") +
-  my_theme +
-  theme_half_open() 
+  theme_half_open() +
+  my_theme
 tf <- tf + labs(fill = "Quartile")
 
 tf
@@ -233,6 +235,6 @@ ltf <- ggarrange(skmb,tf, ncol = 1, nrow = 2,
                  labels = c("a", "c"),
                  font.label = list(size = 10))
 ggsave(ltf,file = "../plots/lifetime_fec_reg.pdf",
-                width = 8,height=4)
+                width = 8,height=9)
 ```
 
