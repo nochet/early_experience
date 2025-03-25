@@ -37,14 +37,15 @@ library(survminer)
 library(tidyverse) 
 library(forcats)
 library(cowplot)
+library(gridExtra)
 library(colorblindr)
 library(visR)
 #library(Greg)
 
 
 #source("color_map.R")
-source("../../Functions_and_Themes/color_map.R")
-source("../../Functions_and_Themes/ggplot_theme.R")
+source("/Users/ngomae/MyGithub/Functions_and_Themes/color_map.R")
+source("/Users/ngomae/MyGithub/Functions_and_Themes/ggplot_theme.R")
 
 ```
 
@@ -128,17 +129,32 @@ mp.plot <- ggsurvplot(mp, data = eelife,
                      risk.table.fontsize = 4,
                      tables.height = 0.35,
                      tables.theme = theme_cleantable(),
-                     legend.labs = c("C_C","C_DR","DR_C","DR_DR"),
+                     legend.labs = c("HP_HP","HP_LP","LP_HP","LP_LP"),
                      legend.title = ("Diet \n combination")) +
                       xlab("Age (days)")
 mp.plot$table <- mp.plot$table + labs(y = NULL)
 mp.plot
 #mp.plot$table + theme(plot.title = element_text(size=12))
 
-ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.pdf", last_plot(),device = "pdf")
+# Combine the main plot and risk table into one grob
+combined_plot <- arrangeGrob(mp.plot$plot, mp.plot$table, ncol = 1, heights = c(2, 1))
 
+ggsave("~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_All.png",
+       plot = combined_plot, width = 8, height = 8, dpi = 300)
+
+
+# Significance testing - overall and pairwise
 survdiff(Surv(age) ~larvalTreat + adultTreat, 
                      data = eelife, rho = 0) 
+
+pairwise_diffs <- pairwise_survdiff(Surv(age) ~ larv_adult, 
+                                      data = eelife, 
+                                      p.adjust.method = "BH")
+
+pairwise_diffs
+
+
+summary(mp,times=25)
 
 quantile(mp,  probs = c(0.1, 0.5, 0.9))
 visR::get_quantile(mp, probs = c(0.1, 0.5, 0.9))
@@ -155,6 +171,7 @@ surv_pvalue(mpc)
 # Extract summary table at interesting probabilities
 mpsum <- summary(mp,probs=c(0.1,0.5,0.9))
 #summary(mp,times=c(1,2,3))
+
 
 ```
 
@@ -207,10 +224,10 @@ mf.plot <- ggsurvplot(mf, data = eelife,
                      #tables.y.fontsize = 3,
                      tables.height = 0.4,
                      tables.theme = theme_cleantable(),
-                     legend.labs = c("C_C_F","C_C_M",
-                                     "C_DR_F","C_DR_M",
-                                     "DR_C_F","DR_C_M",
-                                     "DR_DR_F","DR_DR_M"),
+                     legend.labs = c("HP_HP_F","HP_HP_M",
+                                     "HP_LP_F","HP_LP_M",
+                                     "LP_HP_F","LP_HP_M",
+                                     "LP_LP_F","LP_LP_M"),
                      legend.title = "Diet-Sex \n combination") +
                      #guides(colour = guide_legend(nrow = 8)) +
                      xlab("Age (days)")
@@ -223,6 +240,7 @@ mf.plot
 #     axis.text.y = element_blank(),
 #     axis.ticks.y = element_blank()
 #     )
+quantile(mf,  probs = c(0.1, 0.5, 0.9))
 
 ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_with_RiskTable_Sex.png", last_plot(),device = "png")
 
@@ -230,7 +248,25 @@ ggsave(filename = "~/MyGithub/early_experience/plots/SurvPlots_for_fullModel_wit
 survdiff(Surv(age) ~larvalTreat+adultTreat+sex,
                      data = eelife, rho = 0) 
 
-quantile(mf,  probs = c(0.1, 0.5, 0.9))
+
+# Combine larvalTreat, adultTreat, and sex into a single grouping factor
+eelife$group <- interaction(eelife$larvalTreat, eelife$adultTreat, eelife$sex, sep = "_")
+
+# Pairwisediff() using the grouping variable
+pairwise_results <- pairwise_survdiff(Surv(age, status) ~ group, 
+                                      data = eelife, 
+                                      p.adjust.method = "BH")
+pairwise_results
+
+# Extract table
+library(officer)
+library(flextable)
+
+p_values_df <- as.data.frame(as.table(pairwise_results$p.value))
+ft <- flextable(p_values_df)
+ft <- autofit(ft)
+ft
+
 ```
 
 # Arrange supplementsary plots
@@ -255,6 +291,20 @@ ggsave(
   file = "~/MyGithub/early_experience/plots/Sup_SurvPlots_for_larvalDiet.pdf",
   width = 14,
   height = 8)
+```
+
+# Check if survival is different up to time, t
+
+```{r}
+# Truncate time at 20 days and recode events
+eelife$time20 <- pmin(eelife$age, 20)
+eelife$event20 <- ifelse(eelife$age > 20, 0, eelife$event)
+
+# Perform the survival difference test using the truncated data
+survdiff(Surv(time20, event20) ~ larvalTreat + adultTreat, data = eelife, rho = 0)
+
+
+
 ```
 
 ##################
@@ -300,8 +350,8 @@ erf_bar <- surv_median(erf)
 
 colnames(erf_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 erf_bar$adultDiet <- as.factor(erf_bar$adultDiet)
-#rownames(epf_bar) <- c("C", "DR")
-levels(erf_bar$adultDiet) <- c("C", "DR")
+#rownames(epf_bar) <- c("C", "LP")
+levels(erf_bar$adultDiet) <- c("C", "LP")
 
 erfbarp <- ggplot(erf_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
@@ -328,7 +378,7 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
                      risk.table = FALSE,
                      legend = c(0.8, 0.8), 
                      title = "Larval diet: C \n (a) Females",
-                     legend.labs = c("C", "DR"),
+                     legend.labs = c("C", "LP"),
                      legend.title = "Adult Diet") +
   xlab("Age (days)") 
 erf.plot
@@ -359,8 +409,8 @@ erm_bar <- surv_median(erm)
 
 colnames(erm_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 erm_bar$adultDiet <- as.factor(erm_bar$adultDiet)
-#rownames(erm_bar) <- c("C", "DR")
-levels(erm_bar$adultDiet) <- c("C", "DR")
+#rownames(erm_bar) <- c("C", "LP")
+levels(erm_bar$adultDiet) <- c("C", "LP")
 
 ermbarp <- ggplot(erm_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
@@ -388,7 +438,7 @@ erm.plot <- ggsurvplot(erm, data = earlyRichM,
                      risk.table = FALSE,
                      legend="none",
                      # legend = c(0.9, 0.8),                     
-                     # legend.labs = c("C", "DR"),
+                     # legend.labs = c("C", "LP"),
                      legend.title="",
                      title = "Larval diet: C \n (b) Males") +
   xlab("Age (days)") 
@@ -399,12 +449,12 @@ survdiff(Surv(age) ~ adultTreat,
 
 ```
 
-# EarlyPoor (DR diet) 
+# EarlyPoor (LP diet) 
 
 ### Females only
 
 ```{r}
-earlyPoorF <- subset(eelife, c(eelife$larvalTreat=="DR" & eelife$sex=="F"))
+earlyPoorF <- subset(eelife, c(eelife$larvalTreat=="LP" & eelife$sex=="F"))
 
 epf <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
@@ -417,15 +467,15 @@ epf_bar <- surv_median(epf)
 
 colnames(epf_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 epf_bar$adultDiet <- as.factor(epf_bar$adultDiet)
-#rownames(epf_bar) <- c("C", "DR")
-levels(epf_bar$adultDiet) <- c("C", "DR")
+#rownames(epf_bar) <- c("C", "LP")
+levels(epf_bar$adultDiet) <- c("C", "LP")
 
 epfbarp <- ggplot(epf_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
   # color="black" sets outlines of bars to black
   # color=NA removes lines around bars
   scale_fill_manual(values=c("#999999", "#E69F00")) +
-  labs(title="Larval DR", x="Adult Diet", y="Median lifespan, days") +
+  labs(title="Larval LP", x="Adult Diet", y="Median lifespan, days") +
   theme_half_open() +
   my_theme
  
@@ -446,9 +496,9 @@ epf.plot <- ggsurvplot(epf, data = earlyPoorF,
                      risk.table = FALSE,
                      legend="none",
                      # legend = c(0.9, 0.8),                     
-                     # legend.labs = c("C", "DR"),
+                     # legend.labs = c("C", "LP"),
                      # legend.title = "Adult Diet",
-                     title = "Larval diet: DR \n (c) Females") +
+                     title = "Larval diet: LP \n (c) Females") +
   xlab("Age (days)") +
   ylab("")
 epf.plot
@@ -463,7 +513,7 @@ summary(mf)$table[, "median"]
 ### Males only
 
 ```{r}
-earlyPoorM <- subset(eelife, c(eelife$larvalTreat=="DR" & eelife$sex=="M"))
+earlyPoorM <- subset(eelife, c(eelife$larvalTreat=="LP" & eelife$sex=="M"))
 
 epm <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
@@ -477,15 +527,15 @@ epm_bar <- surv_median(epm)
 
 colnames(epm_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 epm_bar$adultDiet <- as.factor(epm_bar$adultDiet)
-#rownames(epm_bar) <- c("C", "DR")
-levels(epm_bar$adultDiet) <- c("C", "DR")
+#rownames(epm_bar) <- c("C", "LP")
+levels(epm_bar$adultDiet) <- c("C", "LP")
 
 epmbarp <- ggplot(epm_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
   # color="black" sets outlines of bars to black
   # color=NA removes lines around bars
   scale_fill_manual(values=c("#999999", "#E69F00")) +
-  labs(title="Larval DR", x="Adult Diet", y="Median lifespan, days") +
+  labs(title="Larval LP", x="Adult Diet", y="Median lifespan, days") +
   theme_half_open() +
   my_theme
  
@@ -509,9 +559,9 @@ epm.plot <- ggsurvplot(epm, data = earlyPoorM,
                      # ggtheme = theme_classic2(base_family = "Courier New"),
                      # font.family = "Courier New",
                      # legend = c(0.9, 0.8),                     
-                     # legend.labs = c("C", "DR"),
+                     # legend.labs = c("C", "LP"),
                      # legend.title = "Adult Diet",
-                     title = "Larval diet: DR \n (d) Males") +
+                     title = "Larval diet: LP \n (d) Males") +
   xlab("Age (days)") +
   ylab("")
 epm.plot
