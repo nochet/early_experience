@@ -16,10 +16,11 @@ library(jtools) # for effect plots
 library(ggstance) # additional functions for effect plots
 library(sandwich) # additional functions for effect plots
 library(broom.mixed)  # additional functions for effect plots
+library(effsize)
+library(reshape2)  # For reshaping data
 
-source("color_map.R")
-source("ggplot_theme.R")
-#source("color_map_blindr.R")
+
+source("/Users/ngomae/MyGithub/Functions_and_Themes/ggplot_theme.R")
 
 ```
 
@@ -39,7 +40,7 @@ zdn %>% group_by(id) %>% summarise(sum(numEggs),n=n())
 hist(log(zdn$numEggs))
 
 ```
-
+    
 # Age specific group fecundity patterns
 ## Group by regime
 
@@ -112,10 +113,181 @@ lts
 ltf <- ggarrange(lt,ltp,lts, ncol = 3, nrow = 1, 
                  labels = c("a", "b","c"),
                  font.label = list(size = 10))
-ggsave(ltf,file = "../plots/lifetime_fec_reg.pdf",
+ggsave(ltf,file = "/Users/ngomae/MyGithub/early_experience/plots/lifetime_fec_reg.pdf",
                 width = 8,height=4)
 
 ```
+
+# Lifetime fecundity
+
+```{r}
+
+lifetime_fecundity <- zdn %>%
+  group_by(id, Regime) %>%
+  summarise(totalEggs = sum(numEggs, na.rm = TRUE), .groups = "drop")
+
+
+ggplot(lifetime_fecundity, aes(x = Regime, y = totalEggs)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Lifetime Fecundity Across Regimes", 
+       x = "Regime", y = "Lifetime Fecundity (Total Eggs)")
+
+anova_model <- aov(totalEggs ~ Regime, data = lifetime_fecundity)
+summary(anova_model)
+
+# Check the spread within each regime by computing standard deviations
+## If the variation within each regime is large relative to the differences between regimes
+lifetime_fecundity %>%
+  group_by(Regime) %>%
+  summarise(mean = mean(totalEggs), sd = sd(totalEggs))
+
+# Check normality
+shapiro.test(lifetime_fecundity$totalEggs)  # data is normal, p>0.05
+
+# Check variance homogeneity
+bartlett.test(totalEggs ~ Regime, data = lifetime_fecundity)
+## A high p-value (> 0.05) indicates no significant difference in variances between regimes, meaning ANOVA assumptions hold
+
+# Why Is DR_C Not Significant?
+#Even though DR_C has a much higher mean (4897 eggs) and standard deviation (2319 eggs) than other regimes: The small sample size (n=2 per group) limits statistical power.The large variance within DR_C (2319 eggs) means there’s high variability, making it harder to detect a significant difference.
+
+# Kruskal-Wallis (justified on small sample size)
+kruskal.test(totalEggs ~ Regime, data = lifetime_fecundity)
+```
+
+
+# EVALUATE EFFECT SIZES - Cohen's d
+
+```{r}
+## Even if p-values are not significant, large effect sizes can still indicate biological relevance.
+lifetime_fecundity$Regime <- as.factor(lifetime_fecundity$Regime)
+
+# Get all pairwise combinations
+regime_pairs <- combn(levels(lifetime_fecundity$Regime), 2, simplify = FALSE)
+
+# Compute Cohen's d for each pair
+pairwise_d_results <- lapply(regime_pairs, function(pair) {
+  d_result <- cohen.d(
+    lifetime_fecundity$totalEggs[lifetime_fecundity$Regime == pair[1]],
+    lifetime_fecundity$totalEggs[lifetime_fecundity$Regime == pair[2]]
+  )
+  data.frame(Group1 = pair[1], Group2 = pair[2], CohenD = d_result$estimate)
+})
+
+# Combine results into a table
+pairwise_d_table <- do.call(rbind, pairwise_d_results)
+pairwise_d_table
+
+# Visualize - bar plot
+ggplot(pairwise_d_table, aes(x = interaction(Group1, Group2, sep = " vs "), y = CohenD, fill = CohenD)) +
+  geom_bar(stat = "identity") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal() +
+  labs(title = "Pairwise Cohen's d for Lifetime Fecundity",
+       x = "Regime Comparison",
+       y = "Cohen's d") +
+  coord_flip()  # Rotate for better readability
+
+
+
+
+
+# Visualize - heat map
+
+# Convert to wide matrix format
+pairwise_matrix <- dcast(pairwise_d_table, Group1 ~ Group2, value.var = "CohenD")
+
+# Convert to matrix for ggplot
+pairwise_melt <- melt(pairwise_matrix, id.vars = "Group1")
+
+ggplot(pairwise_melt, aes(x = Group1, y = variable, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal() +
+  labs(title = "Heatmap of Pairwise Cohen's d",
+       x = "Group 1",
+       y = "Group 2",
+       fill = "Cohen's d")
+
+# Visualize - Lollipop Plot (Alternative to Bar Plot)
+ggplot(pairwise_d_table, aes(x = interaction(Group1, Group2, sep = " vs "), y = CohenD)) +
+  geom_segment(aes(xend = interaction(Group1, Group2, sep = " vs "), yend = 0), color = "gray") +
+  geom_point(size = 4, aes(color = CohenD)) +
+  scale_color_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal() +
+  labs(title = "Pairwise Cohen's d for Lifetime Fecundity",
+       x = "Regime Comparison",
+       y = "Cohen's d") +
+  coord_flip()
+
+
+```
+
+# Interpretation of Cohen’s d
+## 0.2 = Small effect
+## 0.5 = Medium effect
+## 0.8+ = Large effect (meaning a biologically relevant difference)
+
+
+# EVALUATE HEDGE'S D INSTEAD
+
+```{r}
+
+# Calculate Hedge's g (Hedge's d) for pairwise comparisons
+regime_pairs <- combn(levels(lifetime_fecundity$Regime), 2, simplify = FALSE)
+
+pairwise_d_results <- lapply(regime_pairs, function(pair) {
+  d_result <- cohen.d(
+    lifetime_fecundity$totalEggs[lifetime_fecundity$Regime == pair[1]],
+    lifetime_fecundity$totalEggs[lifetime_fecundity$Regime == pair[2]],
+    hedges.correction = TRUE  # Apply the correction for small sample sizes
+  )
+  data.frame(Group1 = pair[1], Group2 = pair[2], CohenD = d_result$estimate)
+})
+
+# Combine results into a table
+pairwise_d_table <- do.call(rbind, pairwise_d_results)
+pairwise_d_table
+
+# Lolipop plot of Hedge's d
+
+# Example data frame with the updated labels
+# Assuming 'pairwise_d_table' now uses the new labels (HH, LL, HL, LH)
+pairwise_d_table <- data.frame(
+  Group1 = c("HH vs HL", "HH vs LH", "HH vs LL", "HL vs LH", "HL vs LL", "LH vs LL"),
+  Group2 = c("HL", "LH", "LL", "LH", "LL", "LL"),
+  HedgeD = c(0.08480678, -0.99219517, -0.50155403, -1.07257875, -0.63648230, 0.66102670)  # Replace with actual Hedge's d values
+)
+
+
+hd <- ggplot(pairwise_d_table, aes(x = Group1, y = HedgeD)) +
+  geom_segment(aes(xend = Group1, yend = 0), color = "#E69F00", size = 1) +  # Lollipop stem
+  geom_point(color = "#E69F00", size = 4) +  # Lollipop circle
+  geom_hline(yintercept = 0, color = "grey", linetype = "dashed", size = 0.8) +  # Add horizontal line at y = 0
+  coord_flip() +  # Flip coordinates for better readability
+  labs(
+    # title = "Pairwise Hedge's d Effect Sizes",
+    x = "Pairwise comparison",
+    y = "Hedge's d (effect size)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + # Rotate x-axis labels for better clarity
+  theme_half_open() +
+  my_theme
+
+ggsave(hd,file = "/Users/ngomae/MyGithub/early_experience/plots/hedgesd.png",
+                width = 5,height=4)
+
+```
+
+# Effect Size Guidelines (Hedge’s d):
+# d < 0.2 → Small effect
+# 0.2 ≤ d < 0.5 → Medium effect
+# 0.5 ≤ d < 0.8 → Large effect
+# d ≥ 0.8 → Very large effect
+
 
 # Per female patterns
 # Group by regime

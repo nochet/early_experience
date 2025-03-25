@@ -44,7 +44,6 @@ library(visR)
 
 
 #source("color_map.R")
-source("/Users/ngomae/MyGithub/Functions_and_Themes/color_map.R")
 source("/Users/ngomae/MyGithub/Functions_and_Themes/ggplot_theme.R")
 
 ```
