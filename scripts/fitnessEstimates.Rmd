@@ -16,8 +16,7 @@ library(survival)
 library(survminer)
 library(demogR)
 
-source("../../../Functions_and_Themes/color_map.R")
-source("../../../Functions_and_Themes/ggplot_theme.R")
+source("/Users/ngomae/MyGithub/Functions_and_Themes/ggplot_theme.R")
 
 # Function to drop +0i from complex numbers
 f <- function(x) {
@@ -51,7 +50,7 @@ lh <- zdn %>%
   mutate(snum = row_number()) %>% # specify flip#
   as.data.frame()
 
-lh$ad <- str_split(zdn$cageID, "_", simplify = TRUE)[,2]
+#lh$ad <- str_split(zdn$cageID, "_", simplify = TRUE)[,2]
 
 lf <- lh %>%
   group_by(Diet,age) %>%
@@ -65,7 +64,7 @@ lf <- lf[!lf$age==87, ]
 
 
 write.csv(lf,
-          file = "../processed/eggDat_Leslie.csv",
+          file = "~/MyGithub/early_experience/processed/eggDat_Leslie.csv",
           row.names = FALSE)
 
 
@@ -76,7 +75,7 @@ lf %>%
 
 
 # Lifespan
-eelife <- read.csv("../processed/eeAlldat.csv") %>%
+eelife <- read.csv("~/MyGithub/early_experience/processed/eeAlldat.csv") %>%
   select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex) 
 
 eelife$age <- as.numeric(eelife$age)
@@ -96,11 +95,11 @@ surv4 <- mf4_data %>%
 # Some ages are unmatched across regimes at the ends. Remove these to balance lengths, otherwise matrices will not form.
 surv4 <- surv4[!surv4$age==73 & !surv4$age==82 & !surv4$age==85 & !surv4$age==87 & !surv4$age==89 ,]
 
-# C_DR ends at age 75; add last row of zeros
-# surv4 <- rbind(surv4, data.frame(Diet="C_DR",age=78, n.risk=0, n.event=0,surv=0))
+# HL ends at age 75; add last row of zeros
+# surv4 <- rbind(surv4, data.frame(Diet="HL",age=78, n.risk=0, n.event=0,surv=0))
 
 write.csv(surv4,
-          file = "../../processed/survDat_bestModelF.csv",
+          file = "~/MyGithub/early_experience/processed/survDat_bestModelF.csv",
           row.names = FALSE)
 
 
@@ -113,18 +112,22 @@ write.csv(surv4,
 # Tx=eggs per female per day
 # mx=number of eggs per female in age class X
 
-surv_eggs <- inner_join(surv4,lf) 
+surv4$Diet <- as.character(surv4$Diet)  # Convert factor to character
+lf$Diet <- as.character(lf$Diet)        # Ensure it's character
 
-  # rename(X="age",Sx="n.risk",Dx="n.event",lx="surv",Tx="n.eggs") %>%
-  # select(-n)
+surv4 <- surv4 %>%
+  mutate(Diet = recode(Diet, 
+                       "HP_HP" = "HH",
+                       "HP_LP" = "HL",
+                       "LP_HP" = "LH",
+                       "LP_LP" = "LL"))
 
-# surv_eggs <- surv_eggs[!surv_eggs$age==73 & !surv_eggs$age==80 & !surv_eggs$age==85,]
+surv_eggs <- inner_join(surv4, lf, by = c("Diet", "age"))  # Explicitly specify keys
 
 
 
-  
 write.csv(surv_eggs,
-          file = "../processed/surv_eggs.csv",
+          file = "~/MyGithub/early_experience/processed/surv_eggs.csv",
           row.names = FALSE)
 
 ```
@@ -133,37 +136,37 @@ write.csv(surv_eggs,
 
 ```{r}
 
-surv_eggs <- read.csv("../processed/surv_eggs.csv") 
+surv_eggs <- read.csv("~/MyGithub/early_experience/processed/surv_eggs.csv") 
 
 # Add row for zero mortality and fecundity before first age class
 # Add row for zero survival and fecundity at the end of experiment
 
-cc <- surv_eggs %>% filter(Diet=="C_C") %>% 
+hh <- surv_eggs %>% filter(Diet=="HH") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
-cc <- rbind(data.frame(Diet="C_C",age=0, count=426, death=0,surv=1,mx=0), cc)
-cc <- rbind(cc, data.frame(Diet="C_C",age=80, count=0, death=0,surv=0,mx=0))
+hh <- rbind(data.frame(Diet="HH",age=0, count=426, death=0,surv=1,mx=0), hh)
+hh <- rbind(hh, data.frame(Diet="HH",age=80, count=0, death=0,surv=0,mx=0))
 
-cdr <- surv_eggs %>% filter(Diet=="C_DR") %>% 
+hl <- surv_eggs %>% filter(Diet=="HL") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
-cdr <- rbind(data.frame(Diet="C_DR",age=0, count=393, death=0,surv=1,mx=0), cdr)
-cdr <- rbind(cdr, data.frame(Diet="C_DR",age=80, count=0, death=0,surv=0,mx=0))
+hl <- rbind(data.frame(Diet="HL",age=0, count=393, death=0,surv=1,mx=0), hl)
+hl <- rbind(hl, data.frame(Diet="HL",age=80, count=0, death=0,surv=0,mx=0))
 
-drc <- surv_eggs %>% filter(Diet=="DR_C") %>% 
+lh <- surv_eggs %>% filter(Diet=="LH") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% select(-n) 
-drc <- rbind(data.frame(Diet="DR_C",age=0, count=625, death=0,surv=1,mx=0), drc)
-drc <- rbind(drc, data.frame(Diet="DR_C",age=80, count=0, death=0,surv=0,mx=0))
+lh <- rbind(data.frame(Diet="LH",age=0, count=625, death=0,surv=1,mx=0), lh)
+lh <- rbind(lh, data.frame(Diet="LH",age=80, count=0, death=0,surv=0,mx=0))
 
-drdr <- surv_eggs %>% filter(Diet=="DR_DR") %>% 
+ll <- surv_eggs %>% filter(Diet=="LL") %>% 
   rename(count="n.risk",death="n.event",mx="n.eggs") %>% 
   select(-n) 
-drdr <- rbind(data.frame(Diet="DR_DR",age=0, count=510, death=0,surv=1,mx=0), drdr)
-drdr <- rbind(drdr, data.frame(Diet="dr_DR",age=80, count=0, death=0,surv=0,mx=0))
+ll <- rbind(data.frame(Diet="LL",age=0, count=510, death=0,surv=1,mx=0), ll)
+ll <- rbind(ll, data.frame(Diet="LL",age=80, count=0, death=0,surv=0,mx=0))
 
 # Life tables
-cc.lt <- with(cc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-cdr.lt <- with(cdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-drc.lt <- with(drc, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
-drdr.lt <- with(drdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+hh.lt <- with(hh, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+hl.lt <- with(hl, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+lh.lt <- with(lh, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
+ll.lt <- with(ll, life.table(x=age, nDx=death, nKx=count, type="cohort", iwidth=1, width12=c(1,1)))
 
 # View function
 #getAnywhere(life.table) # iwidth and width12!!!
@@ -177,134 +180,134 @@ drdr.lt <- with(drdr, life.table(x=age, nDx=death, nKx=count, type="cohort", iwi
 # nLx = age-specific survival
 # mx = age-specific fertility
 
-cc.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cc) %>% select(1,3:7,2) 
-cc.lmat <- leslie.matrix(lx=cc.mx$nLx, mx=cc.mx$mx)
-cc.eig <- eigen.analysis(cc.lmat)
+hh.mx <- hh.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(hh) %>% select(1,3:7,2) 
+hh.lmat <- leslie.matrix(lx=hh.mx$nLx, mx=hh.mx$mx)
+hh.eig <- eigen.analysis(hh.lmat)
 
-cdr.mx <- cdr.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(cdr) %>% select(1,3:7,2) 
-cdr.lmat <- leslie.matrix(lx=cdr.mx$nLx, mx=cdr.mx$mx)
-cdr.eig <- eigen.analysis(cdr.lmat)
+hl.mx <- hl.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(hl) %>% select(1,3:7,2) 
+hl.lmat <- leslie.matrix(lx=hl.mx$nLx, mx=hl.mx$mx)
+hl.eig <- eigen.analysis(hl.lmat)
 
-drc.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(drc) %>% select(1,3:7,2) 
-drc.lmat <- leslie.matrix(lx=drc.mx$nLx, mx=drc.mx$mx)
-drc.eig <- eigen.analysis(drc.lmat)
+lh.mx <- hh.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(lh) %>% select(1,3:7,2) 
+lh.lmat <- leslie.matrix(lx=lh.mx$nLx, mx=lh.mx$mx)
+lh.eig <- eigen.analysis(lh.lmat)
 
-drdr.mx <- cc.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(drdr) %>% select(1,3:7,2) 
-drdr.lmat <- leslie.matrix(lx=drdr.mx$nLx, mx=drdr.mx$mx)
-drdr.eig <- eigen.analysis(drdr.lmat)
+ll.mx <- hh.lt %>% select(x,nLx) %>% rename(age="x") %>%  inner_join(ll) %>% select(1,3:7,2) 
+ll.lmat <- leslie.matrix(lx=ll.mx$nLx, mx=ll.mx$mx)
+ll.eig <- eigen.analysis(ll.lmat)
 
 # Plot sensitivities and elasticities
 par(mfrow=c(3,4))
-plot(cc.eig$sensitivities)
+plot(hh.eig$sensitivities)
 title("a")
-plot(cdr.eig$sensitivities)
+plot(hl.eig$sensitivities)
 title("b")
-plot(drc.eig$sensitivities)
+plot(lh.eig$sensitivities)
 title("c")
-plot(drdr.eig$sensitivities)
+plot(ll.eig$sensitivities)
 title("d")
 
-plot(cc.eig$elasticities)
+plot(hh.eig$elasticities)
 title("e")
-plot(cdr.eig$elasticities)
+plot(hl.eig$elasticities)
 title("f")
-plot(drc.eig$elasticities)
+plot(lh.eig$elasticities)
 title("g")
-plot(drdr.eig$elasticities)
+plot(ll.eig$elasticities)
 title("h")
 
-plot(cc.eig$repro.value)
+plot(hh.eig$repro.value)
 title("i")
-plot(cdr.eig$repro.value)
+plot(hl.eig$repro.value)
 title("j")
-plot(drc.eig$repro.value)
+plot(lh.eig$repro.value)
 title("k")
-plot(drdr.eig$repro.value)
+plot(ll.eig$repro.value)
 title("l")
 
 # Reproductive values
-cc.age <- surv_eggs %>% filter(Diet=="C_C") %>% select(age) 
-cc.rv <- as.data.frame(cbind(cc.eig$stable.age,cc.eig$repro.value)) %>%
+hh.age <- surv_eggs %>% filter(Diet=="HH") %>% select(age) 
+hh.rv <- as.data.frame(cbind(hh.eig$stable.age,hh.eig$repro.value)) %>%
   rename(stable_age="V1", Rvalue="V2") %>%
-  cbind(cc.age)
+  cbind(hh.age)
 
-ccpl <- ggplot(cc.rv, aes(age,Rvalue)) +
+hhpl <- ggplot(hh.rv, aes(age,Rvalue)) +
   geom_point() +
   geom_smooth() +
   labs(x = "Age (days)", y = "Reproductive value") +
   theme_half_open() +
   my_theme
-ccpl <- ccpl + ggtitle("C_C")
+hhpl <- hhpl + ggtitle("HH")
 
-cdr.age <- surv_eggs %>% filter(Diet=="C_DR") %>% select(age) 
-cdr.rv <- as.data.frame(cbind(cdr.eig$stable.age,cdr.eig$repro.value)) %>%
+hl.age <- surv_eggs %>% filter(Diet=="HL") %>% select(age) 
+hl.rv <- as.data.frame(cbind(hl.eig$stable.age,hl.eig$repro.value)) %>%
   rename(stable_age="V1", Rvalue="V2") %>%
-  cbind(cdr.age)
+  cbind(hl.age)
 
-cdrpl <- ggplot(cdr.rv, aes(age,Rvalue)) +
+hlpl <- ggplot(hl.rv, aes(age,Rvalue)) +
   geom_point() +
   geom_smooth() +
   labs(x = "Age (days)", y = "Reproductive value") +
   theme_half_open() +
   my_theme
-cdrpl <- cdrpl + ggtitle("C_DR")
+hlpl <- hlpl + ggtitle("HL")
           
-drc.age <- surv_eggs %>% filter(Diet=="DR_C") %>% select(age) 
-drc.rv <- as.data.frame(cbind(drc.eig$stable.age,drc.eig$repro.value)) %>%
+lh.age <- surv_eggs %>% filter(Diet=="LH") %>% select(age) 
+lh.rv <- as.data.frame(cbind(lh.eig$stable.age,lh.eig$repro.value)) %>%
   rename(stable_age="V1", Rvalue="V2") %>%
-  cbind(drc.age)
+  cbind(lh.age)
 
-drcpl <- ggplot(drc.rv, aes(age,Rvalue)) +
+lhpl <- ggplot(lh.rv, aes(age,Rvalue)) +
   geom_point() +
   geom_smooth() +
   labs(x = "Age (days)", y = "Reproductive value") +
   theme_half_open() +
   my_theme
-drcpl <- drcpl + ggtitle("DR_C")
-drcpl <- drcpl + ylim(0, 8)
+lhpl <- lhpl + ggtitle("LH")
+lhpl 
 
-drdr.age <- surv_eggs %>% filter(Diet=="DR_DR") %>% select(age) 
-drdr.rv <- as.data.frame(cbind(drdr.eig$stable.age,drdr.eig$repro.value)) %>%
+ll.age <- surv_eggs %>% filter(Diet=="LL") %>% select(age) 
+ll.rv <- as.data.frame(cbind(ll.eig$stable.age,ll.eig$repro.value)) %>%
   rename(stable_age="V1", Rvalue="V2") %>%
-  cbind(drdr.age)
+  cbind(ll.age)
 
-drdrpl <- ggplot(drdr.rv, aes(age,Rvalue)) +
+llpl <- ggplot(ll.rv, aes(age,Rvalue)) +
   geom_point() +
   geom_smooth() +
   labs(x = "Age (days)", y = "Reproductive value") +
   theme_half_open() +
   my_theme
-drdrpl <- drdrpl + ggtitle("DR_DR")
+llpl <- llpl + ggtitle("LL")
 
 library(ggpubr)
-fitn <- ggarrange(ccpl,cdrpl,drcpl,drdrpl, ncol = 2, nrow = 2, 
+fitn <- ggarrange(hhpl,hlpl,lhpl,llpl, ncol = 2, nrow = 2, 
                  labels = c("a", "b","c","d"),
                  font.label=list(size=11,face="plain"))
 fitn
 
-ggsave(fitn,file = "../plots/leslie_fitness.pdf",
-                width = 4,height=4)
+ggsave(fitn,file = "~/MyGithub/early_experience/plots/leslie_fitness.pdf",
+                width = 4,height=4.5)
 
-c(cc.eig$lambda1,cc.eig$rho)
-log(cc.eig$rho)
-max(cc.eig$repro.value)
-range(cc.eig$repro.value)
-c(cc.age$age[5:12],cc.eig$repro.value)
+c(hh.eig$lambda1,hh.eig$rho)
+log(hh.eig$rho)
+max(hh.eig$repro.value)
+range(hh.eig$repro.value)
+c(hh.age$age[5:12],hh.eig$repro.value)
 
-c(cdr.eig$lambda1,cdr.eig$rho)
-log(cdr.eig$rho)
-max(cdr.eig$repro.value)
-range(cdr.eig$repro.value)
+c(hl.eig$lambda1,hl.eig$rho)
+log(hl.eig$rho)
+max(hl.eig$repro.value)
+range(hl.eig$repro.value)
 
-c(drc.eig$lambda1,drc.eig$rho)
-log(drc.eig$rho)
-max(drc.eig$repro.value)
-range(drc.eig$repro.value)
+c(lh.eig$lambda1,lh.eig$rho)
+log(lh.eig$rho)
+max(lh.eig$repro.value)
+range(lh.eig$repro.value)
 
-c(drdr.eig$lambda1,drdr.eig$rho)
-log(drdr.eig$rho)
-max(drdr.eig$repro.value)
-range(drdr.eig$repro.value)
+c(ll.eig$lambda1,ll.eig$rho)
+log(ll.eig$rho)
+max(ll.eig$repro.value)
+range(ll.eig$repro.value)
 
 # ?eigen.analysis:
 # lambda - asymptotic growth rate of a pop. (i.e. the dominant eigen val. of the matrix)
@@ -317,29 +320,29 @@ range(drdr.eig$repro.value)
 
 ```{r}
 
-age <- cc.age
+age <- hh.age
 par(mfrow=c(2,2))
-barplot(cc.eig$stable.age, names.arg=age, 
+barplot(hh.eig$stable.age, names.arg=age, 
 	     horiz=TRUE, 
 	     col="grey", 
 	     ylab="Age")
 
-age <- cdr.age
-barplot(cdr.eig$stable.age, names.arg=age, 
+age <- hl.age
+barplot(hl.eig$stable.age, names.arg=age, 
 	     horiz=TRUE, 
 	     col="blue", 
 	     ylab="Age", 
 	     xlim=c(0,0.2))
 
-age <- drc.age
-barplot(drc.eig$stable.age, names.arg=age, 
+age <- lh.age
+barplot(lh.eig$stable.age, names.arg=age, 
 	     horiz=TRUE, 
 	     col="blue", 
 	     ylab="Age", 
 	     xlim=c(0,0.2))
 
-age <- drdr.age
-barplot(drdr.eig$stable.age, names.arg=age, 
+age <- ll.age
+barplot(ll.eig$stable.age, names.arg=age, 
 	     horiz=TRUE, 
 	     col="blue", 
 	     ylab="Age", 

@@ -127,12 +127,16 @@ lifetime_fecundity <- zdn %>%
   summarise(totalEggs = sum(numEggs, na.rm = TRUE), .groups = "drop")
 
 
-ggplot(lifetime_fecundity, aes(x = Regime, y = totalEggs)) +
+lfec <- ggplot(lifetime_fecundity, aes(x = Regime, y = totalEggs)) +
   geom_boxplot() +
   geom_jitter(width = 0.2, alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Lifetime Fecundity Across Regimes", 
-       x = "Regime", y = "Lifetime Fecundity (Total Eggs)")
+  labs(
+    #title = "Lifetime Fecundity Across Regimes", 
+       x = "Regime", 
+    y = "Lifetime fecundity") +
+  theme_half_open() +
+  my_theme
 
 anova_model <- aov(totalEggs ~ Regime, data = lifetime_fecundity)
 summary(anova_model)
@@ -262,13 +266,16 @@ pairwise_d_table <- data.frame(
 )
 
 
-hd <- ggplot(pairwise_d_table, aes(x = Group1, y = HedgeD)) +
-  geom_segment(aes(xend = Group1, yend = 0), color = "#E69F00", size = 1) +  # Lollipop stem
-  geom_point(color = "#E69F00", size = 4) +  # Lollipop circle
-  geom_hline(yintercept = 0, color = "grey", linetype = "dashed", size = 0.8) +  # Add horizontal line at y = 0
+hd <- ggplot(pairwise_d_table, aes(x = Group1, y = HedgeD, color = HedgeD)) +
+  geom_segment(aes(xend = Group1, yend = 0), color = "grey", size = 1) +  # Lollipop stem
+  geom_point(size = 4) +  # Lollipop circle with color mapping
+  geom_hline(yintercept = 0, color = "black", linetype = "dashed", size = 0.8) +  # Add horizontal line at y = 0
+  scale_color_gradient2(
+  low = "blue", mid = "white", high = "red", midpoint = 0,
+  name = expression("Hedge's "*italic(d))
+) +
   coord_flip() +  # Flip coordinates for better readability
   labs(
-    # title = "Pairwise Hedge's d Effect Sizes",
     x = "Pairwise comparison",
     y = "Hedge's d (effect size)"
   ) +
@@ -277,8 +284,20 @@ hd <- ggplot(pairwise_d_table, aes(x = Group1, y = HedgeD)) +
   theme_half_open() +
   my_theme
 
+
 ggsave(hd,file = "/Users/ngomae/MyGithub/early_experience/plots/hedgesd.png",
                 width = 5,height=4)
+
+lfd <- ggarrange(
+  lfec, hd, 
+  ncol = 2, nrow = 1, 
+  labels = c("a", "b"),
+  font.label = list(size = 10),
+  widths = c(2, 3)  # Adjust widths: first plot gets 2 parts, second plot gets 3 parts
+)
+
+ggsave(lfd,file = "/Users/ngomae/MyGithub/early_experience/plots/lifetime_fecundity.png",
+                width = 8,height=2.5)
 
 ```
 
@@ -333,13 +352,13 @@ pffs
 pfdf <- ggarrange(pp,pffe,pffs, ncol = 3, nrow = 1, 
                  labels = c("d", "e","f"),
                  font.label = list(size = 10))
-ggsave(pfdf,file = "../plots/per_female_fec_reg.pdf",
+ggsave(pfdf,file = "/Users/ngomae/MyGithub/early_experience/plots/per_female_fec_reg.pdf",
                 width = 8,height=3)
 
 # Make panel
 fec <- ggarrange(ltf,pfdf, ncol = 1, nrow = 2,
                  font.label = list(size = 10))
-ggsave(fec,file = "../plots/fec_panel.pdf",
+ggsave(fec,file = "/Users/ngomae/MyGithub/early_experience/plots/fec_panel.pdf",
                 width = 8,height=6)
 fec
 
@@ -347,6 +366,7 @@ fec
 pfec <-lme4::lmer(log(numEggs) ~ Regime + (1|id), data = zdn)
 summary(pfec)
 report::report(pfec) 
+
 ```
 
 # Daily per female fecundity grouped by: 1) larval diet; 2) adult diet
@@ -395,7 +415,7 @@ aa
 # aamf <- ggarrange(aa,aame,aams, ncol = 3, nrow = 1, 
 #                  labels = c("g", "h","i"),
 #                  font.label = list(size = 10))
-# ggsave(aamf,file = "../plots/per_female_fec_larv.pdf",
+# ggsave(aamf,file = "/Users/ngomae/MyGithub/early_experience/plots/per_female_fec_larv.pdf",
 #                 width = 8,height=2)
 
 
@@ -443,7 +463,7 @@ eggs <- ggarrange(aa,bb, ncol = 2, nrow = 1,
                  labels = c("g", "h"),
                  font.label = list(size = 10))
 
-ggsave(eggs,file = "../plots/eggs_perFemale_perDay_lm.pdf",
+ggsave(eggs,file = "/Users/ngomae/MyGithub/early_experience/plots/eggs_perFemale_perDay_lm.pdf",
                 width = 5,height=3)
 
 eggs
@@ -455,7 +475,7 @@ eggs
 ```{r}
 # Lifespan
 
-quants <- read.csv("../processed/quantiles.csv")
+quants <- read.csv("/Users/ngomae/MyGithub/early_experience/processed/quantiles.csv")
 #zdn$sgroup <- gsub("\\d", "", zdn$id)
 #edata <- edata[order(edata$age),]
 
@@ -566,9 +586,9 @@ tf <- tf + labs(fill = "Quartile")
 
 tf
 
-ggsave(tf,file = "../plots/Eggs_perFemale_Quartiles.pdf",
+ggsave(tf,file = "/Users/ngomae/MyGithub/early_experience/plots/Eggs_perFemale_Quartiles.pdf",
                 width = 6,height=4)
-ggsave(tf,file = "../plots/Eggs_perFemale_Quartile.pdf",
+ggsave(tf,file = "/Users/ngomae/MyGithub/early_experience/plots/Eggs_perFemale_Quartile.pdf",
                 width = 8,height=6)
 
 ```
@@ -576,7 +596,7 @@ ggsave(tf,file = "../plots/Eggs_perFemale_Quartile.pdf",
 ```{r}
 # Lifespan
 
-mmm <- read.csv("../processed/mini-med-max.csv")
+mmm <- read.csv("/Users/ngomae/MyGithub/early_experience/processed/mini-med-max.csv")
 #zdn$sgroup <- gsub("\\d", "", zdn$id)
 #edata <- edata[order(edata$age),]
 

@@ -188,15 +188,15 @@ summary(mf)$table[, "median"]
 sum_survfit <- surv_summary(mf, data = eelife)
 
 write.csv(sum_survfit, 
-          file = "../processed/SummarySurvModel_larvAdulSex.csv",
+          file = "~/MyGithub/early_experience/processed/SummarySurvModel_larvAdulSex.csv",
           row.names = FALSE) 
 
 # Write quantiles
 write.csv(quantile(mf, probs = c(0.25, 0.5, 0.75)), 
-          file = "../processed/quantiles.csv")
+          file = "~/MyGithub/early_experience/processed/quantiles.csv")
 
 write.csv(quantile(mf, probs = c(0.9, 0.5, 0.1)), 
-          file = "../processed/mini-med-max.csv")
+          file = "~/MyGithub/early_experience/processed/mini-med-max.csv")
 
 # OkabeIto palette in Hex: "#000000","#E69F00","#56B4E9",
 # "#009E73", #F0E442","#0072B2","#D55E00","#CC79A7"
@@ -296,11 +296,11 @@ ggsave(
 
 ```{r}
 # Truncate time at 20 days and recode events
-eelife$time20 <- pmin(eelife$age, 20)
-eelife$event20 <- ifelse(eelife$age > 20, 0, eelife$event)
+# eelife$time20 <- pmin(eelife$age, 20)
+# eelife$event20 <- ifelse(eelife$age > 20, 0, eelife$event)
 
 # Perform the survival difference test using the truncated data
-survdiff(Surv(time20, event20) ~ larvalTreat + adultTreat, data = eelife, rho = 0)
+#survdiff(Surv(time20, event20) ~ larvalTreat + adultTreat, data = eelife, rho = 0)
 
 
 
@@ -335,7 +335,7 @@ mfeval <- mfilt %>%
 ### Females only
 
 ```{r}
-earlyRichF <- subset(eelife, c(eelife$larvalTreat=="C" & eelife$sex=="F"))
+earlyRichF <- subset(eelife, c(eelife$larvalTreat=="HP" & eelife$sex=="F"))
 
 erf <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
@@ -349,8 +349,8 @@ erf_bar <- surv_median(erf)
 
 colnames(erf_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 erf_bar$adultDiet <- as.factor(erf_bar$adultDiet)
-#rownames(epf_bar) <- c("C", "LP")
-levels(erf_bar$adultDiet) <- c("C", "LP")
+#rownames(epf_bar) <- c("HP", "LP")
+levels(erf_bar$adultDiet) <- c("HP", "LP")
 
 erfbarp <- ggplot(erf_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
@@ -376,8 +376,8 @@ erf.plot <- ggsurvplot(erf, data = earlyRichF,
                      font.main = 10,
                      risk.table = FALSE,
                      legend = c(0.8, 0.8), 
-                     title = "Larval diet: C \n (a) Females",
-                     legend.labs = c("C", "LP"),
+                     title = "Larval diet: H \n (a) Females",
+                     legend.labs = c("HP", "LP"),
                      legend.title = "Adult Diet") +
   xlab("Age (days)") 
 erf.plot
@@ -393,7 +393,7 @@ survdiff(Surv(age, status) ~ adultTreat,
 ### Males only
 
 ```{r}
-earlyRichM <- subset(eelife, c(eelife$larvalTreat=="C" & eelife$sex=="M"))
+earlyRichM <- subset(eelife, c(eelife$larvalTreat=="HP" & eelife$sex=="M"))
 
 erm <- survfit(Surv(age, status) ~ adultTreat,
                    conf.type = "log", 
@@ -408,8 +408,8 @@ erm_bar <- surv_median(erm)
 
 colnames(erm_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 erm_bar$adultDiet <- as.factor(erm_bar$adultDiet)
-#rownames(erm_bar) <- c("C", "LP")
-levels(erm_bar$adultDiet) <- c("C", "LP")
+#rownames(erm_bar) <- c("HP", "LP")
+levels(erm_bar$adultDiet) <- c("HP", "LP")
 
 ermbarp <- ggplot(erm_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
@@ -437,9 +437,9 @@ erm.plot <- ggsurvplot(erm, data = earlyRichM,
                      risk.table = FALSE,
                      legend="none",
                      # legend = c(0.9, 0.8),                     
-                     # legend.labs = c("C", "LP"),
+                     # legend.labs = c("HP", "LP"),
                      legend.title="",
-                     title = "Larval diet: C \n (b) Males") +
+                     title = "Larval diet: H \n (b) Males") +
   xlab("Age (days)") 
 erm.plot
 
@@ -467,7 +467,7 @@ epf_bar <- surv_median(epf)
 colnames(epf_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 epf_bar$adultDiet <- as.factor(epf_bar$adultDiet)
 #rownames(epf_bar) <- c("C", "LP")
-levels(epf_bar$adultDiet) <- c("C", "LP")
+levels(epf_bar$adultDiet) <- c("HP", "LP")
 
 epfbarp <- ggplot(epf_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
@@ -495,9 +495,9 @@ epf.plot <- ggsurvplot(epf, data = earlyPoorF,
                      risk.table = FALSE,
                      legend="none",
                      # legend = c(0.9, 0.8),                     
-                     # legend.labs = c("C", "LP"),
+                     # legend.labs = c("HP", "LP"),
                      # legend.title = "Adult Diet",
-                     title = "Larval diet: LP \n (c) Females") +
+                     title = "Larval diet: L \n (c) Females") +
   xlab("Age (days)") +
   ylab("")
 epf.plot
@@ -526,8 +526,8 @@ epm_bar <- surv_median(epm)
 
 colnames(epm_bar) <- c("adultDiet", "Median","CI_Lower","CI_upper")
 epm_bar$adultDiet <- as.factor(epm_bar$adultDiet)
-#rownames(epm_bar) <- c("C", "LP")
-levels(epm_bar$adultDiet) <- c("C", "LP")
+#rownames(epm_bar) <- c("HP", "LP")
+levels(epm_bar$adultDiet) <- c("HP", "LP")
 
 epmbarp <- ggplot(epm_bar, aes(x=adultDiet, y=Median, fill=adultDiet)) +
   geom_col(color="NA", width=0.5) + 
@@ -558,9 +558,9 @@ epm.plot <- ggsurvplot(epm, data = earlyPoorM,
                      # ggtheme = theme_classic2(base_family = "Courier New"),
                      # font.family = "Courier New",
                      # legend = c(0.9, 0.8),                     
-                     # legend.labs = c("C", "LP"),
+                     # legend.labs = c("hp", "LP"),
                      # legend.title = "Adult Diet",
-                     title = "Larval diet: LP \n (d) Males") +
+                     title = "Larval diet: L \n (d) Males") +
   xlab("Age (days)") +
   ylab("")
 epm.plot

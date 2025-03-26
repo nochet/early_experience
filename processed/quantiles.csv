@@ -1,9 +1,9 @@
 "","quantile.25","quantile.50","quantile.75","lower.25","lower.50","lower.75","upper.25","upper.50","upper.75"
-"larvalTreat=C, adultTreat=C , sex=F",19,26,47,19,26,43,22,29,50
-"larvalTreat=C, adultTreat=C , sex=M",22,38,57,19,36,52,26,40,57
-"larvalTreat=C, adultTreat=DR, sex=F",24,36,52,22,36,47,26,40,57
-"larvalTreat=C, adultTreat=DR, sex=M",22,38,61,22,36,54,31,40,71
-"larvalTreat=DR, adultTreat=C , sex=F",22,31,47,22,29,45,22,33,47
-"larvalTreat=DR, adultTreat=C , sex=M",31,38,54,26,38,50,33,40,64
-"larvalTreat=DR, adultTreat=DR, sex=F",22,36,50,22,33,47,24,38,50
-"larvalTreat=DR, adultTreat=DR, sex=M",31,43,64,26,40,59,36,47,68
+"larvalTreat=HP, adultTreat=HP, sex=F",19,26,47,19,26,43,22,29,50
+"larvalTreat=HP, adultTreat=HP, sex=M",22,38,57,19,36,52,26,40,57
+"larvalTreat=HP, adultTreat=LP, sex=F",24,36,52,22,36,47,26,40,57
+"larvalTreat=HP, adultTreat=LP, sex=M",22,38,61,22,36,54,31,40,71
+"larvalTreat=LP, adultTreat=HP, sex=F",22,31,47,22,29,45,22,33,47
+"larvalTreat=LP, adultTreat=HP, sex=M",31,38,54,26,38,50,33,40,64
+"larvalTreat=LP, adultTreat=LP, sex=F",22,36,50,22,33,47,24,38,50
+"larvalTreat=LP, adultTreat=LP, sex=M",31,43,64,26,40,59,36,47,68
