@@ -316,6 +316,31 @@ range(ll.eig$repro.value)
 # rho is the rate by which the population will converge asymptotically to the stable age distribution exponentially with rate at least as fast as log(rho).
 ```
 
+```{r}
+# Assuming you have your eigenvalue lists for each treatment:
+treatment_list <- list(hh = hh.eig, hl = hl.eig, lh = lh.eig, ll = ll.eig)
+
+# Create a summary table
+summary_table <- do.call(rbind, lapply(names(treatment_list), function(trt) {
+  eig <- treatment_list[[trt]]
+  data.frame(
+    Treatment = trt,
+    Lambda = eig$lambda1,
+    MaxReproValue = max(eig$repro.value),
+    MinReproValue = min(eig$repro.value),
+    RangeReproValue = diff(range(eig$repro.value))
+  )
+}))
+
+# View it
+print(summary_table)
+
+summary_table <- summary_table |> 
+  mutate(across(where(is.numeric), \(x) round(x, 3)))
+
+
+```
+
 # Compare stable age distributions
 
 ```{r}
