@@ -23,7 +23,7 @@ library(MuMIn)
 
 ```{r}
 
-eelife <- read.csv("../processed/eeAlldat.csv") %>%
+eelife <- read.csv("/Users/ngomae/MyGithub/early_experience/processed/eeAlldat.csv") %>%
   select(-X,cageID,larv_adult,larvalTreat,adultTreat,age,status,sex) 
 
 # cols <- c("cageID", "larv_adult", "larvalTreat", "adultTreat","sex")
@@ -74,7 +74,7 @@ summary(mf6)
 cox.zph(mf6)
 
 aictab(list(mf1,mf2,mf3,mf4,mf5,mf6))
-anova(mf1,mf2,mf3,mf4,mf5,mf6)
+#anova(mf1,mf2,mf3,mf4,mf5,mf6)
 anova(mf5,mf4)
 ```
 

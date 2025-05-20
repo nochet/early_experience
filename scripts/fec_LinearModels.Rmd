@@ -16,8 +16,7 @@ library(gdata)
 library(gtools)
 library(MuMIn)
 
-source("color_map.R")
-source("ggplot_theme.R")
+source("/Users/ngomae/MyGithub/Functions_and_Themes/ggplot_theme.R")
 ```
 
 # Fecundity data
