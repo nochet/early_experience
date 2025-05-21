@@ -290,7 +290,7 @@ ggsave(eggs,file = "~/MyGithub/early_experience/plots/eggs_perFemale_changepoint
 # pdf
 
 ```{r}
-pdf("~/MyGithub/early_experience/plots/eggs_perFemale_changepoints.pdf",width = 4.5,height=7)
+jpeg("~/MyGithub/early_experience/plots/eggs_perFemale_changepoint.jpeg",width = 4.5,height=7)
 
 pushViewport(viewport(layout = grid.layout(3, 2)))
 vplayout <- function(x, y) 

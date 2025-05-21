@@ -296,7 +296,7 @@ lfd <- ggarrange(
   widths = c(2, 3)  # Adjust widths: first plot gets 2 parts, second plot gets 3 parts
 )
 
-ggsave(lfd,file = "/Users/ngomae/MyGithub/early_experience/plots/lifetime_fecundity.png",
+ggsave(lfd,file = "/Users/ngomae/MyGithub/early_experience/plots/lifetime_fecundity.pdf",
                 width = 8,height=2.5)
 
 ```
